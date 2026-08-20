@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://${PUBLIC_HOST:-167.86.120.214}:${BACKEND_PORT:-8082}
+    image: riskyc-frontend:latest
+    container_name: riskyc-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3001}:3000"

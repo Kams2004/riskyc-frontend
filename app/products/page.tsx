@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatPrice } from "@/lib/data";
 import { listProducts } from "@/lib/api/products";
@@ -20,6 +20,14 @@ const sortOptions = [
 ];
 
 export default function ProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProductsPageInner />
+    </Suspense>
+  );
+}
+
+function ProductsPageInner() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const catParam = searchParams.get("cat") || "";

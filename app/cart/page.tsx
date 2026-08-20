@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useStore } from "@/lib/store";
 import CartItems from "@/components/cart/CartItems";
 import OrdersList from "@/components/cart/OrdersList";
@@ -10,6 +10,14 @@ import { ShoppingCart, Package } from "lucide-react";
 import clsx from "clsx";
 
 export default function CartPage() {
+  return (
+    <Suspense fallback={null}>
+      <CartPageInner />
+    </Suspense>
+  );
+}
+
+function CartPageInner() {
   const searchParams = useSearchParams();
   const startCheckout = searchParams.get("checkout") === "1";
   const { items } = useStore();
