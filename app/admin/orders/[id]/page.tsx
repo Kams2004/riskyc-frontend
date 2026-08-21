@@ -22,6 +22,8 @@ const statusMeta: Record<OrderStatus, { label: string }> = {
   AWAITING_PAYMENT: { label: "Awaiting Payment" },
   REVIEWING:        { label: "Under Review" },
   VALIDATED:        { label: "Validated ✓" },
+  PACKAGING:        { label: "Packaging" },
+  PACKAGED:         { label: "Packaged ✓" },
   CANCELLED:        { label: "Cancelled" },
 };
 
@@ -343,6 +345,33 @@ export default function AdminOrderDetailPage() {
                     {statusMeta[order.status].label}
                   </span>
                 </div>
+                {order.statusChangedByName && (
+                  <div className="flex justify-between text-sm">
+                    <span className={c.textSecondary}>Changed by</span>
+                    <span className={clsx("text-xs", c.textPrimary)}>
+                      {order.statusChangedByName}
+                      {order.statusChangedAt && ` · ${new Date(order.statusChangedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`}
+                    </span>
+                  </div>
+                )}
+                {order.packagingStartedByName && (
+                  <div className="flex justify-between text-sm">
+                    <span className={c.textSecondary}>Packaging started</span>
+                    <span className={clsx("text-xs", c.textPrimary)}>
+                      {order.packagingStartedByName}
+                      {order.packagingStartedAt && ` · ${new Date(order.packagingStartedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`}
+                    </span>
+                  </div>
+                )}
+                {order.packagingCompletedByName && (
+                  <div className="flex justify-between text-sm">
+                    <span className={c.textSecondary}>Packaging done</span>
+                    <span className={clsx("text-xs", c.textPrimary)}>
+                      {order.packagingCompletedByName}
+                      {order.packagingCompletedAt && ` · ${new Date(order.packagingCompletedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Change status */}

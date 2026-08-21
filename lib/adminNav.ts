@@ -6,6 +6,7 @@ import {
   UserRound,
   Users,
   MessageSquare,
+  PackageCheck,
   LucideIcon,
 } from "lucide-react";
 import { Permission } from "./types";
@@ -24,6 +25,7 @@ export interface AdminNavItem {
 export const adminNavItems: AdminNavItem[] = [
   { href: "/admin",            label: "Dashboard",  icon: LayoutDashboard, exact: true, permission: "VIEW_DASHBOARD" },
   { href: "/admin/orders",     label: "Orders",     icon: ShoppingBag,     permission: "VIEW_ORDERS" },
+  { href: "/admin/treatment",  label: "Treatment",  icon: PackageCheck,    permission: "VIEW_ORDERS" },
   { href: "/admin/products",   label: "Products",   icon: Package,         permission: "VIEW_PRODUCTS" },
   { href: "/admin/categories", label: "Categories", icon: Layers,          permission: "VIEW_CATEGORIES" },
   { href: "/admin/customers",  label: "Customers",  icon: UserRound,       permission: "VIEW_CUSTOMERS" },

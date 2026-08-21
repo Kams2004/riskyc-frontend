@@ -18,9 +18,13 @@ export function createConversation(data: { customerName: string; customerId?: st
   return apiFetch<Conversation>("/api/conversations", { method: "POST", body: JSON.stringify(data) });
 }
 
-/** REST fallback for sending a message — the STOMP path (lib/chatSocket.ts) is used when connected. */
-export function sendMessage(data: { conversationId: string; sender: MessageSender; text: string }) {
-  return apiFetch<ChatMessage>("/api/conversations/messages", { method: "POST", body: JSON.stringify(data) });
+/**
+ * REST fallback for sending a message — the STOMP path (lib/chatSocket.ts)
+ * is used when connected. Pass `token` for admin sends so the backend can
+ * stamp who answered (customers never pass one — there's no customer JWT).
+ */
+export function sendMessage(data: { conversationId: string; sender: MessageSender; text: string }, token?: string) {
+  return apiFetch<ChatMessage>("/api/conversations/messages", { method: "POST", body: JSON.stringify(data), token });
 }
 
 /** Uploads a photo (with an optional caption) as a chat message — multipart, like the other media endpoints. */
@@ -28,7 +32,8 @@ export async function sendImageMessage(
   conversationId: string,
   sender: MessageSender,
   file: File,
-  text?: string
+  text?: string,
+  token?: string
 ): Promise<ChatMessage> {
   const { API_BASE_URL } = await import("@/lib/apiClient");
   const form = new FormData();
@@ -37,6 +42,7 @@ export async function sendImageMessage(
   if (text) form.append("text", text);
   const res = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/messages/image`, {
     method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: form,
   });
   if (!res.ok) {

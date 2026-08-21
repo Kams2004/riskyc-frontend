@@ -40,6 +40,7 @@ export interface Product {
   hidden: boolean;
   colors: ProductColor[];
   media: MediaItem[];
+  createdByName?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -65,6 +66,7 @@ export interface Category {
   name: string;
   icon?: string | null;
   imageUrl?: string | null;
+  createdByName?: string | null;
   subcategories: Subcategory[];
 }
 
@@ -75,6 +77,8 @@ export type OrderStatus =
   | "AWAITING_PAYMENT"
   | "REVIEWING"
   | "VALIDATED"
+  | "PACKAGING"
+  | "PACKAGED"
   | "CANCELLED";
 
 export type PaymentMethod = "ORANGE_MONEY" | "MOBILE_MONEY";
@@ -111,6 +115,12 @@ export interface Order {
   paymentMethod?: PaymentMethod | null;
   paymentCode?: string | null;
   paymentScreenshotUrl?: string | null;
+  statusChangedByName?: string | null;
+  statusChangedAt?: string | null;
+  packagingStartedByName?: string | null;
+  packagingStartedAt?: string | null;
+  packagingCompletedByName?: string | null;
+  packagingCompletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -125,6 +135,8 @@ export interface ChatMessage {
   sender: MessageSender;
   text: string;
   imageUrl?: string | null;
+  /** Which staff member sent this (ADMIN messages only) — never show this to a customer. */
+  adminSenderName?: string | null;
   timestamp: string;
 }
 

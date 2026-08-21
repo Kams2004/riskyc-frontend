@@ -3,7 +3,7 @@
 import { Client, IMessage } from "@stomp/stompjs";
 import { useEffect, useRef } from "react";
 import { API_BASE_URL } from "./apiClient";
-import { ChatMessage, AppNotification } from "./types";
+import { ChatMessage, AppNotification, Order } from "./types";
 
 function wsUrl() {
   return API_BASE_URL.replace(/^http/, "ws") + "/ws";
@@ -88,6 +88,40 @@ export function useAdminNotificationSocket(onNotification: (n: AppNotification) 
       subscription?.unsubscribe();
     };
   }, [onNotification]);
+}
+
+/**
+ * Subscribes to `/topic/orders` — every connected admin session gets the
+ * updated order live whenever anyone changes its status or packaging state,
+ * so "who's doing what" stays in sync without a manual refresh.
+ */
+export function useOrdersSocket(onOrderUpdate: (order: Order) => void) {
+  const handlerRef = useRef(onOrderUpdate);
+  handlerRef.current = onOrderUpdate;
+
+  useEffect(() => {
+    const client = getClient();
+    let subscription: { unsubscribe: () => void } | null = null;
+    let cancelled = false;
+
+    const subscribe = () => {
+      if (cancelled) return;
+      subscription = client.subscribe("/topic/orders", (frame: IMessage) => {
+        handlerRef.current(JSON.parse(frame.body));
+      });
+    };
+
+    if (client.connected) {
+      subscribe();
+    } else {
+      client.onConnect = subscribe;
+    }
+
+    return () => {
+      cancelled = true;
+      subscription?.unsubscribe();
+    };
+  }, [onOrderUpdate]);
 }
 
 /** Live `{ online: number }` presence count from `/topic/sessions`. */

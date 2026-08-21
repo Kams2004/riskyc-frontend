@@ -22,6 +22,8 @@ const statusLabels: Record<OrderStatus, string> = {
   AWAITING_PAYMENT: "Awaiting Payment",
   REVIEWING: "Under Review",
   VALIDATED: "Validated",
+  PACKAGING: "Packaging",
+  PACKAGED: "Packaged",
   CANCELLED: "Cancelled",
 };
 

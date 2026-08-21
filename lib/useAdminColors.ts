@@ -52,10 +52,16 @@ export function useAdminColors() {
       VALIDATED: d
         ? "text-green-400 bg-green-900/30 border border-green-500/20"
         : "text-green-700 bg-green-50 border border-green-200",
+      PACKAGING: d
+        ? "text-purple-400 bg-purple-900/30 border border-purple-500/20"
+        : "text-purple-600 bg-purple-50 border border-purple-200",
+      PACKAGED: d
+        ? "text-teal-400 bg-teal-900/30 border border-teal-500/20"
+        : "text-teal-600 bg-teal-50 border border-teal-200",
       CANCELLED: d
         ? "text-red-400 bg-red-900/30 border border-red-500/20"
         : "text-red-600 bg-red-50 border border-red-200",
-    } as Record<"PENDING" | "AWAITING_PAYMENT" | "REVIEWING" | "VALIDATED" | "CANCELLED", string>,
+    } as Record<"PENDING" | "AWAITING_PAYMENT" | "REVIEWING" | "VALIDATED" | "PACKAGING" | "PACKAGED" | "CANCELLED", string>,
     // Action buttons
     btnGhost: d
       ? "bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white"

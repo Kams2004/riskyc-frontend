@@ -53,3 +53,12 @@ export function updateOrderStatus(orderId: string, status: OrderStatus, token: s
     body: JSON.stringify({ status }),
   });
 }
+
+/** Claims a validated order for packaging — 409s if someone else already started it. */
+export function startPackaging(orderId: string, token: string) {
+  return apiFetch<Order>(`/api/orders/${orderId}/packaging/start`, { method: "PATCH", token });
+}
+
+export function completePackaging(orderId: string, token: string) {
+  return apiFetch<Order>(`/api/orders/${orderId}/packaging/complete`, { method: "PATCH", token });
+}

@@ -358,6 +358,9 @@ export default function AdminCategoriesPage() {
                       <div className="flex-1 min-w-0">
                         <p className={clsx("font-semibold text-sm truncate", c.textPrimary)}>{cat.name}</p>
                         <p className={clsx("text-xs font-mono", c.textMuted)}>{cat.id}</p>
+                        {cat.createdByName && (
+                          <p className={clsx("text-[10px]", c.textMuted)}>Added by {cat.createdByName}</p>
+                        )}
                       </div>
                     </>
                   )}

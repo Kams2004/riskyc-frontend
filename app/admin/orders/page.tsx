@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import {
   Eye, CheckCircle2, XCircle, Clock, CreditCard,
   Search, Filter, ShoppingBag, ChevronLeft, ChevronRight,
-  LayoutGrid, List,
+  LayoutGrid, List, PackageSearch, PackageCheck,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -21,6 +21,8 @@ const statusMeta: Record<OrderStatus, { label: string; icon: React.ReactNode }> 
   AWAITING_PAYMENT: { label: "Awaiting Payment", icon: <CreditCard size={12} /> },
   REVIEWING:        { label: "Under Review",     icon: <Search size={12} /> },
   VALIDATED:        { label: "Validated",        icon: <CheckCircle2 size={12} /> },
+  PACKAGING:        { label: "Packaging",        icon: <PackageSearch size={12} /> },
+  PACKAGED:         { label: "Packaged",         icon: <PackageCheck size={12} /> },
   CANCELLED:        { label: "Cancelled",        icon: <XCircle size={12} /> },
 };
 
@@ -77,6 +79,8 @@ export default function AdminOrdersPage() {
     REVIEWING:        orders.filter((o) => o.status === "REVIEWING").length,
     AWAITING_PAYMENT: orders.filter((o) => o.status === "AWAITING_PAYMENT").length,
     VALIDATED:        orders.filter((o) => o.status === "VALIDATED").length,
+    PACKAGING:        orders.filter((o) => o.status === "PACKAGING").length,
+    PACKAGED:         orders.filter((o) => o.status === "PACKAGED").length,
     PENDING:          orders.filter((o) => o.status === "PENDING").length,
     CANCELLED:        orders.filter((o) => o.status === "CANCELLED").length,
   };
@@ -124,7 +128,7 @@ export default function AdminOrdersPage() {
 
         {/* ── Filter tabs ── */}
         <div className="flex flex-wrap gap-2">
-          {(["all", "REVIEWING", "AWAITING_PAYMENT", "PENDING", "VALIDATED", "CANCELLED"] as const).map((s) => (
+          {(["all", "REVIEWING", "AWAITING_PAYMENT", "PENDING", "VALIDATED", "PACKAGING", "PACKAGED", "CANCELLED"] as const).map((s) => (
             <button key={s} onClick={() => handleFilter(s)}
               className={clsx(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",

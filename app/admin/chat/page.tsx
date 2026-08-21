@@ -109,7 +109,7 @@ export default function AdminChatPage() {
     const msg = (text || input).trim();
     if (!msg || !selectedId) return;
     setInput("");
-    const sent = await conversationsApi.sendMessage({ conversationId: selectedId, sender: "ADMIN", text: msg });
+    const sent = await conversationsApi.sendMessage({ conversationId: selectedId, sender: "ADMIN", text: msg }, token ?? undefined);
     setConversations((prev) =>
       prev.map((c) =>
         c.id === selectedId && !c.messages.some((m) => m.id === sent.id)
@@ -530,7 +530,7 @@ export default function AdminChatPage() {
                                 : "text-gray-400"
                             )}
                           >
-                            {isAdmin ? "Admin · " : `${selectedConv.customerName} · `}
+                            {isAdmin ? `${msg.adminSenderName ?? "Admin"} · ` : `${selectedConv.customerName} · `}
                             {new Date(msg.timestamp).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit",

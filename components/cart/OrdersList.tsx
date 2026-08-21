@@ -49,6 +49,18 @@ const statusConfig: Record<
     bg: "bg-green-100",
     icon: <CheckCircle2 size={14} />,
   },
+  PACKAGING: {
+    label: "Preparing your order",
+    color: "text-purple-700",
+    bg: "bg-purple-100",
+    icon: <Package size={14} />,
+  },
+  PACKAGED: {
+    label: "Packaged — on its way",
+    color: "text-teal-700",
+    bg: "bg-teal-100",
+    icon: <CheckCircle2 size={14} />,
+  },
   CANCELLED: {
     label: "Cancelled",
     color: "text-red-600",

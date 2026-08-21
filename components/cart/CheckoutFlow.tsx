@@ -47,6 +47,8 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
         return "awaiting";
       case "REVIEWING":
       case "VALIDATED":
+      case "PACKAGING":
+      case "PACKAGED":
         return "confirmed";
       default:
         return "method";

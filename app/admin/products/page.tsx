@@ -237,6 +237,9 @@ export default function AdminProductsPage() {
                               ))}
                               {product.colors.length > 6 && <span className={clsx("text-xs", c.textMuted)}>+{product.colors.length - 6}</span>}
                             </div>
+                            {product.createdByName && (
+                              <p className={clsx("text-[10px] mt-1", c.textMuted)}>Added by {product.createdByName}</p>
+                            )}
                           </td>
 
                           {/* Category */}
