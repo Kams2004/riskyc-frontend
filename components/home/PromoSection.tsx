@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Tag, Truck, RotateCcw, Shield } from "lucide-react";
+import { Tag, Truck, RotateCcw, Shield } from "@/components/icons/fa";
 
 export default function PromoSection() {
   return (

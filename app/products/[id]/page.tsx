@@ -24,7 +24,7 @@ import {
   HelpCircle,
   X,
   MessageCircle,
-} from "lucide-react";
+} from "@/components/icons/fa";
 import clsx from "clsx";
 import Link from "next/link";
 

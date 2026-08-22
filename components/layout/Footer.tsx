@@ -8,7 +8,7 @@ import {
   Phone,
   Mail,
   MapPin,
-} from "lucide-react";
+} from "@/components/icons/fa";
 import { useCategories } from "@/lib/useCategories";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 

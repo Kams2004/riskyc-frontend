@@ -13,7 +13,7 @@ import {
   Package,
   CreditCard,
   Search,
-} from "lucide-react";
+} from "@/components/icons/fa";
 import clsx from "clsx";
 import Link from "next/link";
 

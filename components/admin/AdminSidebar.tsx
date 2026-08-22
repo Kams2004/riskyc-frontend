@@ -8,6 +8,7 @@ import { useAdminTheme } from "@/lib/adminTheme";
 import { listConversations } from "@/lib/api/conversations";
 import { useAdminNotificationSocket } from "@/lib/chatSocket";
 import { adminNavItems } from "@/lib/adminNav";
+import DownloadAppButton from "@/components/shared/DownloadAppButton";
 import {
   LogOut,
   ChevronRight,
@@ -141,6 +142,9 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
             </>
           )}
         </button>
+
+        {/* Download App */}
+        <DownloadAppButton variant="sidebar" />
 
         {/* View Store */}
         <Link

@@ -17,10 +17,11 @@ import {
   LogOut,
   HelpCircle,
   Package,
-} from "lucide-react";
+} from "@/components/icons/fa";
 import { useStore } from "@/lib/store";
 import { useCategories } from "@/lib/useCategories";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
+import DownloadAppButton from "@/components/shared/DownloadAppButton";
 import { Customer } from "@/lib/types";
 import clsx from "clsx";
 
@@ -192,6 +193,9 @@ export default function Navbar() {
               <span>{language.toUpperCase()}</span>
             </button>
 
+            {/* Download App */}
+            <DownloadAppButton variant="navbar-icon" />
+
             {/* Wishlist placeholder */}
             <button className="btn-ghost p-2 rounded-full hidden sm:flex">
               <Heart size={20} />
@@ -305,6 +309,9 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="lg:hidden bg-white border-t border-gray-100 animate-slide-up">
           <div className="px-4 py-4 space-y-1 max-h-[80vh] overflow-y-auto">
+            {/* Download App */}
+            <DownloadAppButton variant="mobile-banner" onNavigate={() => setMobileOpen(false)} />
+
             {/* Mobile search */}
             <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 mb-3">
               <Search size={16} className="text-gray-400" />

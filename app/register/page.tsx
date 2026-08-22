@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus, AlertCircle } from "@/components/icons/fa";
 
 function RegisterForm() {
   const router = useRouter();

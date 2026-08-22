@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { formatPrice } from "@/lib/data";
-import { Trash2, ShoppingBag, Plus, Minus, ArrowRight } from "lucide-react";
+import { Trash2, ShoppingBag, Plus, Minus, ArrowRight } from "@/components/icons/fa";
 import Link from "next/link";
 
 interface Props {

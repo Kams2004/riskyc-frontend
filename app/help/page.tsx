@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Truck, ShieldCheck, RotateCcw, MessageCircle, Mail } from "lucide-react";
+import { Truck, ShieldCheck, RotateCcw, MessageCircle, Mail } from "@/components/icons/fa";
 
 const faqs = [
   {

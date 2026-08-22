@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Zap, Heart, Star, Check } from "lucide-react";
+import { ShoppingCart, Zap, Heart, Star, Check } from "@/components/icons/fa";
 import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
 import { useStore } from "@/lib/store";

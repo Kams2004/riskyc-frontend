@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { getConversation, getConversationForCustomer, createConversation, sendMessage, sendImageMessage } from "@/lib/api/conversations";
 import { useConversationSocket } from "@/lib/chatSocket";
 import { ChatMessage } from "@/lib/types";
-import { MessageCircle, X, Send, Minimize2, Paperclip } from "lucide-react";
+import { MessageCircle, X, Send, Minimize2, Paperclip } from "@/components/icons/fa";
 import clsx from "clsx";
 
 export default function ChatBlob() {

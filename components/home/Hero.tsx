@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ShoppingBag, Star } from "lucide-react";
+import { ArrowRight, ShoppingBag, Star } from "@/components/icons/fa";
 
 const heroImages = [
   {

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { listProducts } from "@/lib/api/products";
 import { Product } from "@/lib/types";
 import ProductCard from "@/components/products/ProductCard";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/components/icons/fa";
 
 export default function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([]);

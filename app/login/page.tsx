@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle } from "@/components/icons/fa";
 
 function LoginForm() {
   const router = useRouter();

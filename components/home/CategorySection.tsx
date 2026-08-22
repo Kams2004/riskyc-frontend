@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCategories } from "@/lib/useCategories";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
-import { ArrowRight, Image as ImageIcon } from "lucide-react";
+import { ArrowRight, ImageIcon } from "@/components/icons/fa";
 
 const categoryBadges: Record<string, { label: string; cls: string }> = {
   dresses: { label: "New", cls: "badge-new" },

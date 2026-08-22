@@ -8,7 +8,7 @@ import { useCategories } from "@/lib/useCategories";
 import { Product } from "@/lib/types";
 import ProductCard from "@/components/products/ProductCard";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
-import { SlidersHorizontal, X, ChevronDown, Search } from "lucide-react";
+import { SlidersHorizontal, X, ChevronDown, Search } from "@/components/icons/fa";
 import clsx from "clsx";
 
 const sortOptions = [

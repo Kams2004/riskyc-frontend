@@ -8,7 +8,7 @@ import { Product } from "@/lib/types";
 import ProductCard from "@/components/products/ProductCard";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/components/icons/fa";
 
 export default function CategoryPage() {
   const { categoryId } = useParams<{ categoryId: string }>();

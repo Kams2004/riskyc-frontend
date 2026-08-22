@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import CartItems from "@/components/cart/CartItems";
 import OrdersList from "@/components/cart/OrdersList";
 import CheckoutFlow from "@/components/cart/CheckoutFlow";
-import { ShoppingCart, Package } from "lucide-react";
+import { ShoppingCart, Package } from "@/components/icons/fa";
 import clsx from "clsx";
 
 export default function CartPage() {
