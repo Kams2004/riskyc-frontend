@@ -11,5 +11,9 @@ services:
     image: riskyc-frontend:latest
     container_name: riskyc-frontend
     restart: unless-stopped
+    environment:
+      # Used server-side only (sitemap.xml, robots.txt, canonical URLs) — never
+      # shipped to the browser, so a plain runtime env var is enough, no build arg.
+      SITE_URL: ${SITE_URL:-http://167.86.120.214:3001}
     ports:
       - "${FRONTEND_PORT:-3001}:3000"

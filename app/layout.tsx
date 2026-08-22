@@ -13,15 +13,34 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
 });
 
+const SITE_URL = process.env.SITE_URL || "http://localhost:3000";
+const SITE_TITLE = "Riskyc Fashion – Style That Speaks";
+const SITE_DESCRIPTION =
+  "Discover the latest fashion dresses, jerseys, and more at Riskyc Fashion. Quality, style, and elegance delivered to your door.";
+
 export const metadata: Metadata = {
-  title: "Riskyc Fashion – Style That Speaks",
-  description:
-    "Discover the latest fashion dresses, jerseys, and more at Riskyc Fashion. Quality, style, and elegance delivered to your door.",
+  metadataBase: new URL(SITE_URL),
+  // Pages with their own generateMetadata (products, categories) already return a
+  // complete "X – Riskyc Fashion" title, so no template here — that would double it up.
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   keywords: "fashion, dresses, jerseys, Cameroon, style",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Riskyc",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Riskyc Fashion",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
   },
 };
 
