@@ -301,15 +301,15 @@ export default function AdminProductViewPage() {
                   const stock = col.stock;
                   const maxStock = Math.max(...product.colors.map((c) => c.stock ?? 0), 1);
                   return (
-                    <div key={col.name} className={clsx("flex items-center gap-3 p-3 rounded-xl", c.isDark ? "bg-gray-900/40" : "bg-gray-50")}>
+                    <div key={col.name} className={clsx("flex flex-wrap items-center gap-x-3 gap-y-2 p-3 rounded-xl", c.isDark ? "bg-gray-900/40" : "bg-gray-50")}>
                       <div
                         className="w-7 h-7 rounded-full border-2 flex-shrink-0"
                         style={{ backgroundColor: col.hex, borderColor: c.isDark ? "#4b5563" : "#d1d5db" }}
                       />
-                      <span className={clsx("flex-1 text-sm font-medium", c.textPrimary)}>{col.name}</span>
-                      <span className={clsx("font-mono text-xs", c.textSecondary)}>{col.hex}</span>
+                      <span className={clsx("flex-1 min-w-0 text-sm font-medium truncate", c.textPrimary)}>{col.name}</span>
+                      <span className={clsx("font-mono text-xs hidden sm:inline flex-shrink-0", c.textSecondary)}>{col.hex}</span>
                       <span className={clsx(
-                        "text-xs font-semibold px-2 py-0.5 rounded-full",
+                        "text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0",
                         stock == null ? c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-500"
                         : stock === 0 ? "bg-red-100 text-red-600"
                         : stock <= 3 ? "bg-orange-100 text-orange-600"
@@ -318,7 +318,7 @@ export default function AdminProductViewPage() {
                         {stock == null ? "No stock set" : stock === 0 ? "Out of stock" : `${stock} in stock`}
                       </span>
                       {/* Mini stock bar */}
-                      <div className={clsx("w-20 h-1.5 rounded-full overflow-hidden", c.isDark ? "bg-gray-700" : "bg-gray-200")}>
+                      <div className={clsx("w-20 h-1.5 rounded-full overflow-hidden hidden sm:block flex-shrink-0", c.isDark ? "bg-gray-700" : "bg-gray-200")}>
                         <div
                           className={clsx("h-full rounded-full", stock == null ? "bg-transparent" : stock === 0 ? "bg-red-400" : stock <= 3 ? "bg-orange-400" : "bg-green-500")}
                           style={{ width: `${Math.min(100, ((stock ?? 0) / maxStock) * 100)}%` }}

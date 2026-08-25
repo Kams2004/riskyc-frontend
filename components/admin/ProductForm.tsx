@@ -7,7 +7,7 @@ import { useAdminColors } from "@/lib/useAdminColors";
 import { useCategories } from "@/lib/useCategories";
 import * as productsApi from "@/lib/api/products";
 import { Product, ProductColor, Badge, MediaItem } from "@/lib/types";
-import PromoRibbon from "@/components/products/PromoRibbon";
+import PromoLabel from "@/components/products/PromoLabel";
 import {
   Plus,
   Trash2,
@@ -39,7 +39,6 @@ interface FormState {
   description: string;
   price: number;
   originalPrice?: number;
-  promoMediaIndex?: number;
   categorySlug: string;
   subcategorySlug?: string;
   colors: ProductColor[];
@@ -56,7 +55,6 @@ const emptyForm = (): FormState => ({
   description: "",
   price: 0,
   originalPrice: undefined,
-  promoMediaIndex: undefined,
   categorySlug: "",
   subcategorySlug: "",
   colors: [{ name: "Black", hex: "#1a1a1a" }],
@@ -101,7 +99,6 @@ export default function ProductForm({ initial, mode }: Props) {
           description: initial.description ?? "",
           price: initial.price,
           originalPrice: initial.originalPrice ?? undefined,
-          promoMediaIndex: initial.promoMediaIndex ?? undefined,
           categorySlug: initial.categorySlug,
           subcategorySlug: initial.subcategorySlug ?? "",
           colors: initial.colors,
@@ -120,6 +117,11 @@ export default function ProductForm({ initial, mode }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
+  // Per-image promo caption, keyed by combined displayMedia index — independent
+  // of price, each image can carry its own freeform text (or none).
+  const [promoLabels, setPromoLabels] = useState<Record<number, string>>(() =>
+    Object.fromEntries((initial?.media ?? []).map((m, i) => [i, m.promoLabel ?? ""]))
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Default to the first category/subcategory once categories load, for new products
@@ -153,7 +155,6 @@ export default function ProductForm({ initial, mode }: Props) {
         description: form.description.trim() || undefined,
         price: form.price,
         originalPrice: form.originalPrice,
-        promoMediaIndex: form.promoMediaIndex ?? null,
         categorySlug: form.categorySlug,
         subcategorySlug: form.subcategorySlug || undefined,
         sizes: form.sizes,
@@ -170,8 +171,20 @@ export default function ProductForm({ initial, mode }: Props) {
           ? await productsApi.createProduct(input, token)
           : await productsApi.updateProduct(initial!.id, input, token);
 
-      for (const pf of pendingFiles) {
-        await productsApi.uploadProductMedia(product.id, pf.file, token);
+      // Existing images — push any promo-caption edits (idempotent, so it's
+      // fine to resend even when a caption wasn't touched this time).
+      for (let i = 0; i < existingMedia.length; i++) {
+        await productsApi.setMediaPromoLabel(existingMedia[i].id, promoLabels[i] || null, token);
+      }
+
+      // New images — upload, then apply whatever caption was typed for that
+      // slot while it was still a local preview (no media id existed yet).
+      for (let j = 0; j < pendingFiles.length; j++) {
+        const newMedia = await productsApi.uploadProductMedia(product.id, pendingFiles[j].file, token);
+        const label = promoLabels[existingMedia.length + j];
+        if (label) {
+          await productsApi.setMediaPromoLabel(newMedia.id, label, token);
+        }
       }
 
       setSaved(true);
@@ -233,11 +246,14 @@ export default function ProductForm({ initial, mode }: Props) {
     } else {
       removePendingFile(pendingFiles[i - existingMedia.length].previewUrl);
     }
-    setForm((f) => {
-      if (f.promoMediaIndex == null) return f;
-      if (f.promoMediaIndex === i) return { ...f, promoMediaIndex: undefined };
-      if (f.promoMediaIndex > i) return { ...f, promoMediaIndex: f.promoMediaIndex - 1 };
-      return f;
+    setPromoLabels((prev) => {
+      const next: Record<number, string> = {};
+      for (const [key, val] of Object.entries(prev)) {
+        const idx = Number(key);
+        if (idx === i) continue;
+        next[idx > i ? idx - 1 : idx] = val;
+      }
+      return next;
     });
     setPreviewIndex((p) => (p > i ? p - 1 : p));
   };
@@ -508,9 +524,9 @@ export default function ProductForm({ initial, mode }: Props) {
                           <Film size={9} /> video
                         </span>
                       )}
-                      {form.promoMediaIndex === i && (
-                        <span className="absolute bottom-1 left-1 bg-brand-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                          <Tag size={9} /> promo
+                      {promoLabels[i] && (
+                        <span className="absolute bottom-1 left-1 bg-brand-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 max-w-[calc(100%-8px)] truncate">
+                          <Tag size={9} className="flex-shrink-0" /> {promoLabels[i]}
                         </span>
                       )}
                     </div>
@@ -759,10 +775,7 @@ export default function ProductForm({ initial, mode }: Props) {
                   />
                 )}
 
-                {/* Promo-price ribbon, only meaningful once a discount is set */}
-                {form.promoMediaIndex === clampedPreviewIndex &&
-                  form.originalPrice != null &&
-                  form.originalPrice > form.price && <PromoRibbon price={form.price} />}
+                {promoLabels[clampedPreviewIndex] && <PromoLabel text={promoLabels[clampedPreviewIndex]} />}
 
                 {/* Switch which uploaded image is being previewed */}
                 {displayMedia.length > 1 && (
@@ -803,34 +816,39 @@ export default function ProductForm({ initial, mode }: Props) {
                 </div>
               )}
 
-              {/* Promo-image picker */}
+              {/* Per-image promo caption — independent of price, own text per image */}
               <div className="mt-3">
-                {!(form.originalPrice != null && form.originalPrice > form.price) ? (
-                  <p className={clsx("text-xs italic text-center", c.textMuted)}>
-                    Set an Original Price above the Price to enable a promo-price ribbon.
-                  </p>
-                ) : form.promoMediaIndex === clampedPreviewIndex ? (
-                  <button
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, promoMediaIndex: undefined }))}
-                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold bg-brand-500 text-white"
-                  >
-                    <Tag size={13} /> Promo ribbon on this image — click to remove
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, promoMediaIndex: clampedPreviewIndex }))}
-                    className={clsx(
-                      "w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border transition-colors",
-                      isDark
-                        ? "bg-gray-800 text-gray-300 border-gray-700 hover:border-brand-500 hover:text-brand-400"
-                        : "bg-gray-50 text-gray-600 border-gray-200 hover:border-brand-400 hover:text-brand-500"
-                    )}
-                  >
-                    <Tag size={13} /> Use this image for the promo ribbon
-                  </button>
-                )}
+                <label className={clsx("text-xs font-semibold uppercase tracking-wide block mb-1.5", c.textMuted)}>
+                  Promo text on this image ({clampedPreviewIndex + 1}/{displayMedia.length})
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    className={inp()}
+                    value={promoLabels[clampedPreviewIndex] ?? ""}
+                    onChange={(e) =>
+                      setPromoLabels((prev) => ({ ...prev, [clampedPreviewIndex]: e.target.value }))
+                    }
+                    placeholder='e.g. "1500frs — 10 for 10,000frs"'
+                  />
+                  {promoLabels[clampedPreviewIndex] && (
+                    <button
+                      type="button"
+                      onClick={() => setPromoLabels((prev) => ({ ...prev, [clampedPreviewIndex]: "" }))}
+                      title="Clear this image's promo text"
+                      className={clsx(
+                        "flex-shrink-0 w-10 rounded-xl border flex items-center justify-center transition-colors",
+                        isDark
+                          ? "bg-gray-900 border-gray-700 text-gray-400 hover:text-red-400"
+                          : "bg-white border-gray-300 text-gray-400 hover:text-red-500"
+                      )}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+                <p className={clsx("text-[11px] mt-1.5", c.textMuted)}>
+                  Shown exactly as typed, stamped on this image only — switch images above to caption each one separately.
+                </p>
               </div>
             </Section>
           )}

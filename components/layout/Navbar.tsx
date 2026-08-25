@@ -87,10 +87,10 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-1">
             <Link
-              href="/"
+              href="/home"
               className={clsx(
                 "px-4 py-2 rounded-lg font-medium text-sm transition-colors",
-                pathname === "/"
+                pathname === "/home"
                   ? "text-brand-600 bg-brand-50"
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
               )}
@@ -182,10 +182,10 @@ export default function Navbar() {
             )}
 
             <Link
-              href="/products"
+              href="/"
               className={clsx(
                 "px-4 py-2 rounded-lg font-medium text-sm transition-colors",
-                pathname === "/products"
+                pathname === "/"
                   ? "text-brand-600 bg-brand-50"
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
               )}
@@ -391,14 +391,14 @@ export default function Navbar() {
             </div>
 
             <Link
-              href="/"
+              href="/home"
               onClick={() => setMobileOpen(false)}
               className="block py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
             >
               🏠 Home
             </Link>
             <Link
-              href="/products"
+              href="/"
               onClick={() => setMobileOpen(false)}
               className="block py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
             >

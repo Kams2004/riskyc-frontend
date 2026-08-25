@@ -11,6 +11,8 @@ export interface MediaItem {
   type: "IMAGE" | "VIDEO";
   contentType?: string | null;
   sizeBytes?: number | null;
+  /** Free-text promo caption an admin stamped on this specific image, if any. */
+  promoLabel?: string | null;
   uploadedAt?: string | null;
 }
 
@@ -30,8 +32,6 @@ export interface Product {
   description?: string | null;
   price: number;
   originalPrice?: number | null;
-  /** Index into `media` (upload order) of the image that carries the promo-price ribbon, if any. */
-  promoMediaIndex?: number | null;
   categorySlug: string;
   subcategorySlug?: string | null;
   sizes: string[];

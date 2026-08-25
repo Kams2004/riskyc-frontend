@@ -12,6 +12,14 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
+  async redirects() {
+    return [
+      // The product listing is now the landing page (/) — keep the old
+      // /products URL working (bookmarks, existing links) via a permanent
+      // redirect instead of serving the same content at two URLs.
+      { source: "/products", destination: "/", permanent: true },
+    ];
+  },
 };
 
 module.exports = nextConfig;

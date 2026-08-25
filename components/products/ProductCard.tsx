@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { useState } from "react";
 import clsx from "clsx";
-import PromoRibbon from "./PromoRibbon";
+import PromoLabel from "./PromoLabel";
 
 interface Props {
   product: Product;
@@ -19,9 +19,7 @@ export default function ProductCard({ product }: Props) {
   const { addToCart } = useStore();
   const [wishlisted, setWishlisted] = useState(false);
   const [added, setAdded] = useState(false);
-  // Default to the admin-chosen promo image (if any) so its ribbon is what shoppers see first.
-  const defaultImgIdx = product.promoMediaIndex ?? 0;
-  const [imgIdx, setImgIdx] = useState(defaultImgIdx);
+  const [imgIdx, setImgIdx] = useState(0);
 
   const firstColor = product.colors[0];
   const firstSize  = product.sizes?.[0];
@@ -56,7 +54,7 @@ export default function ProductCard({ product }: Props) {
       <div
         className="relative overflow-hidden bg-gray-50 aspect-[3/4]"
         onMouseEnter={() => product.media[1] && setImgIdx(1)}
-        onMouseLeave={() => setImgIdx(defaultImgIdx)}
+        onMouseLeave={() => setImgIdx(0)}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -65,8 +63,8 @@ export default function ProductCard({ product }: Props) {
           className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
         />
 
-        {product.promoMediaIndex != null && imgIdx === product.promoMediaIndex && (
-          <PromoRibbon price={product.price} />
+        {product.media[imgIdx]?.promoLabel && (
+          <PromoLabel text={product.media[imgIdx].promoLabel!} />
         )}
 
         {/* Badges */}
