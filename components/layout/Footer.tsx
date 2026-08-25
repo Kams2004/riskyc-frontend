@@ -101,6 +101,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/contact" className="hover:text-brand-400 transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
                 <a href="#" className="hover:text-brand-400 transition-colors">
                   Size Guide
                 </a>
@@ -129,7 +134,7 @@ export default function Footer() {
             <ul className="space-y-3 text-sm text-gray-400">
               <li className="flex items-start gap-2.5">
                 <MapPin size={16} className="mt-0.5 text-brand-400 flex-shrink-0" />
-                <span>Douala, Cameroon<br />Akwa, Rue de la Joie</span>
+                <span>Marché Central, Douala<br />Précisément au Marché des Pommes</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone size={16} className="text-brand-400 flex-shrink-0" />

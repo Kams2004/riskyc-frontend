@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCategories } from "@/lib/useCategories";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
-import { ArrowRight, ImageIcon } from "@/components/icons/fa";
+import { ArrowRight } from "@/components/icons/fa";
 
 const categoryBadges: Record<string, { label: string; cls: string }> = {
   dresses: { label: "New", cls: "badge-new" },
@@ -13,8 +13,9 @@ const categoryBadges: Record<string, { label: string; cls: string }> = {
 
 export default function CategorySection() {
   const { categories } = useCategories();
+  const categoriesWithImage = categories.filter((cat) => cat.imageUrl);
 
-  if (categories.length === 0) return null;
+  if (categoriesWithImage.length === 0) return null;
 
   return (
     <section className="py-16 px-4 sm:px-6 max-w-7xl mx-auto">
@@ -24,7 +25,7 @@ export default function CategorySection() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
-        {categories.map((cat) => {
+        {categoriesWithImage.map((cat) => {
           const badge = categoryBadges[cat.slug];
           return (
             <Link
@@ -33,18 +34,12 @@ export default function CategorySection() {
               className="group relative overflow-hidden rounded-2xl aspect-[3/4] bg-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
               {/* Background image */}
-              {cat.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={cat.imageUrl}
-                  alt={cat.name}
-                  className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-brand-100 to-brand-50">
-                  <ImageIcon size={40} className="text-brand-300" />
-                </div>
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={cat.imageUrl ?? undefined}
+                alt={cat.name}
+                className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+              />
 
               {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />

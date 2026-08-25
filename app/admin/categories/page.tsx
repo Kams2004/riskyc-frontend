@@ -44,6 +44,7 @@ export default function AdminCategoriesPage() {
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState("fa:solid:tag");
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const uploadTargetRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,25 +87,32 @@ export default function AdminCategoriesPage() {
     setEditValue(name);
     setEditIcon(icon);
     setAdding(null);
+    setFormError(null);
   };
 
   const saveEditCat = async (id: string) => {
     if (!editValue.trim() || !token) return;
     const existing = categories.find((cat) => cat.id === id);
     if (!existing) return;
-    const updated = await categoriesApi.updateCategory(
-      id,
-      { slug: existing.slug, name: editValue.trim(), icon: editIcon || "fa:solid:tag" },
-      token
-    );
-    setCategories((prev) => prev.map((cat) => (cat.id === id ? { ...updated, subcategories: cat.subcategories } : cat)));
-    setEditing(null);
+    setFormError(null);
+    try {
+      const updated = await categoriesApi.updateCategory(
+        id,
+        { slug: existing.slug, name: editValue.trim(), icon: editIcon || "fa:solid:tag" },
+        token
+      );
+      setCategories((prev) => prev.map((cat) => (cat.id === id ? { ...updated, subcategories: cat.subcategories } : cat)));
+      setEditing(null);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to update category");
+    }
   };
 
   const startEditSub = (catId: string, subId: string, name: string) => {
     setEditing(`sub-${catId}-${subId}`);
     setEditValue(name);
     setAdding(null);
+    setFormError(null);
   };
 
   const saveEditSub = async (catId: string, subId: string) => {
@@ -112,15 +120,20 @@ export default function AdminCategoriesPage() {
     const cat = categories.find((c) => c.id === catId);
     const existing = cat?.subcategories.find((s) => s.id === subId);
     if (!existing) return;
-    const updated = await categoriesApi.updateSubcategory(subId, { slug: existing.slug, name: editValue.trim() }, token);
-    setCategories((prev) =>
-      prev.map((c) =>
-        c.id === catId
-          ? { ...c, subcategories: c.subcategories.map((s) => (s.id === subId ? updated : s)) }
-          : c
-      )
-    );
-    setEditing(null);
+    setFormError(null);
+    try {
+      const updated = await categoriesApi.updateSubcategory(subId, { slug: existing.slug, name: editValue.trim() }, token);
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === catId
+            ? { ...c, subcategories: c.subcategories.map((s) => (s.id === subId ? updated : s)) }
+            : c
+        )
+      );
+      setEditing(null);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to update subcategory");
+    }
   };
 
   const startAddCat = () => {
@@ -128,16 +141,22 @@ export default function AdminCategoriesPage() {
     setNewName("");
     setNewIcon("fa:solid:tag");
     setEditing(null);
+    setFormError(null);
   };
 
   const saveAddCat = async () => {
     if (!newName.trim() || !token) return;
-    const created = await categoriesApi.createCategory(
-      { slug: slugify(newName), name: newName.trim(), icon: newIcon || "fa:solid:tag" },
-      token
-    );
-    setCategories((prev) => [...prev, created]);
-    setAdding(null);
+    setFormError(null);
+    try {
+      const created = await categoriesApi.createCategory(
+        { slug: slugify(newName), name: newName.trim(), icon: newIcon || "fa:solid:tag" },
+        token
+      );
+      setCategories((prev) => [...prev, created]);
+      setAdding(null);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to create category");
+    }
   };
 
   const startAddSub = (catId: string) => {
@@ -145,15 +164,21 @@ export default function AdminCategoriesPage() {
     setNewName("");
     setEditing(null);
     setExpanded((prev) => ({ ...prev, [catId]: true }));
+    setFormError(null);
   };
 
   const saveAddSub = async (catId: string) => {
     if (!newName.trim() || !token) return;
-    const created = await categoriesApi.addSubcategory(catId, { slug: slugify(newName), name: newName.trim() }, token);
-    setCategories((prev) =>
-      prev.map((c) => (c.id === catId ? { ...c, subcategories: [...c.subcategories, created] } : c))
-    );
-    setAdding(null);
+    setFormError(null);
+    try {
+      const created = await categoriesApi.addSubcategory(catId, { slug: slugify(newName), name: newName.trim() }, token);
+      setCategories((prev) =>
+        prev.map((c) => (c.id === catId ? { ...c, subcategories: [...c.subcategories, created] } : c))
+      );
+      setAdding(null);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to add subcategory");
+    }
   };
 
   const askDeleteCategory = (id: string, name: string, subCount: number) => {
@@ -243,6 +268,15 @@ export default function AdminCategoriesPage() {
             </button>
           </div>
         </div>
+
+        {formError && (
+          <div className="flex items-center justify-between gap-3 text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+            <span>⚠ {formError}</span>
+            <button onClick={() => setFormError(null)} className="text-red-500 hover:text-red-700 flex-shrink-0">
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {/* New category form */}
         {adding === "new-cat" && (

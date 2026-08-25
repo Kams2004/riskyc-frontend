@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { formatPrice } from "@/lib/data";
 import * as ordersApi from "@/lib/api/orders";
 import { PaymentMethod, Order, CustomerInfo, DeliveryType } from "@/lib/types";
+import { StatusBadge } from "@/components/cart/OrdersList";
 import {
   X,
   Copy,
@@ -489,13 +490,17 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Order Received! 🎉</h3>
                 <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
-                  Thank you for your order! Our team will review your payment proof and you will receive a <strong>notification call or SMS</strong> to confirm your payment and order.
+                  Thank you for your order and for sending your payment proof! Our team will review it and{" "}
+                  <strong>we will reach out to you by call or SMS</strong> to confirm your payment and order.
                 </p>
               </div>
 
               {order && (
                 <div className="bg-green-50 border border-green-100 rounded-2xl p-4 text-left space-y-2">
-                  <p className="text-xs font-semibold text-green-800 uppercase tracking-wide">Order Summary</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-green-800 uppercase tracking-wide">Order Summary</p>
+                    <StatusBadge status={order.status} />
+                  </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Order ID</span>
                     <span className="font-mono font-semibold text-gray-800">{order.id}</span>

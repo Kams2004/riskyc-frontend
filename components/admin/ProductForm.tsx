@@ -7,6 +7,7 @@ import { useAdminColors } from "@/lib/useAdminColors";
 import { useCategories } from "@/lib/useCategories";
 import * as productsApi from "@/lib/api/products";
 import { Product, ProductColor, Badge, MediaItem } from "@/lib/types";
+import PromoRibbon from "@/components/products/PromoRibbon";
 import {
   Plus,
   Trash2,
@@ -22,6 +23,9 @@ import {
   X,
   Eye,
   EyeOff,
+  Tag,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -35,6 +39,7 @@ interface FormState {
   description: string;
   price: number;
   originalPrice?: number;
+  promoMediaIndex?: number;
   categorySlug: string;
   subcategorySlug?: string;
   colors: ProductColor[];
@@ -51,6 +56,7 @@ const emptyForm = (): FormState => ({
   description: "",
   price: 0,
   originalPrice: undefined,
+  promoMediaIndex: undefined,
   categorySlug: "",
   subcategorySlug: "",
   colors: [{ name: "Black", hex: "#1a1a1a" }],
@@ -61,6 +67,20 @@ const emptyForm = (): FormState => ({
   tags: [],
   hidden: false,
 });
+
+// Cleans up freeform size entry — admins type things like "m.l.xl.xxl.xxxl"
+// or "s/ m /l" instead of the expected "S, M, L" comma format. Splits on any
+// run of common separators, not just commas, and normalizes case.
+function normalizeSizes(raw: string): string[] {
+  return Array.from(
+    new Set(
+      raw
+        .split(/[,;/|.\s]+/)
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean)
+    )
+  );
+}
 
 interface PendingFile {
   file: File;
@@ -81,6 +101,7 @@ export default function ProductForm({ initial, mode }: Props) {
           description: initial.description ?? "",
           price: initial.price,
           originalPrice: initial.originalPrice ?? undefined,
+          promoMediaIndex: initial.promoMediaIndex ?? undefined,
           categorySlug: initial.categorySlug,
           subcategorySlug: initial.subcategorySlug ?? "",
           colors: initial.colors,
@@ -98,6 +119,7 @@ export default function ProductForm({ initial, mode }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Default to the first category/subcategory once categories load, for new products
@@ -131,6 +153,7 @@ export default function ProductForm({ initial, mode }: Props) {
         description: form.description.trim() || undefined,
         price: form.price,
         originalPrice: form.originalPrice,
+        promoMediaIndex: form.promoMediaIndex ?? null,
         categorySlug: form.categorySlug,
         subcategorySlug: form.subcategorySlug || undefined,
         sizes: form.sizes,
@@ -201,21 +224,38 @@ export default function ProductForm({ initial, mode }: Props) {
     URL.revokeObjectURL(previewUrl);
   };
 
-  type DisplayMedia = { key: string; url: string; isVideo: boolean; onRemove: () => void };
+  // Removing a media item can shift every index after it — keep the promo
+  // selection and the preview cursor pointing at the same image, or clear
+  // the promo pick if it was the one just removed.
+  const handleRemoveAt = (i: number) => {
+    if (i < existingMedia.length) {
+      removeExistingMedia(existingMedia[i].id);
+    } else {
+      removePendingFile(pendingFiles[i - existingMedia.length].previewUrl);
+    }
+    setForm((f) => {
+      if (f.promoMediaIndex == null) return f;
+      if (f.promoMediaIndex === i) return { ...f, promoMediaIndex: undefined };
+      if (f.promoMediaIndex > i) return { ...f, promoMediaIndex: f.promoMediaIndex - 1 };
+      return f;
+    });
+    setPreviewIndex((p) => (p > i ? p - 1 : p));
+  };
+
+  type DisplayMedia = { key: string; url: string; isVideo: boolean };
   const displayMedia: DisplayMedia[] = [
     ...existingMedia.map((m) => ({
       key: m.id,
       url: m.presignedUrl,
       isVideo: m.type === "VIDEO",
-      onRemove: () => removeExistingMedia(m.id),
     })),
     ...pendingFiles.map((pf) => ({
       key: pf.previewUrl,
       url: pf.previewUrl,
       isVideo: pf.file.type.startsWith("video/"),
-      onRemove: () => removePendingFile(pf.previewUrl),
     })),
   ];
+  const clampedPreviewIndex = Math.min(previewIndex, Math.max(0, displayMedia.length - 1));
 
   const selectedCategory = categories.find((cat) => cat.slug === form.categorySlug);
 
@@ -454,7 +494,7 @@ export default function ProductForm({ initial, mode }: Props) {
                       {/* Remove overlay */}
                       <button
                         type="button"
-                        onClick={m.onRemove}
+                        onClick={() => handleRemoveAt(i)}
                         className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X size={20} className="text-white" />
@@ -466,6 +506,11 @@ export default function ProductForm({ initial, mode }: Props) {
                       {m.isVideo && (
                         <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
                           <Film size={9} /> video
+                        </span>
+                      )}
+                      {form.promoMediaIndex === i && (
+                        <span className="absolute bottom-1 left-1 bg-brand-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                          <Tag size={9} /> promo
                         </span>
                       )}
                     </div>
@@ -489,22 +534,11 @@ export default function ProductForm({ initial, mode }: Props) {
                   )}
                 >
                   {/* Color picker */}
-                  <div className="relative flex-shrink-0">
-                    <input
-                      type="color"
-                      value={color.hex}
-                      onChange={(e) => updateColor(i, { hex: e.target.value })}
-                      className="sr-only"
-                      id={`color-picker-${i}`}
-                      title="Pick color"
-                    />
-                    <label
-                      htmlFor={`color-picker-${i}`}
-                      className="block w-10 h-10 rounded-full border-2 border-white shadow-md cursor-pointer ring-2 ring-gray-200 hover:ring-brand-400 transition-all"
-                      style={{ backgroundColor: color.hex }}
-                      title={`Pick color (current: ${color.hex})`}
-                    />
-                  </div>
+                  <ColorPicker
+                    value={color.hex}
+                    onChange={(hex) => updateColor(i, { hex })}
+                    isDark={isDark}
+                  />
                   {/* Color name */}
                   <input
                     className={clsx(inpSm, "flex-1")}
@@ -617,12 +651,20 @@ export default function ProductForm({ initial, mode }: Props) {
                       ...f,
                       sizes: e.target.value
                         .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean),
+                        .map((s) => s.trim()),
+                    }))
+                  }
+                  onBlur={() =>
+                    setForm((f) => ({
+                      ...f,
+                      sizes: normalizeSizes(f.sizes.join(", ")),
                     }))
                   }
                   placeholder="XS, S, M, L, XL"
                 />
+                <p className={clsx("text-[11px] mt-1", c.textMuted)}>
+                  Any separator works (comma, period, space, slash) — cleaned up automatically, e.g. &quot;m.l.xl&quot; → M, L, XL
+                </p>
               </Field>
 
               {/* Size presets */}
@@ -632,7 +674,6 @@ export default function ProductForm({ initial, mode }: Props) {
                   {[
                     { label: "XS–XL", val: "XS, S, M, L, XL" },
                     { label: "XS–2XL", val: "XS, S, M, L, XL, 2XL" },
-                    { label: "Shoes 36–41", val: "36, 37, 38, 39, 40, 41" },
                     { label: "One Size", val: "One Size" },
                   ].map((p) => (
                     <button
@@ -696,13 +737,13 @@ export default function ProductForm({ initial, mode }: Props) {
             <Section title="Preview" isDark={isDark} c={c}>
               <div
                 className={clsx(
-                  "rounded-xl overflow-hidden aspect-[3/4] border",
+                  "relative rounded-xl overflow-hidden aspect-[3/4] border",
                   isDark ? "bg-gray-900 border-gray-700" : "bg-gray-100 border-gray-200"
                 )}
               >
-                {displayMedia[0].isVideo ? (
+                {displayMedia[clampedPreviewIndex].isVideo ? (
                   <video
-                    src={displayMedia[0].url}
+                    src={displayMedia[clampedPreviewIndex].url}
                     className="w-full h-full object-cover"
                     autoPlay
                     muted
@@ -712,12 +753,41 @@ export default function ProductForm({ initial, mode }: Props) {
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={displayMedia[0].url}
+                    src={displayMedia[clampedPreviewIndex].url}
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
                 )}
+
+                {/* Promo-price ribbon, only meaningful once a discount is set */}
+                {form.promoMediaIndex === clampedPreviewIndex &&
+                  form.originalPrice != null &&
+                  form.originalPrice > form.price && <PromoRibbon price={form.price} />}
+
+                {/* Switch which uploaded image is being previewed */}
+                {displayMedia.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewIndex((p) => (p - 1 + displayMedia.length) % displayMedia.length)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewIndex((p) => (p + 1) % displayMedia.length)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                    <span className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                      {clampedPreviewIndex + 1} / {displayMedia.length}
+                    </span>
+                  </>
+                )}
               </div>
+
               <p className={clsx("text-xs text-center mt-2 font-medium", c.textSecondary)}>
                 {form.name || "Product name"}
               </p>
@@ -732,6 +802,36 @@ export default function ProductForm({ initial, mode }: Props) {
                   </span>
                 </div>
               )}
+
+              {/* Promo-image picker */}
+              <div className="mt-3">
+                {!(form.originalPrice != null && form.originalPrice > form.price) ? (
+                  <p className={clsx("text-xs italic text-center", c.textMuted)}>
+                    Set an Original Price above the Price to enable a promo-price ribbon.
+                  </p>
+                ) : form.promoMediaIndex === clampedPreviewIndex ? (
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, promoMediaIndex: undefined }))}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold bg-brand-500 text-white"
+                  >
+                    <Tag size={13} /> Promo ribbon on this image — click to remove
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, promoMediaIndex: clampedPreviewIndex }))}
+                    className={clsx(
+                      "w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border transition-colors",
+                      isDark
+                        ? "bg-gray-800 text-gray-300 border-gray-700 hover:border-brand-500 hover:text-brand-400"
+                        : "bg-gray-50 text-gray-600 border-gray-200 hover:border-brand-400 hover:text-brand-500"
+                    )}
+                  >
+                    <Tag size={13} /> Use this image for the promo ribbon
+                  </button>
+                )}
+              </div>
             </Section>
           )}
 
@@ -852,6 +952,194 @@ function Field({
         <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
           ⚠ {error}
         </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Resolves any CSS <color> the browser understands — a name ("navy"), a hex
+ * code, rgb()/hsl(), etc — to a normalized "#rrggbb" string, or null if the
+ * browser rejects it. Uses the CSSOM's own color parser (no dictionary to
+ * maintain, no library): assigning an invalid value to `style.color` is a
+ * silent no-op (empty string back), which flags it as unrecognized. A plain
+ * inline style keeps whatever literal was assigned ("navy" stays "navy"
+ * instead of becoming rgb(0,0,128)), so the element has to actually be in
+ * the document for `getComputedStyle` to resolve it to rgb().
+ */
+function resolveCssColor(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const el = document.createElement("div");
+  el.style.color = trimmed;
+  if (!el.style.color) return null;
+  el.style.position = "absolute";
+  el.style.visibility = "hidden";
+  el.style.pointerEvents = "none";
+  document.body.appendChild(el);
+  const rgb = getComputedStyle(el).color;
+  document.body.removeChild(el);
+  const nums = rgb.match(/[\d.]+/g);
+  if (!nums || nums.length < 3) return null;
+  const [r, g, b] = nums.map(Number);
+  return (
+    "#" +
+    [r, g, b]
+      .map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
+const COLOR_SUGGESTIONS: { name: string; hex: string }[] = [
+  { name: "Black", hex: "#1a1a1a" },
+  { name: "White", hex: "#ffffff" },
+  { name: "Gray", hex: "#9ca3af" },
+  { name: "Navy", hex: "#1e3a5f" },
+  { name: "Red", hex: "#dc2626" },
+  { name: "Pink", hex: "#ec4899" },
+  { name: "Rose", hex: "#f43f5e" },
+  { name: "Blue", hex: "#3b82f6" },
+  { name: "Sky Blue", hex: "#0ea5e9" },
+  { name: "Green", hex: "#16a34a" },
+  { name: "Olive", hex: "#65784b" },
+  { name: "Yellow", hex: "#eab308" },
+  { name: "Orange", hex: "#f97316" },
+  { name: "Purple", hex: "#9333ea" },
+  { name: "Brown", hex: "#78350f" },
+  { name: "Beige", hex: "#e8dcc8" },
+  { name: "Cream", hex: "#fdf6e3" },
+  { name: "Gold", hex: "#d4af37" },
+];
+
+/**
+ * Swatch button that opens a small popover for picking a color — type a
+ * name or hex and see it previewed live, tap a suggestion, or fall back to
+ * the system color picker. Replaces a bare `<input type="color">`, whose
+ * native OS picker was hard to use and, on some mobile browsers, threw off
+ * the page's scroll/viewport when it opened.
+ */
+function ColorPicker({
+  value,
+  onChange,
+  isDark,
+}: {
+  value: string;
+  onChange: (hex: string) => void;
+  isDark: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(value);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) setText(value);
+  }, [open, value]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [open]);
+
+  const resolved = resolveCssColor(text);
+  const commit = (hex: string) => {
+    onChange(hex);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative flex-shrink-0" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="block w-10 h-10 rounded-full border-2 border-white shadow-md ring-2 ring-gray-200 hover:ring-brand-400 transition-all"
+        style={{ backgroundColor: value }}
+        title={`Pick color (current: ${value})`}
+      />
+
+      {open && (
+        <div
+          className={clsx(
+            "absolute z-20 top-full left-0 mt-2 w-64 max-w-[80vw] rounded-2xl border shadow-xl p-3",
+            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+          )}
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <div
+              className="w-9 h-9 rounded-lg border flex-shrink-0"
+              style={{ backgroundColor: resolved ?? value, borderColor: isDark ? "#4b5563" : "#e5e7eb" }}
+            />
+            <input
+              autoFocus
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && resolved) commit(resolved);
+                if (e.key === "Escape") setOpen(false);
+              }}
+              placeholder="Color name or hex…"
+              className={clsx(
+                "flex-1 min-w-0 border rounded-lg px-2.5 py-2 text-sm outline-none",
+                isDark ? "bg-gray-900 border-gray-600 text-white" : "bg-gray-50 border-gray-200 text-gray-900"
+              )}
+            />
+          </div>
+
+          {text.trim() && !resolved ? (
+            <p className="text-[11px] text-red-500 mb-2">
+              Not a recognized color — try a name like &quot;navy&quot; or a hex code like #3b82f6.
+            </p>
+          ) : resolved ? (
+            <button
+              type="button"
+              onClick={() => commit(resolved)}
+              className="w-full mb-3 text-xs font-semibold py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white transition-colors"
+            >
+              Use this color
+            </button>
+          ) : (
+            <div className="mb-2" />
+          )}
+
+          <p className={clsx("text-[10px] uppercase tracking-wide font-semibold mb-1.5", isDark ? "text-gray-500" : "text-gray-400")}>
+            Suggestions
+          </p>
+          <div className="grid grid-cols-6 gap-1.5 mb-1">
+            {COLOR_SUGGESTIONS.map((p) => (
+              <button
+                key={p.hex}
+                type="button"
+                title={p.name}
+                onClick={() => commit(p.hex)}
+                className={clsx(
+                  "w-7 h-7 rounded-full border-2 transition-all",
+                  value.toLowerCase() === p.hex
+                    ? "border-brand-500 ring-2 ring-brand-200"
+                    : "border-white ring-1 ring-gray-200 hover:ring-brand-300"
+                )}
+                style={{ backgroundColor: p.hex }}
+              />
+            ))}
+          </div>
+
+          <label
+            className={clsx(
+              "mt-2 flex items-center justify-center gap-1.5 text-[11px] font-medium py-1.5 rounded-lg cursor-pointer transition-colors",
+              isDark ? "text-gray-400 hover:bg-gray-700" : "text-gray-500 hover:bg-gray-100"
+            )}
+          >
+            Fine-tune with the system picker
+            <input
+              type="color"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="sr-only"
+            />
+          </label>
+        </div>
       )}
     </div>
   );

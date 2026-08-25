@@ -17,6 +17,7 @@ import {
   LogOut,
   HelpCircle,
   Package,
+  MapPin,
 } from "@/components/icons/fa";
 import { useStore } from "@/lib/store";
 import { useCategories } from "@/lib/useCategories";
@@ -25,11 +26,17 @@ import DownloadAppButton from "@/components/shared/DownloadAppButton";
 import { Customer } from "@/lib/types";
 import clsx from "clsx";
 
+// Keeps the desktop nav row from growing unbounded as categories are added —
+// anything past this count moves into the "More" dropdown instead.
+const MAX_NAV_CATEGORIES = 5;
+
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { getCartCount, language, setLanguage, items, customer, logoutCustomer } = useStore();
   const { categories } = useCategories();
+  const visibleCategories = categories.slice(0, MAX_NAV_CATEGORIES);
+  const overflowCategories = categories.slice(MAX_NAV_CATEGORIES);
   const [cartCount, setCartCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -57,7 +64,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
       {/* Top bar */}
       <div className="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs text-center py-1.5 tracking-wide">
-        ✨ Free delivery on orders above 50,000 XAF &nbsp;|&nbsp; Pay with Orange Money or Mobile Money
+        ✨ Free delivery on orders above 50,000 XAF &nbsp;|&nbsp; Pay with no extra charges via Orange Money or Mobile Money
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -91,7 +98,7 @@ export default function Navbar() {
               Home
             </Link>
 
-            {categories.map((cat) => (
+            {visibleCategories.map((cat) => (
               <div
                 key={cat.id}
                 className="relative"
@@ -134,6 +141,45 @@ export default function Navbar() {
                 )}
               </div>
             ))}
+
+            {overflowCategories.length > 0 && (
+              <div
+                className="relative"
+                onMouseEnter={() => setActiveDropdown("__more")}
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
+                <button
+                  className={clsx(
+                    "flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors",
+                    "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
+                  )}
+                >
+                  More
+                  <ChevronDown
+                    size={14}
+                    className={clsx(
+                      "transition-transform duration-200",
+                      activeDropdown === "__more" ? "rotate-180" : ""
+                    )}
+                  />
+                </button>
+
+                {activeDropdown === "__more" && (
+                  <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
+                    {overflowCategories.map((cat) => (
+                      <Link
+                        key={cat.id}
+                        href={`/category/${cat.slug}`}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                      >
+                        <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={13} />
+                        {cat.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <Link
               href="/products"
@@ -245,6 +291,13 @@ export default function Navbar() {
                       >
                         <HelpCircle size={15} /> Help Center
                       </Link>
+                      <Link
+                        href="/contact"
+                        onClick={() => setActiveDropdown(null)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                      >
+                        <MapPin size={15} /> Contact Us
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
@@ -274,6 +327,13 @@ export default function Navbar() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
                         <HelpCircle size={15} /> Help Center
+                      </Link>
+                      <Link
+                        href="/contact"
+                        onClick={() => setActiveDropdown(null)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                      >
+                        <MapPin size={15} /> Contact Us
                       </Link>
                     </>
                   )}
@@ -414,6 +474,13 @@ export default function Navbar() {
                   >
                     <HelpCircle size={16} /> Help Center
                   </Link>
+                  <Link
+                    href="/contact"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
+                  >
+                    <MapPin size={16} /> Contact Us
+                  </Link>
                   <button
                     onClick={() => {
                       setMobileOpen(false);
@@ -446,6 +513,13 @@ export default function Navbar() {
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
                     <HelpCircle size={16} /> Help Center
+                  </Link>
+                  <Link
+                    href="/contact"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
+                  >
+                    <MapPin size={16} /> Contact Us
                   </Link>
                 </>
               )}

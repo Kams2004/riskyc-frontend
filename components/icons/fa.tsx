@@ -66,6 +66,7 @@ import {
   faFacebookF,
   faInstagram,
   faXTwitter,
+  faWhatsapp,
 } from "@fortawesome/free-brands-svg-icons";
 
 interface IconProps {
@@ -126,6 +127,7 @@ export const Tag = makeIcon(faTag);
 export const Trash2 = makeIcon(faTrash);
 export const Truck = makeIcon(faTruck);
 export const Twitter = makeIcon(faXTwitter);
+export const Whatsapp = makeIcon(faWhatsapp);
 export const Upload = makeIcon(faUpload);
 export const User = makeIcon(faUser);
 export const UserPlus = makeIcon(faUserPlus);

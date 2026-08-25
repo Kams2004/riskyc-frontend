@@ -53,6 +53,7 @@ export interface ProductInput {
   description?: string;
   price: number;
   originalPrice?: number;
+  promoMediaIndex?: number | null;
   categorySlug: string;
   subcategorySlug?: string;
   sizes: string[];

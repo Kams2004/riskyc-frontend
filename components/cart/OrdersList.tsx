@@ -69,7 +69,7 @@ const statusConfig: Record<
   },
 };
 
-function StatusBadge({ status }: { status: OrderStatus }) {
+export function StatusBadge({ status }: { status: OrderStatus }) {
   const cfg = statusConfig[status];
   return (
     <span

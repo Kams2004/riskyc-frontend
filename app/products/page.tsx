@@ -48,6 +48,16 @@ function ProductsPageInner() {
     catParam ? [catParam] : []
   );
   const [selectedSub, setSelectedSub] = useState<string[]>([]);
+
+  // Re-sync filters from the URL on every navigation to /products — without
+  // this, clicking "All Products" while already on a filtered /products?cat=…
+  // view leaves the stale filter in place (Next doesn't remount the page for
+  // a query-only client-side navigation, so useState's initial value never re-runs).
+  useEffect(() => {
+    setSearch(query);
+    setSelectedCat(catParam ? [catParam] : []);
+    setSelectedSub([]);
+  }, [query, catParam]);
   const [sort, setSort] = useState("default");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
   const [filtersOpen, setFiltersOpen] = useState(false);

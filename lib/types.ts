@@ -30,6 +30,8 @@ export interface Product {
   description?: string | null;
   price: number;
   originalPrice?: number | null;
+  /** Index into `media` (upload order) of the image that carries the promo-price ribbon, if any. */
+  promoMediaIndex?: number | null;
   categorySlug: string;
   subcategorySlug?: string | null;
   sizes: string[];
