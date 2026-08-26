@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminStore } from "@/lib/adminStore";
-import { Eye, EyeOff, Lock, Mail, LogIn, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, LogIn, AlertCircle, Clock } from "lucide-react";
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminLoginPageInner />
+    </Suspense>
+  );
+}
+
+function AdminLoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const expired = searchParams.get("expired") === "1";
   const login = useAdminStore((s) => s.login);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +56,13 @@ export default function AdminLoginPage() {
             <h1 className="text-white font-display font-bold text-2xl">Admin Panel</h1>
             <p className="text-gray-500 text-sm mt-1">Riskyc Fashion</p>
           </div>
+
+          {expired && (
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5 mb-4">
+              <Clock size={15} className="text-amber-400 flex-shrink-0" />
+              <p className="text-amber-400 text-xs font-medium">Your session expired — please log in again.</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

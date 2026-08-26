@@ -20,6 +20,22 @@ interface ApiFetchOptions extends RequestInit {
   token?: string | null;
 }
 
+// A 401 on a request that carried a token means the backend rejected that
+// token outright (expired or otherwise invalid) — as opposed to a 403, which
+// means the token is fine but lacks a permission. Without this, an admin
+// whose token expired mid-session just sees empty lists everywhere (every
+// fetch fails silently) with no indication why. Exported so the couple of
+// admin endpoints that upload files via a raw `fetch` (bypassing apiFetch)
+// can trigger the same handling.
+export async function handleUnauthorized(status: number, hadToken: boolean) {
+  if (status !== 401 || !hadToken || typeof window === "undefined") return;
+  const { useAdminStore } = await import("./adminStore");
+  useAdminStore.getState().logout();
+  if (!window.location.pathname.startsWith("/admin/login")) {
+    window.location.href = "/admin/login?expired=1";
+  }
+}
+
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const { token, headers, ...rest } = options;
 
@@ -40,6 +56,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     } catch {
       // response wasn't JSON — keep the default message
     }
+    await handleUnauthorized(res.status, !!token);
     throw new ApiError(res.status, message);
   }
 

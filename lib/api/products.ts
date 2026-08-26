@@ -85,7 +85,7 @@ export function setProductVisibility(id: string, hidden: boolean, token: string)
 }
 
 export async function uploadProductMedia(productId: string, file: File, token: string): Promise<MediaItem> {
-  const { API_BASE_URL } = await import("@/lib/apiClient");
+  const { API_BASE_URL, handleUnauthorized } = await import("@/lib/apiClient");
   const form = new FormData();
   form.append("file", file);
   const res = await fetch(`${API_BASE_URL}/api/products/${productId}/media`, {
@@ -95,6 +95,7 @@ export async function uploadProductMedia(productId: string, file: File, token: s
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    await handleUnauthorized(res.status, true);
     throw new Error(body.message || "Failed to upload media");
   }
   return res.json();

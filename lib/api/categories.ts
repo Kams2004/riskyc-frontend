@@ -38,7 +38,7 @@ export function deleteSubcategory(subcategoryId: string, token: string) {
 }
 
 export async function uploadCategoryImage(categoryId: string, file: File, token: string): Promise<Category> {
-  const { API_BASE_URL } = await import("@/lib/apiClient");
+  const { API_BASE_URL, handleUnauthorized } = await import("@/lib/apiClient");
   const form = new FormData();
   form.append("file", file);
   const res = await fetch(`${API_BASE_URL}/api/categories/${categoryId}/image`, {
@@ -48,6 +48,7 @@ export async function uploadCategoryImage(categoryId: string, file: File, token:
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    await handleUnauthorized(res.status, true);
     throw new Error(body.message || "Failed to upload category image");
   }
   return res.json();
