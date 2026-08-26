@@ -8,7 +8,6 @@ import { formatPrice } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { useState } from "react";
 import clsx from "clsx";
-import PromoLabel from "./PromoLabel";
 
 interface Props {
   product: Product;
@@ -62,10 +61,6 @@ export default function ProductCard({ product }: Props) {
           alt={product.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
         />
-
-        {product.media[imgIdx]?.promoLabel && (
-          <PromoLabel text={product.media[imgIdx].promoLabel!} />
-        )}
 
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">

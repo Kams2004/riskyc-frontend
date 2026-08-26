@@ -6,8 +6,9 @@ import { useAdminStore } from "@/lib/adminStore";
 import { useAdminColors } from "@/lib/useAdminColors";
 import { useCategories } from "@/lib/useCategories";
 import * as productsApi from "@/lib/api/products";
+import { API_BASE_URL as apiBaseUrl } from "@/lib/apiClient";
 import { Product, ProductColor, Badge, MediaItem } from "@/lib/types";
-import PromoLabel from "@/components/products/PromoLabel";
+import ImageMarkupEditor from "@/components/admin/ImageMarkupEditor";
 import {
   Plus,
   Trash2,
@@ -20,10 +21,9 @@ import {
   Info,
   Upload,
   Film,
-  X,
   Eye,
   EyeOff,
-  Tag,
+  Pencil,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -117,11 +117,7 @@ export default function ProductForm({ initial, mode }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
-  // Per-image promo caption, keyed by combined displayMedia index — independent
-  // of price, each image can carry its own freeform text (or none).
-  const [promoLabels, setPromoLabels] = useState<Record<number, string>>(() =>
-    Object.fromEntries((initial?.media ?? []).map((m, i) => [i, m.promoLabel ?? ""]))
-  );
+  const [markupTarget, setMarkupTarget] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Default to the first category/subcategory once categories load, for new products
@@ -137,6 +133,7 @@ export default function ProductForm({ initial, mode }: Props) {
     if (form.price <= 0) e.price = "Price must be greater than 0";
     if (existingMedia.length === 0 && pendingFiles.length === 0) e.images = "At least one image is required";
     if (form.colors.length === 0) e.colors = "At least one color required";
+    else if (form.colors.some((c) => !c.name.trim())) e.colors = "Every color needs a name";
     return e;
   };
 
@@ -171,20 +168,8 @@ export default function ProductForm({ initial, mode }: Props) {
           ? await productsApi.createProduct(input, token)
           : await productsApi.updateProduct(initial!.id, input, token);
 
-      // Existing images — push any promo-caption edits (idempotent, so it's
-      // fine to resend even when a caption wasn't touched this time).
-      for (let i = 0; i < existingMedia.length; i++) {
-        await productsApi.setMediaPromoLabel(existingMedia[i].id, promoLabels[i] || null, token);
-      }
-
-      // New images — upload, then apply whatever caption was typed for that
-      // slot while it was still a local preview (no media id existed yet).
-      for (let j = 0; j < pendingFiles.length; j++) {
-        const newMedia = await productsApi.uploadProductMedia(product.id, pendingFiles[j].file, token);
-        const label = promoLabels[existingMedia.length + j];
-        if (label) {
-          await productsApi.setMediaPromoLabel(newMedia.id, label, token);
-        }
+      for (const pf of pendingFiles) {
+        await productsApi.uploadProductMedia(product.id, pf.file, token);
       }
 
       setSaved(true);
@@ -206,7 +191,7 @@ export default function ProductForm({ initial, mode }: Props) {
   const addColor = () =>
     setForm((f) => ({
       ...f,
-      colors: [...f.colors, { name: "New Color", hex: "#888888" }],
+      colors: [...f.colors, { name: "", hex: "#888888" }],
     }));
 
   const removeColor = (i: number) =>
@@ -237,24 +222,39 @@ export default function ProductForm({ initial, mode }: Props) {
     URL.revokeObjectURL(previewUrl);
   };
 
-  // Removing a media item can shift every index after it — keep the promo
-  // selection and the preview cursor pointing at the same image, or clear
-  // the promo pick if it was the one just removed.
+  // Swaps one image for a hand-marked-up version — for an already-uploaded
+  // image this replaces it on the server right away (same pattern as
+  // removeExistingMedia); for a not-yet-uploaded pick it just swaps the
+  // local File, no network call until the main Save.
+  const handleMarkupSave = async (index: number, file: File) => {
+    // existingMedia is only ever populated in edit mode (seeded from `initial`),
+    // so reaching this branch implies `initial` is set.
+    if (index < existingMedia.length) {
+      if (!token) return;
+      const old = existingMedia[index];
+      const uploaded = await productsApi.uploadProductMedia(initial!.id, file, token);
+      await productsApi.deleteMedia(old.id, token);
+      setExistingMedia((prev) => prev.map((m, i) => (i === index ? uploaded : m)));
+    } else {
+      const j = index - existingMedia.length;
+      setPendingFiles((prev) =>
+        prev.map((pf, i) => {
+          if (i !== j) return pf;
+          URL.revokeObjectURL(pf.previewUrl);
+          return { file, previewUrl: URL.createObjectURL(file) };
+        })
+      );
+    }
+  };
+
+  // Removing a media item can shift every index after it — keep the
+  // preview cursor pointing at the same image.
   const handleRemoveAt = (i: number) => {
     if (i < existingMedia.length) {
       removeExistingMedia(existingMedia[i].id);
     } else {
       removePendingFile(pendingFiles[i - existingMedia.length].previewUrl);
     }
-    setPromoLabels((prev) => {
-      const next: Record<number, string> = {};
-      for (const [key, val] of Object.entries(prev)) {
-        const idx = Number(key);
-        if (idx === i) continue;
-        next[idx > i ? idx - 1 : idx] = val;
-      }
-      return next;
-    });
     setPreviewIndex((p) => (p > i ? p - 1 : p));
   };
 
@@ -507,14 +507,27 @@ export default function ProductForm({ initial, mode }: Props) {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={m.url} alt="" className="w-full h-full object-cover" />
                       )}
-                      {/* Remove overlay */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveAt(i)}
-                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X size={20} className="text-white" />
-                      </button>
+                      {/* Hover overlay — draw / remove */}
+                      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {!m.isVideo && (
+                          <button
+                            type="button"
+                            onClick={() => setMarkupTarget(i)}
+                            title="Draw on this image"
+                            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center text-gray-700"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAt(i)}
+                          title="Remove"
+                          className="w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center text-red-500"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                       {/* Index badge */}
                       <span className="absolute top-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
                         {i + 1}
@@ -522,11 +535,6 @@ export default function ProductForm({ initial, mode }: Props) {
                       {m.isVideo && (
                         <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
                           <Film size={9} /> video
-                        </span>
-                      )}
-                      {promoLabels[i] && (
-                        <span className="absolute bottom-1 left-1 bg-brand-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 max-w-[calc(100%-8px)] truncate">
-                          <Tag size={9} className="flex-shrink-0" /> {promoLabels[i]}
                         </span>
                       )}
                     </div>
@@ -555,12 +563,18 @@ export default function ProductForm({ initial, mode }: Props) {
                     onChange={(hex) => updateColor(i, { hex })}
                     isDark={isDark}
                   />
-                  {/* Color name */}
+                  {/* Color name — typing a recognized color name/hex auto-updates
+                      the swatch too, so picking the swatch is only needed when
+                      the name doesn't map to a real color (e.g. a made-up name). */}
                   <input
                     className={clsx(inpSm, "flex-1")}
                     value={color.name}
-                    onChange={(e) => updateColor(i, { name: e.target.value })}
-                    placeholder="Color name"
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      const resolved = resolveCssColor(name);
+                      updateColor(i, resolved ? { name, hex: resolved } : { name });
+                    }}
+                    placeholder="e.g. Black, Navy, Rose bonbon…"
                   />
                   {/* Stock (optional) */}
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -775,8 +789,6 @@ export default function ProductForm({ initial, mode }: Props) {
                   />
                 )}
 
-                {promoLabels[clampedPreviewIndex] && <PromoLabel text={promoLabels[clampedPreviewIndex]} />}
-
                 {/* Switch which uploaded image is being previewed */}
                 {displayMedia.length > 1 && (
                   <>
@@ -816,41 +828,36 @@ export default function ProductForm({ initial, mode }: Props) {
                 </div>
               )}
 
-              {/* Per-image promo caption — independent of price, own text per image */}
-              <div className="mt-3">
-                <label className={clsx("text-xs font-semibold uppercase tracking-wide block mb-1.5", c.textMuted)}>
-                  Promo text on this image ({clampedPreviewIndex + 1}/{displayMedia.length})
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    className={inp()}
-                    value={promoLabels[clampedPreviewIndex] ?? ""}
-                    onChange={(e) =>
-                      setPromoLabels((prev) => ({ ...prev, [clampedPreviewIndex]: e.target.value }))
-                    }
-                    placeholder='e.g. "1500frs — 10 for 10,000frs"'
-                  />
-                  {promoLabels[clampedPreviewIndex] && (
-                    <button
-                      type="button"
-                      onClick={() => setPromoLabels((prev) => ({ ...prev, [clampedPreviewIndex]: "" }))}
-                      title="Clear this image's promo text"
-                      className={clsx(
-                        "flex-shrink-0 w-10 rounded-xl border flex items-center justify-center transition-colors",
-                        isDark
-                          ? "bg-gray-900 border-gray-700 text-gray-400 hover:text-red-400"
-                          : "bg-white border-gray-300 text-gray-400 hover:text-red-500"
-                      )}
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-                <p className={clsx("text-[11px] mt-1.5", c.textMuted)}>
-                  Shown exactly as typed, stamped on this image only — switch images above to caption each one separately.
-                </p>
-              </div>
+              {!displayMedia[clampedPreviewIndex].isVideo && (
+                <button
+                  type="button"
+                  onClick={() => setMarkupTarget(clampedPreviewIndex)}
+                  className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-brand-500 hover:bg-brand-600 text-white transition-colors"
+                >
+                  <Pencil size={14} /> Draw on this image
+                </button>
+              )}
             </Section>
+          )}
+
+          {markupTarget !== null && (
+            <ImageMarkupEditor
+              // Pending picks are already same-origin blob: URLs. Already-uploaded
+              // media live on MinIO (a different origin, no CORS there — see
+              // MediaController) — route those through our own API instead, which
+              // does allow our origin, so the canvas export isn't tainted.
+              imageUrl={
+                markupTarget < existingMedia.length
+                  ? `${apiBaseUrl}/api/media/${existingMedia[markupTarget].id}/content`
+                  : displayMedia[markupTarget].url
+              }
+              onCancel={() => setMarkupTarget(null)}
+              onSave={async (file) => {
+                const idx = markupTarget;
+                setMarkupTarget(null);
+                await handleMarkupSave(idx, file);
+              }}
+            />
           )}
 
           {/* SAVE BUTTON */}
@@ -1145,11 +1152,13 @@ function ColorPicker({
 
           <label
             className={clsx(
-              "mt-2 flex items-center justify-center gap-1.5 text-[11px] font-medium py-1.5 rounded-lg cursor-pointer transition-colors",
-              isDark ? "text-gray-400 hover:bg-gray-700" : "text-gray-500 hover:bg-gray-100"
+              "mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold py-2 rounded-lg cursor-pointer border transition-colors",
+              isDark
+                ? "text-gray-300 border-gray-700 hover:bg-gray-700"
+                : "text-gray-600 border-gray-300 hover:bg-gray-100"
             )}
           >
-            Fine-tune with the system picker
+            <Palette size={12} /> Customize
             <input
               type="color"
               value={value}

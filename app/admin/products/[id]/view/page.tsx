@@ -231,9 +231,10 @@ export default function AdminProductViewPage() {
               )}
             </div>
 
-            {/* Thumbnails */}
+            {/* Thumbnails — horizontally scrollable so a large gallery never
+                overflows into the column next to it */}
             {product.media.length > 1 && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                 {product.media.map((m, i) => (
                   <button
                     key={m.id}

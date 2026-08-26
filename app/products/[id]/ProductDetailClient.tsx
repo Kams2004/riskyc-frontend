@@ -8,7 +8,6 @@ import { useCategories } from "@/lib/useCategories";
 import { Product } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import ProductCard from "@/components/products/ProductCard";
-import PromoLabel from "@/components/products/PromoLabel";
 import CheckoutFlow from "@/components/cart/CheckoutFlow";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import {
@@ -268,9 +267,6 @@ export default function ProductDetailClient({ productId }: { productId: string }
               alt={product.name}
               className="w-full h-full object-cover transition-opacity duration-300"
             />
-            {product.media[imgIdx]?.promoLabel && (
-              <PromoLabel text={product.media[imgIdx].promoLabel!} />
-            )}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               {product.badge === "NEW" && <span className="badge-new text-sm px-3 py-1">NEW</span>}
               {product.badge === "SALE" && <span className="badge-sale text-sm px-3 py-1">SALE</span>}

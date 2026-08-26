@@ -103,11 +103,3 @@ export async function uploadProductMedia(productId: string, file: File, token: s
 export function deleteMedia(mediaId: string, token: string) {
   return apiFetch<void>(`/api/media/${mediaId}`, { method: "DELETE", token });
 }
-
-export function setMediaPromoLabel(mediaId: string, text: string | null, token: string) {
-  return apiFetch<MediaItem>(`/api/media/${mediaId}/promo-label`, {
-    method: "PATCH",
-    token,
-    body: JSON.stringify({ text }),
-  });
-}

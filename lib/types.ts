@@ -11,8 +11,6 @@ export interface MediaItem {
   type: "IMAGE" | "VIDEO";
   contentType?: string | null;
   sizeBytes?: number | null;
-  /** Free-text promo caption an admin stamped on this specific image, if any. */
-  promoLabel?: string | null;
   uploadedAt?: string | null;
 }
 
