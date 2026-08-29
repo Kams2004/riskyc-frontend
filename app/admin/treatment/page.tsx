@@ -26,7 +26,7 @@ type Tab = "waiting" | "in_progress" | "done";
 
 export default function AdminTreatmentPage() {
   const token = useAdminStore((s) => s.session?.token);
-  const canManage = useAdminStore((s) => s.hasPermission("MANAGE_ORDERS"));
+  const canManage = useAdminStore((s) => s.hasPermission("MANAGE_TREATMENT"));
   const c = useAdminColors();
 
   const [orders, setOrders] = useState<Order[]>([]);

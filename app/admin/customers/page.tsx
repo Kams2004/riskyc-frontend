@@ -129,14 +129,20 @@ export default function AdminCustomersPage() {
               </tr>
             </thead>
             <tbody className={clsx("divide-y", c.divide)}>
-              {filtered.length === 0 && (
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-16">
+                    <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className={clsx("text-center py-16 text-sm", c.textMuted)}>
                     {customers.length === 0 ? "No registered customers yet" : "No customers match your search"}
                   </td>
                 </tr>
-              )}
-              {filtered.map((cu) => (
+              ) : null}
+              {!loading && filtered.map((cu) => (
                 <tr key={cu.id} className={clsx("transition-colors", c.rowHover)}>
                   <td className={clsx("px-5 py-3.5 font-medium", c.textPrimary)}>
                     <div className="flex items-center gap-3">
@@ -216,7 +222,7 @@ export default function AdminCustomersPage() {
           </table>
         </div>
 
-        {customers.length === 0 && (
+        {!loading && customers.length === 0 && (
           <div className={clsx("text-center py-10 rounded-2xl border", c.card)}>
             <UserRound size={40} className={clsx("mx-auto mb-3 opacity-30", c.textMuted)} />
             <p className={clsx("text-sm", c.textMuted)}>

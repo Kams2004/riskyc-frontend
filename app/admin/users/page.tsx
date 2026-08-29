@@ -49,9 +49,10 @@ interface UserFormProps {
   onSave: (u: UserFormValues) => void;
   onCancel: () => void;
   c: ReturnType<typeof useAdminColors>;
+  saving?: boolean;
 }
 
-function UserForm({ roles, initial, onSave, onCancel, c }: UserFormProps) {
+function UserForm({ roles, initial, onSave, onCancel, c, saving }: UserFormProps) {
   const isEdit = !!initial;
   const [firstName, setFirstName]   = useState(initial?.firstName ?? "");
   const [lastName,  setLastName]    = useState(initial?.lastName  ?? "");
@@ -174,13 +175,16 @@ function UserForm({ roles, initial, onSave, onCancel, c }: UserFormProps) {
       <div className="flex gap-3 pt-1">
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors"
+          disabled={saving}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white text-sm font-semibold transition-colors"
         >
-          <Save size={14} /> Save User
+          {saving ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
+          {saving ? "Saving…" : "Save User"}
         </button>
         <button
           onClick={onCancel}
-          className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors", c.btnGhost)}
+          disabled={saving}
+          className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60", c.btnGhost)}
         >
           <X size={14} /> Cancel
         </button>
@@ -197,9 +201,10 @@ interface RoleFormProps {
   onSave: (r: { name: string; description: string; permissions: Permission[] }) => void;
   onCancel: () => void;
   c: ReturnType<typeof useAdminColors>;
+  saving?: boolean;
 }
 
-function RoleForm({ initial, onSave, onCancel, c }: RoleFormProps) {
+function RoleForm({ initial, onSave, onCancel, c, saving }: RoleFormProps) {
   const [name,        setName]        = useState(initial?.name        ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [permissions, setPermissions] = useState<Permission[]>(initial?.permissions ?? []);
@@ -318,13 +323,16 @@ function RoleForm({ initial, onSave, onCancel, c }: RoleFormProps) {
       <div className="flex gap-3 pt-1">
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors"
+          disabled={saving}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white text-sm font-semibold transition-colors"
         >
-          <Save size={14} /> Save Role
+          {saving ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
+          {saving ? "Saving…" : "Save Role"}
         </button>
         <button
           onClick={onCancel}
-          className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors", c.btnGhost)}
+          disabled={saving}
+          className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60", c.btnGhost)}
         >
           <X size={14} /> Cancel
         </button>
@@ -347,6 +355,8 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [formError, setFormError] = useState("");
+  const [savingUser, setSavingUser] = useState(false);
+  const [savingRole, setSavingRole] = useState(false);
 
   const [tab,          setTab]          = useState<Tab>("users");
   const [userForm,     setUserForm]     = useState<null | "new" | string>(null); // null | "new" | userId
@@ -383,6 +393,7 @@ export default function AdminUsersPage() {
   // ── User CRUD ──
   const handleSaveUser = async (data: UserFormValues, existing?: AdminUser) => {
     setFormError("");
+    setSavingUser(true);
     try {
       if (existing) {
         const updated = await apiFetch<AdminUser>(`/api/admin-users/${existing.id}`, {
@@ -408,6 +419,8 @@ export default function AdminUsersPage() {
       setUserForm(null);
     } catch (e) {
       setFormError(e instanceof ApiError ? e.message : "Failed to save user");
+    } finally {
+      setSavingUser(false);
     }
   };
 
@@ -431,6 +444,7 @@ export default function AdminUsersPage() {
   // ── Role CRUD ──
   const handleSaveRole = async (data: { name: string; description: string; permissions: Permission[] }, existing?: Role) => {
     setFormError("");
+    setSavingRole(true);
     try {
       if (existing) {
         const updated = await apiFetch<Role>(`/api/roles/${existing.id}`, {
@@ -450,6 +464,8 @@ export default function AdminUsersPage() {
       setRoleForm(null);
     } catch (e) {
       setFormError(e instanceof ApiError ? e.message : "Failed to save role");
+    } finally {
+      setSavingRole(false);
     }
   };
 
@@ -540,6 +556,7 @@ export default function AdminUsersPage() {
                   onSave={(data) => handleSaveUser(data)}
                   onCancel={() => setUserForm(null)}
                   c={c}
+                  saving={savingUser}
                 />
                 {formError && <p className="text-xs text-red-500 px-1">{formError}</p>}
               </div>
@@ -621,6 +638,7 @@ export default function AdminUsersPage() {
                               onSave={(data) => handleSaveUser(data, u)}
                               onCancel={() => setUserForm(null)}
                               c={c}
+                              saving={savingUser}
                             />
                             {formError && <p className="text-xs text-red-500 mt-2">{formError}</p>}
                           </td>
@@ -643,6 +661,7 @@ export default function AdminUsersPage() {
                   onSave={(data) => handleSaveRole(data)}
                   onCancel={() => setRoleForm(null)}
                   c={c}
+                  saving={savingRole}
                 />
                 {formError && <p className="text-xs text-red-500 px-1">{formError}</p>}
               </div>
@@ -668,6 +687,7 @@ export default function AdminUsersPage() {
                         onSave={(data) => handleSaveRole(data, role)}
                         onCancel={() => setRoleForm(null)}
                         c={c}
+                        saving={savingRole}
                       />
                       {formError && <p className="text-xs text-red-500 px-1">{formError}</p>}
                     </div>

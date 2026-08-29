@@ -48,6 +48,7 @@ export default function AdminChatPage() {
   const isDark = theme === "dark";
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
@@ -58,7 +59,7 @@ export default function AdminChatPage() {
 
   const refresh = useCallback(() => {
     if (!token) return;
-    conversationsApi.listConversations(token).then(setConversations).catch(() => {});
+    conversationsApi.listConversations(token).then(setConversations).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
 
   useEffect(() => {
@@ -270,7 +271,11 @@ export default function AdminChatPage() {
 
             {/* List */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {filteredConvs.length === 0 ? (
+              {loading ? (
+                <div className="text-center py-20">
+                  <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                </div>
+              ) : filteredConvs.length === 0 ? (
                 <div className="text-center py-20">
                   <MessageSquare
                     size={36}

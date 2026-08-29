@@ -35,6 +35,7 @@ export default function AdminCategoriesPage() {
   const c = useAdminColors();
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [view, setView] = useState<"list" | "grid">("grid");
   const [editing, setEditing] = useState<string | null>(null);
@@ -50,7 +51,7 @@ export default function AdminCategoriesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    categoriesApi.listCategories().then(setCategories).catch(() => {});
+    categoriesApi.listCategories().then(setCategories).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const triggerImageUpload = (catId: string) => {
@@ -319,14 +320,18 @@ export default function AdminCategoriesPage() {
 
         {/* Category list / grid */}
         <div className={clsx(view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-3")}>
-          {categories.length === 0 && (
+          {loading ? (
+            <div className={clsx("text-center py-20 rounded-2xl border col-span-full", c.card)}>
+              <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            </div>
+          ) : categories.length === 0 && (
             <div className="text-center py-20">
               <FolderOpen size={40} className={clsx("mx-auto mb-3 opacity-30", c.textMuted)} />
               <p className={clsx("text-sm", c.textMuted)}>No categories yet</p>
             </div>
           )}
 
-          {categories.map((cat) => {
+          {!loading && categories.map((cat) => {
             const isExpanded = expanded[cat.id] ?? true;
             const isEditingCat = editing === `cat-${cat.id}`;
             const isAddingSub = adding === `new-sub-${cat.id}`;

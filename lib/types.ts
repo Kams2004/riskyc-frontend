@@ -180,6 +180,8 @@ export type Permission =
   | "VIEW_DASHBOARD"
   | "VIEW_ORDERS"
   | "MANAGE_ORDERS"
+  | "VIEW_TREATMENT"
+  | "MANAGE_TREATMENT"
   | "VIEW_PRODUCTS"
   | "MANAGE_PRODUCTS"
   | "VIEW_CATEGORIES"
@@ -195,6 +197,8 @@ export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[
   { key: "VIEW_DASHBOARD",    label: "View Dashboard",    group: "Dashboard" },
   { key: "VIEW_ORDERS",       label: "View Orders",       group: "Orders" },
   { key: "MANAGE_ORDERS",     label: "Manage Orders",     group: "Orders" },
+  { key: "VIEW_TREATMENT",    label: "View Treatment",    group: "Treatment" },
+  { key: "MANAGE_TREATMENT",  label: "Manage Treatment",  group: "Treatment" },
   { key: "VIEW_PRODUCTS",     label: "View Products",     group: "Products" },
   { key: "MANAGE_PRODUCTS",   label: "Manage Products",   group: "Products" },
   { key: "VIEW_CATEGORIES",   label: "View Categories",   group: "Categories" },

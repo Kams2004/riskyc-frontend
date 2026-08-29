@@ -25,6 +25,7 @@ export default function AdminProductsPage() {
   const c = useAdminColors();
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState("");
   const [catFilter, setCatFilter]   = useState("all");
   const [confirm, setConfirm]       = useState<ConfirmState | null>(null);
@@ -34,7 +35,7 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     if (!token) return;
-    productsApi.listAdminProducts(token).then(setProducts).catch(() => {});
+    productsApi.listAdminProducts(token).then(setProducts).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
 
   const setHidden = async (id: string, hidden: boolean) => {
@@ -159,7 +160,11 @@ export default function AdminProductsPage() {
         </div>
 
         {/* Empty state */}
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className={clsx("text-center py-20 rounded-2xl border", c.card)}>
+            <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <Package size={40} className={clsx("mx-auto mb-3 opacity-30", c.textMuted)} />
             <p className={clsx("text-sm", c.textMuted)}>No products found</p>

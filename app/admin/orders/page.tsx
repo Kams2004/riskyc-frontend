@@ -32,6 +32,7 @@ export default function AdminOrdersPage() {
   const token = useAdminStore((s) => s.session?.token);
   const c = useAdminColors();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -40,7 +41,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     if (!token) return;
-    ordersApi.listOrders(token).then(setOrders).catch(() => {});
+    ordersApi.listOrders(token).then(setOrders).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
 
   const setStatus = async (orderId: string, status: OrderStatus) => {
@@ -147,7 +148,11 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* ── Table ── */}
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className={clsx("text-center py-20 rounded-2xl border", c.card)}>
+            <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          </div>
+        ) : filtered.length === 0 ? (
           <div className={clsx("text-center py-20", c.textMuted)}>
             <ShoppingBag className="mx-auto w-12 h-12 mb-3 opacity-30" />
             <p className="text-sm">No orders found</p>
