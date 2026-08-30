@@ -200,7 +200,6 @@ export default function AdminProductsPage() {
                       <th className="px-4 py-3 text-left font-semibold">Product</th>
                       <th className="px-4 py-3 text-left font-semibold">Category</th>
                       <th className="px-4 py-3 text-left font-semibold">Price</th>
-                      <th className="px-4 py-3 text-center font-semibold">Stock</th>
                       <th className="px-4 py-3 text-center font-semibold">Rating</th>
                       <th className="px-4 py-3 text-center font-semibold">Badge</th>
                       <th className="px-4 py-3 text-center font-semibold">Visibility</th>
@@ -212,7 +211,6 @@ export default function AdminProductsPage() {
                   <tbody className={clsx("divide-y", c.divide)}>
                     {paginated.map((product) => {
                       const cat        = categories.find((ca) => ca.slug === product.categorySlug);
-                      const totalStock = product.colors.reduce((s, col) => s + (col.stock ?? 0), 0);
                       return (
                         <tr key={product.id} className={clsx("transition-colors", c.rowHover, product.hidden && "opacity-50")}>
 
@@ -266,16 +264,6 @@ export default function AdminProductsPage() {
                             ) : (
                               <span className={clsx("text-xs italic whitespace-nowrap", c.textMuted)}>Price on request</span>
                             )}
-                          </td>
-
-                          {/* Stock */}
-                          <td className="px-4 py-3 text-center">
-                            <span className={clsx("text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap",
-                              totalStock === 0   ? "bg-red-100 text-red-600"
-                              : totalStock <= 5  ? "bg-orange-100 text-orange-600"
-                                                 : "bg-green-100 text-green-700")}>
-                              {totalStock === 0 ? "Out" : totalStock}
-                            </span>
                           </td>
 
                           {/* Rating */}
@@ -343,7 +331,6 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {paginated.map((product) => {
                   const cat        = categories.find((ca) => ca.slug === product.categorySlug);
-                  const totalStock = product.colors.reduce((s, col) => s + (col.stock ?? 0), 0);
                   return (
                     <div key={product.id}
                       className={clsx("rounded-2xl border overflow-hidden group transition-all hover:-translate-y-0.5 hover:shadow-md", c.card, product.hidden && "opacity-60")}>
@@ -372,14 +359,6 @@ export default function AdminProductsPage() {
                         <div className="absolute bottom-2 left-2">
                           <span className="text-xs bg-black/50 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
                             {cat?.name}
-                          </span>
-                        </div>
-                        <div className="absolute top-2 right-2">
-                          <span className={clsx("text-xs font-medium px-2 py-0.5 rounded-full",
-                            totalStock === 0  ? "bg-red-100 text-red-600"
-                            : totalStock <= 5 ? "bg-orange-100 text-orange-600"
-                                              : "bg-green-100 text-green-700")}>
-                            {totalStock === 0 ? "Out of stock" : `${totalStock} in stock`}
                           </span>
                         </div>
                       </div>

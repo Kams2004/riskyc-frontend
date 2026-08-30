@@ -22,10 +22,6 @@ export default function ProductCard({ product }: Props) {
 
   const firstColor = product.colors[0];
   const firstSize  = product.sizes?.[0];
-  // undefined stock = admin didn't track quantity for that color → treat as available
-  const anyUntracked = product.colors.some((c) => c.stock === undefined);
-  const totalStock = product.colors.reduce((s, c) => s + (c.stock ?? 0), 0);
-  const outOfStock = !anyUntracked && totalStock === 0;
 
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -42,7 +38,6 @@ export default function ProductCard({ product }: Props) {
 
   const handleOrderNow = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (outOfStock) return;
     router.push(`/products/${product.id}`);
   };
 
@@ -66,27 +61,15 @@ export default function ProductCard({ product }: Props) {
 
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {outOfStock && (
-            <span className="bg-gray-800 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
-              Out of Stock
-            </span>
-          )}
-          {!outOfStock && product.badge === "NEW"  && <span className="badge-new">NEW</span>}
-          {!outOfStock && product.badge === "SALE" && <span className="badge-sale">SALE</span>}
-          {!outOfStock && product.badge === "HOT"  && <span className="badge-hot">HOT 🔥</span>}
-          {!outOfStock && discount && (
+          {product.badge === "NEW"  && <span className="badge-new">NEW</span>}
+          {product.badge === "SALE" && <span className="badge-sale">SALE</span>}
+          {product.badge === "HOT"  && <span className="badge-hot">HOT 🔥</span>}
+          {discount && (
             <span className="bg-brand-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
               -{discount}%
             </span>
           )}
         </div>
-
-        {/* Low-stock warning */}
-        {totalStock <= 5 && totalStock > 0 && (
-          <div className="absolute top-2 right-10 bg-orange-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-            Only {totalStock} left
-          </div>
-        )}
 
         {/* Dark hover overlay (desktop only enhancement) */}
         <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -163,13 +146,7 @@ export default function ProductCard({ product }: Props) {
           {/* Order Now — full label always */}
           <button
             onClick={handleOrderNow}
-            disabled={outOfStock}
-            className={clsx(
-              "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-all",
-              outOfStock
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-brand-500 hover:bg-brand-600 text-white"
-            )}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-all bg-brand-500 hover:bg-brand-600 text-white"
           >
             <Zap size={13} />
             {priceUnset ? "Ask price" : "Order"}

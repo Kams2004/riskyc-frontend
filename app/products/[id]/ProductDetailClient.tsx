@@ -198,10 +198,6 @@ export default function ProductDetailClient({ productId }: { productId: string }
     );
   }
 
-  const selectedColorObj = product.colors.find((c) => c.name === selectedColor);
-  // undefined = admin didn't track quantity for this color → treat as available, uncapped
-  const stockCount = selectedColorObj?.stock ?? undefined;
-  const isOutOfStock = stockCount === 0;
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
@@ -459,25 +455,17 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 <span className="text-sm font-semibold text-gray-700">
                   Color: <span className="text-brand-600">{selectedColor}</span>
                 </span>
-                <span className={clsx("text-xs font-medium",
-                  stockCount === undefined ? "text-green-600" : stockCount === 0 ? "text-red-500" : stockCount <= 3 ? "text-orange-500" : "text-green-600"
-                )}>
-                  {stockCount === undefined ? "In stock" : stockCount === 0 ? "Out of stock" : stockCount <= 3 ? `Only ${stockCount} left` : `${stockCount} in stock`}
-                </span>
               </div>
               <div className="flex flex-wrap gap-3">
                 {product.colors.map((color) => (
                   <button
                     key={color.name}
-                    title={color.stock != null ? `${color.name} (${color.stock} left)` : color.name}
+                    title={color.name}
                     onClick={() => setSelectedColor(color.name)}
-                    disabled={color.stock === 0}
                     className={clsx(
                       "flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
                       selectedColor === color.name
                         ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : color.stock === 0
-                        ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
                         : "border-gray-200 hover:border-brand-300 text-gray-700"
                     )}
                   >
@@ -525,7 +513,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
               <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
                 <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">−</button>
                 <span className="w-12 text-center font-semibold text-gray-900">{qty}</span>
-                <button onClick={() => setQty(Math.min(stockCount ?? Infinity, qty + 1))} disabled={stockCount !== undefined && qty >= stockCount} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold disabled:opacity-30">+</button>
+                <button onClick={() => setQty(qty + 1)} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">+</button>
               </div>
               <span className="text-sm text-gray-400">
                 Total:{" "}
@@ -556,11 +544,11 @@ export default function ProductDetailClient({ productId }: { productId: string }
             {/* Order Now — opens checkout modal */}
             <button
               onClick={handleOrderNow}
-              disabled={isOutOfStock || priceUnset}
+              disabled={priceUnset}
               title={priceUnset ? "Contact us to get a price for this product" : undefined}
               className={clsx(
                 "flex-1 btn-primary py-3.5 rounded-2xl text-base",
-                (isOutOfStock || priceUnset) && "opacity-50 cursor-not-allowed"
+                priceUnset && "opacity-50 cursor-not-allowed"
               )}
             >
               <Zap size={20} /> Order Now

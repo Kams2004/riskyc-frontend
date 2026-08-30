@@ -655,36 +655,38 @@ export default function ProductForm({ initial, mode }: Props) {
                 <div
                   key={i}
                   className={clsx(
-                    "flex gap-3 items-center p-3 rounded-xl border",
+                    "flex flex-wrap gap-3 items-center p-3 rounded-xl border",
                     isDark
                       ? "bg-gray-900/50 border-gray-700"
                       : "bg-gray-50 border-gray-200"
                   )}
                 >
-                  {/* Color picker */}
-                  <ColorPicker
-                    value={color.hex}
-                    onChange={(hex) => updateColor(i, { hex })}
-                    isDark={isDark}
-                  />
-                  {/* Color name — typing a recognized color name/hex auto-updates
-                      the swatch too, so picking the swatch is only needed when
-                      the name doesn't map to a real color (e.g. a made-up name). */}
-                  <input
-                    className={clsx(inpSm, "flex-1")}
-                    value={color.name}
-                    onChange={(e) => {
-                      const name = e.target.value;
-                      const resolved = resolveCssColor(name);
-                      updateColor(i, resolved ? { name, hex: resolved } : { name });
-                    }}
-                    placeholder="e.g. Black, Navy, Rose bonbon…"
-                  />
+                  <div className="flex items-center gap-3 flex-1 min-w-[160px]">
+                    {/* Color picker */}
+                    <ColorPicker
+                      value={color.hex}
+                      onChange={(hex) => updateColor(i, { hex })}
+                      isDark={isDark}
+                    />
+                    {/* Color name — typing a recognized color name/hex auto-updates
+                        the swatch too, so picking the swatch is only needed when
+                        the name doesn't map to a real color (e.g. a made-up name). */}
+                    <input
+                      className={clsx(inpSm, "flex-1 min-w-0")}
+                      value={color.name}
+                      onChange={(e) => {
+                        const name = e.target.value;
+                        const resolved = resolveCssColor(name);
+                        updateColor(i, resolved ? { name, hex: resolved } : { name });
+                      }}
+                      placeholder="e.g. Black, Navy, Rose bonbon…"
+                    />
+                  </div>
                   {/* Stock (optional) */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                     <input
                       type="number"
-                      className={clsx(inpSm, "w-20 text-center")}
+                      className={clsx(inpSm, "w-16 text-center")}
                       value={color.stock ?? ""}
                       onChange={(e) =>
                         updateColor(i, {
@@ -692,19 +694,19 @@ export default function ProductForm({ initial, mode }: Props) {
                         })
                       }
                       min={0}
-                      placeholder="—"
-                      title="Stock quantity (optional)"
+                      placeholder="Qty"
+                      title="Stock quantity (optional — not used to limit ordering yet)"
                     />
                     <span className={clsx("text-xs", c.textMuted)}>units</span>
+                    {/* Remove */}
+                    <button
+                      onClick={() => removeColor(i)}
+                      className="text-red-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
+                      title="Remove color"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  {/* Remove */}
-                  <button
-                    onClick={() => removeColor(i)}
-                    className="text-red-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
-                    title="Remove color"
-                  >
-                    <Trash2 size={14} />
-                  </button>
                 </div>
               ))}
 
