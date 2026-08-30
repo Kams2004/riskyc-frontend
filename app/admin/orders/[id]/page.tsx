@@ -32,6 +32,8 @@ const steps: { key: OrderStatus; label: string }[] = [
   { key: "AWAITING_PAYMENT", label: "Payment" },
   { key: "REVIEWING",        label: "Review" },
   { key: "VALIDATED",        label: "Validated" },
+  { key: "PACKAGING",        label: "Packaging" },
+  { key: "PACKAGED",         label: "Packaged" },
 ];
 
 export default function AdminOrderDetailPage() {
@@ -77,8 +79,9 @@ export default function AdminOrderDetailPage() {
     );
   }
 
-  const stepOrder: OrderStatus[] = ["PENDING", "AWAITING_PAYMENT", "REVIEWING", "VALIDATED"];
+  const stepOrder: OrderStatus[] = ["PENDING", "AWAITING_PAYMENT", "REVIEWING", "VALIDATED", "PACKAGING", "PACKAGED"];
   const currentIdx = order.status === "CANCELLED" ? -1 : stepOrder.indexOf(order.status);
+  const statusLocked = order.status === "VALIDATED" || order.status === "PACKAGING" || order.status === "PACKAGED";
 
   const setStatus = async (status: OrderStatus, reason?: string) => {
     if (!token) return;
@@ -389,7 +392,10 @@ export default function AdminOrderDetailPage() {
                 )}
               </div>
 
-              {/* Change status */}
+              {/* Change status — locked once the order has moved past review, so a mis-click
+                  here can't undo a validated/packaged order; use the packaging actions
+                  below or Treatment instead. */}
+              {!statusLocked && (
               <div className={clsx("mt-4 pt-4 border-t", c.border)}>
                 <p className={clsx("text-xs font-medium uppercase tracking-wide mb-2", c.textMuted)}>Change Status</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -410,6 +416,7 @@ export default function AdminOrderDetailPage() {
                     ))}
                 </div>
               </div>
+              )}
             </div>
 
             {/* Message customer */}

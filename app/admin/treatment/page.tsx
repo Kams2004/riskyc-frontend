@@ -30,13 +30,14 @@ export default function AdminTreatmentPage() {
   const c = useAdminColors();
 
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("waiting");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
-    ordersApi.listOrders(token).then(setOrders).catch(() => {});
+    ordersApi.listOrders(token).then(setOrders).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
 
   const handleOrderUpdate = useCallback((updated: Order) => {
@@ -123,16 +124,24 @@ export default function AdminTreatmentPage() {
             >
               {t.icon}
               {t.label}
-              <span className={clsx("rounded-full px-1.5 py-0.5 text-xs",
-                tab === t.key ? "bg-white/25 text-white" : c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-500"
-              )}>
-                {t.count}
-              </span>
+              {!loading && (
+                <span className={clsx("rounded-full px-1.5 py-0.5 text-xs",
+                  tab === t.key ? "bg-white/25 text-white" : c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-500"
+                )}>
+                  {t.count}
+                </span>
+              )}
             </button>
           ))}
         </div>
 
-        {list.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className={clsx("rounded-2xl border p-5 h-40 animate-pulse", c.card)} />
+            ))}
+          </div>
+        ) : list.length === 0 ? (
           <div className={clsx("text-center py-20", c.textMuted)}>
             <Package className="mx-auto w-12 h-12 mb-3 opacity-30" />
             <p className="text-sm">Nothing here right now</p>

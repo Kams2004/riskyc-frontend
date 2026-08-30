@@ -15,6 +15,8 @@ import {
   Package,
   ShoppingBag,
   AlertCircle,
+  RotateCcw,
+  MessageCircle,
 } from "@/components/icons/fa";
 import clsx from "clsx";
 
@@ -33,16 +35,30 @@ export default function TrackOrderPage() {
   const orderId = params.orderId;
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
   const { status: pushStatus, subscribe } = usePushSubscription(orderId);
 
+  const fetchOrder = () => {
+    if (!orderId) return Promise.resolve();
+    return getOrder(orderId)
+      .then((o) => {
+        setOrder(o);
+        setError(false);
+      })
+      .catch(() => setError(true));
+  };
+
   useEffect(() => {
-    if (!orderId) return;
-    getOrder(orderId)
-      .then(setOrder)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+    fetchOrder().finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrder();
+    setRefreshing(false);
+  };
 
   if (loading) {
     return (
@@ -70,9 +86,17 @@ export default function TrackOrderPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-      <div className="text-center mb-8">
+      <div className="relative text-center mb-8">
         <h1 className="font-display font-bold text-2xl text-gray-900">Track Your Order</h1>
         <p className="text-gray-400 text-xs font-mono mt-1">{order.id}</p>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          title="Refresh"
+          className="absolute right-0 top-0 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-brand-600 hover:border-brand-300 transition-colors disabled:opacity-60"
+        >
+          <RotateCcw size={15} className={refreshing ? "animate-spin" : undefined} />
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
@@ -86,9 +110,15 @@ export default function TrackOrderPage() {
             <div className="flex items-center gap-2 text-red-600 font-semibold text-sm mb-1">
               <XCircle size={16} /> Order Rejected
             </div>
-            <p className="text-sm text-red-700 leading-relaxed">
+            <p className="text-sm text-red-700 leading-relaxed mb-3">
               {order.rejectionReason || "This order was rejected. Contact us for details."}
             </p>
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 hover:text-red-800 bg-white border border-red-200 rounded-xl px-3 py-2 transition-colors"
+            >
+              <MessageCircle size={13} /> Contact us for help
+            </Link>
           </div>
         ) : (
           <div className="flex items-center">

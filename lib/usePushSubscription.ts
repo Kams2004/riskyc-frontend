@@ -31,10 +31,30 @@ export function usePushSubscription(orderId: string) {
     }
     navigator.serviceWorker
       .register("/sw.js")
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => {
+      .then(async (reg) => {
+        const sub = await reg.pushManager.getSubscription();
         if (cancelled) return;
-        setStatus(sub ? "subscribed" : "idle");
+        if (!sub) {
+          setStatus("idle");
+          return;
+        }
+        // A browser-level subscription can already exist from tracking a
+        // *different* order earlier on this device — the backend only knows
+        // about whichever order this endpoint was last associated with, so
+        // re-registering it for the current order (idempotent upsert) is
+        // required, otherwise this order silently never gets notified even
+        // though the UI would otherwise claim it's already subscribed.
+        const json = sub.toJSON();
+        if (json.endpoint && json.keys?.p256dh && json.keys?.auth) {
+          try {
+            await subscribePush({ orderId, endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } });
+            if (!cancelled) setStatus("subscribed");
+          } catch {
+            if (!cancelled) setStatus("idle");
+          }
+        } else {
+          setStatus("idle");
+        }
       })
       .catch(() => {
         if (!cancelled) setStatus("idle");
@@ -42,7 +62,7 @@ export function usePushSubscription(orderId: string) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [orderId]);
 
   const subscribe = async () => {
     setStatus("subscribing");

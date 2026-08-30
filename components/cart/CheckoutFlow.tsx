@@ -536,6 +536,15 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
               )}
 
               {order && (
+                <button
+                  onClick={() => downloadReceipt(order)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm transition-colors"
+                >
+                  <Printer size={18} />Download Receipt
+                </button>
+              )}
+
+              {order && (
                 <div className={clsx(
                   "rounded-2xl border p-4 text-left space-y-2",
                   order.status === "CANCELLED" ? "bg-gray-50 border-gray-200" : "bg-green-50 border-green-100"
@@ -573,6 +582,15 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 </div>
               )}
 
+              {order && (
+                <Link
+                  href={`/track/${order.id}`}
+                  className="block text-center text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors py-1"
+                >
+                  Track your order →
+                </Link>
+              )}
+
               {order?.status !== "CANCELLED" && (
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-left">
                   <p className="text-sm font-semibold text-amber-800 mb-1">What happens next?</p>
@@ -591,22 +609,6 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 <button onClick={() => { onClose(); router.push("/products"); }} className="w-full btn-primary py-4 rounded-2xl text-base">
                   <ShoppingBag size={20} />Continue Shopping
                 </button>
-                {order && (
-                  <>
-                    <button
-                      onClick={() => downloadReceipt(order)}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm transition-colors"
-                    >
-                      <Printer size={18} />Download Receipt
-                    </button>
-                    <Link
-                      href={`/track/${order.id}`}
-                      className="text-center text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors py-1"
-                    >
-                      Track your order →
-                    </Link>
-                  </>
-                )}
               </div>
             </div>
           )}
