@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { formatPrice } from "@/lib/data";
+import { computeLineTotal } from "@/lib/pricing";
 import * as ordersApi from "@/lib/api/orders";
 import { PaymentMethod, Order, CustomerInfo, DeliveryType } from "@/lib/types";
 import { StatusBadge } from "@/components/cart/OrdersList";
@@ -284,7 +285,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                       <p className="text-sm font-medium text-gray-800 truncate">{item.product.name}</p>
                       <p className="text-xs text-gray-400">{item.selectedColor} · {item.selectedSize} · ×{item.quantity}</p>
                     </div>
-                    <span className="text-sm font-semibold text-brand-600 flex-shrink-0">{formatPrice(item.product.price * item.quantity)}</span>
+                    <span className="text-sm font-semibold text-brand-600 flex-shrink-0">{formatPrice(computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity))}</span>
                   </div>
                 ))}
               </div>

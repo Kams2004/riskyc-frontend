@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { formatPrice } from "@/lib/data";
+import { computeLineTotal } from "@/lib/pricing";
 import { getProduct, listProducts } from "@/lib/api/products";
 import { useCategories } from "@/lib/useCategories";
 import { Product } from "@/lib/types";
@@ -226,7 +227,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
       `Color: ${selectedColor}`,
       selectedSize ? `Size: ${selectedSize}` : null,
       `Qty: ${qty}`,
-      `Price: ${formatPrice(product.price * qty)}`,
+      `Price: ${formatPrice(computeLineTotal(product.price, product.bulkPrices, qty))}`,
       imageUrl ? `\nPhoto: ${imageUrl}` : null,
       productUrl ? `Product page: ${productUrl}` : null,
     ]
@@ -518,7 +519,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
               <span className="text-sm text-gray-400">
                 Total:{" "}
                 <span className="text-brand-600 font-bold">
-                  {priceUnset ? "—" : formatPrice(product.price * qty)}
+                  {priceUnset ? "—" : formatPrice(computeLineTotal(product.price, product.bulkPrices, qty))}
                 </span>
               </span>
             </div>

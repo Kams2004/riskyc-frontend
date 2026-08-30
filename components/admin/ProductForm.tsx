@@ -490,25 +490,27 @@ export default function ProductForm({ initial, mode }: Props) {
               {form.bulkPrices.length > 0 && (
                 <div className="space-y-2">
                   {form.bulkPrices.map((tier, i) => (
-                    <div key={i} className="flex items-center gap-2">
+                    <div key={i} className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <input
+                          type="number"
+                          min={1}
+                          className={clsx(inpSm, "w-16")}
+                          value={tier.quantity || ""}
+                          onChange={(e) => updateBulkTier(i, { quantity: Number(e.target.value) })}
+                          placeholder="Qty"
+                        />
+                        <span className={clsx("text-sm flex-shrink-0", c.textMuted)}>units =</span>
+                      </div>
                       <input
                         type="number"
                         min={1}
-                        className={clsx(inpSm, "w-24")}
-                        value={tier.quantity || ""}
-                        onChange={(e) => updateBulkTier(i, { quantity: Number(e.target.value) })}
-                        placeholder="Qty"
-                      />
-                      <span className={clsx("text-sm", c.textMuted)}>units =</span>
-                      <input
-                        type="number"
-                        min={1}
-                        className={clsx(inpSm, "flex-1")}
+                        className={clsx(inpSm, "flex-1 min-w-[100px]")}
                         value={tier.price || ""}
                         onChange={(e) => updateBulkTier(i, { price: Number(e.target.value) })}
                         placeholder="Total price"
                       />
-                      <span className={clsx("text-xs", c.textMuted)}>XAF</span>
+                      <span className={clsx("text-xs flex-shrink-0", c.textMuted)}>XAF</span>
                       <button
                         type="button"
                         onClick={() => removeBulkTier(i)}

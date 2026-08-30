@@ -2,6 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { formatPrice } from "@/lib/data";
+import { computeLineTotal } from "@/lib/pricing";
 import { Trash2, ShoppingBag, Plus, Minus, ArrowRight } from "@/components/icons/fa";
 import Link from "next/link";
 
@@ -135,11 +136,11 @@ export default function CartItems({ onCheckout }: Props) {
                 {/* Price */}
                 <div className="text-right">
                   <div className="font-bold text-brand-600 text-base">
-                    {formatPrice(item.product.price * item.quantity)}
+                    {formatPrice(computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity))}
                   </div>
                   {item.quantity > 1 && (
                     <div className="text-xs text-gray-400">
-                      {formatPrice(item.product.price)} each
+                      {formatPrice(computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity) / item.quantity)} each
                     </div>
                   )}
                 </div>

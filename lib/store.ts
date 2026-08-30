@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CartItem, Language, Customer } from "./types";
 import * as customersApi from "./api/customers";
+import { computeLineTotal } from "./pricing";
 
 interface CartStore {
   items: CartItem[];
@@ -102,7 +103,7 @@ export const useStore = create<CartStore>()(
       clearCart: () => set({ items: [] }),
 
       getCartTotal: () =>
-        get().items.reduce((sum, i) => sum + i.product.price * i.quantity, 0),
+        get().items.reduce((sum, i) => sum + computeLineTotal(i.product.price, i.product.bulkPrices, i.quantity), 0),
 
       getCartCount: () =>
         get().items.reduce((sum, i) => sum + i.quantity, 0),
