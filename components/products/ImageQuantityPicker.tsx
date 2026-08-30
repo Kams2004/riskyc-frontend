@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
-import { computeLineTotal } from "@/lib/pricing";
-import { X, Plus, Minus, ShoppingCart, Trash2, ImageIcon } from "@/components/icons/fa";
+import { computeLineTotal, computeLineBreakdown } from "@/lib/pricing";
+import { X, Plus, Minus, ShoppingCart, Trash2, ImageIcon, ChevronDown } from "@/components/icons/fa";
 import clsx from "clsx";
 
 export interface ImageQuantitySelection {
   imageIndex: number;
   quantity: number;
+  size?: string;
 }
 
 interface Props {
@@ -18,48 +19,71 @@ interface Props {
   onConfirm: (selections: ImageQuantitySelection[]) => void;
 }
 
+const NO_SIZE = "";
+
+function selectionKey(imageIndex: number, size: string): string {
+  return `${imageIndex}::${size}`;
+}
+
+/** Renders "1 × (10 = 20 000 FCFA) + 2 × 1 000 FCFA" so the customer sees exactly how a bulk-discounted total was reached. */
+function BreakdownLine({ unitPrice, bulkPrices, quantity }: { unitPrice: number; bulkPrices: Product["bulkPrices"]; quantity: number }) {
+  const { parts } = computeLineBreakdown(unitPrice, bulkPrices, quantity);
+  if (parts.length === 0) return null;
+  // Only worth spelling out when more than one part contributes, or the single part is a bulk tier.
+  if (parts.length === 1 && parts[0].kind === "unit") return null;
+  return (
+    <p className="text-[11px] text-gray-400 text-center mt-1.5">
+      {parts
+        .map((p) =>
+          p.kind === "bulk"
+            ? `${p.count} × (${p.tierQuantity} = ${formatPrice(p.tierPrice ?? 0)})`
+            : `${p.count} × ${formatPrice(unitPrice)}`
+        )
+        .join(" + ")}
+    </p>
+  );
+}
+
 /**
- * Lets a customer pick different quantities per product photo instead of a
- * single blanket quantity — for colorless products where the photos
- * themselves are the "variant" (e.g. different styling/prints only shown in
- * pictures). Indices always refer to the product's full media array (not a
- * filtered display list) so they line up with what the backend/receipt use.
+ * Lets a customer pick a different quantity — and optionally a different
+ * size — per product photo, instead of a single blanket quantity/color/size.
+ * Works for any product with photos, colored or not: color selection itself
+ * still isn't offered here (the picker is about photos), but size is, since
+ * a photo can represent a fit/print that only some sizes carry.
  */
 export default function ImageQuantityPicker({ product, onClose, onConfirm }: Props) {
-  // Only stills make sense to order "a quantity of" — but indices stay relative
-  // to the full media array so they match product.media[i] everywhere else.
   const imageEntries = product.media
     .map((m, i) => ({ media: m, index: i }))
     .filter((e) => e.media.type === "IMAGE");
+  const hasSizes = product.sizes && product.sizes.length > 0;
 
   const [activeIndex, setActiveIndex] = useState(imageEntries[0]?.index ?? 0);
-  const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [activeSize, setActiveSize] = useState(hasSizes ? product.sizes[0] : NO_SIZE);
+  const [sizeMenuOpen, setSizeMenuOpen] = useState(false);
+  const [quantities, setQuantities] = useState<Record<string, { imageIndex: number; size: string; quantity: number }>>({});
   const priceUnset = product.price <= 0;
 
-  const setQty = (idx: number, qty: number) => {
+  const setQty = (imageIndex: number, size: string, qty: number) => {
     setQuantities((prev) => {
+      const key = selectionKey(imageIndex, size);
       const next = { ...prev };
-      if (qty <= 0) delete next[idx];
-      else next[idx] = qty;
+      if (qty <= 0) delete next[key];
+      else next[key] = { imageIndex, size, quantity: qty };
       return next;
     });
   };
 
-  const selections: ImageQuantitySelection[] = Object.entries(quantities)
-    .map(([idx, quantity]) => ({ imageIndex: Number(idx), quantity }))
-    .sort((a, b) => a.imageIndex - b.imageIndex);
+  const selections = Object.values(quantities).sort((a, b) => a.imageIndex - b.imageIndex || a.size.localeCompare(b.size));
   const totalItems = selections.reduce((s, x) => s + x.quantity, 0);
-  const totalPrice = selections.reduce(
-    (s, x) => s + computeLineTotal(product.price, product.bulkPrices, x.quantity),
-    0
-  );
+  const totalPrice = selections.reduce((s, x) => s + computeLineTotal(product.price, product.bulkPrices, x.quantity), 0);
 
   const activeMedia = product.media[activeIndex];
-  const activeQty = quantities[activeIndex] ?? 0;
+  const activeKey = selectionKey(activeIndex, activeSize);
+  const activeQty = quantities[activeKey]?.quantity ?? 0;
 
   const handleDone = () => {
     if (selections.length === 0) return;
-    onConfirm(selections);
+    onConfirm(selections.map((s) => ({ imageIndex: s.imageIndex, quantity: s.quantity, size: s.size || undefined })));
   };
 
   return (
@@ -101,25 +125,65 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
               )}
             </div>
 
-            {/* Quantity stepper for the active photo */}
-            <div className="flex items-center justify-center gap-4 mt-4">
-              <button
-                onClick={() => setQty(activeIndex, activeQty - 1)}
-                disabled={activeQty === 0}
-                className="w-11 h-11 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-brand-300 hover:text-brand-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:text-gray-600 transition-colors"
-              >
-                <Minus size={16} />
-              </button>
-              <span className="w-14 text-center text-2xl font-bold text-gray-900 tabular-nums">{activeQty}</span>
-              <button
-                onClick={() => setQty(activeIndex, activeQty + 1)}
-                className="w-11 h-11 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-colors"
-              >
-                <Plus size={16} />
-              </button>
+            {/* Size (optional) + quantity stepper for the active photo */}
+            <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
+              {hasSizes && (
+                <div className="relative">
+                  <button
+                    onClick={() => setSizeMenuOpen((o) => !o)}
+                    className="flex items-center gap-1.5 px-3.5 h-11 rounded-xl border-2 border-gray-200 hover:border-brand-300 text-sm font-semibold text-gray-700 transition-colors"
+                  >
+                    Size: <span className="text-brand-600">{activeSize}</span>
+                    <ChevronDown size={14} className={clsx("transition-transform", sizeMenuOpen && "rotate-180")} />
+                  </button>
+                  {sizeMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setSizeMenuOpen(false)} />
+                      <div className="absolute z-20 top-full left-0 mt-1.5 w-32 max-h-48 overflow-y-auto bg-white rounded-xl shadow-xl border border-gray-100 py-1.5">
+                        {product.sizes.map((sz) => (
+                          <button
+                            key={sz}
+                            onClick={() => {
+                              setActiveSize(sz);
+                              setSizeMenuOpen(false);
+                            }}
+                            className={clsx(
+                              "w-full text-left px-3.5 py-2 text-sm transition-colors",
+                              sz === activeSize ? "text-brand-600 font-semibold bg-brand-50" : "text-gray-600 hover:bg-gray-50"
+                            )}
+                          >
+                            {sz}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQty(activeIndex, activeSize, activeQty - 1)}
+                  disabled={activeQty === 0}
+                  className="w-11 h-11 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-brand-300 hover:text-brand-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:text-gray-600 transition-colors"
+                >
+                  <Minus size={16} />
+                </button>
+                <span className="w-10 text-center text-2xl font-bold text-gray-900 tabular-nums">{activeQty}</span>
+                <button
+                  onClick={() => setQty(activeIndex, activeSize, activeQty + 1)}
+                  className="w-11 h-11 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-colors"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
             </div>
+
+            {!priceUnset && activeQty > 0 && (
+              <BreakdownLine unitPrice={product.price} bulkPrices={product.bulkPrices} quantity={activeQty} />
+            )}
             <p className="text-center text-xs text-gray-400 mt-2">
-              Quantity for the photo shown above — tap another photo below to switch
+              {hasSizes ? "Photo + size shown above" : "Quantity for the photo shown above"} — tap another photo below to switch
             </p>
           </div>
 
@@ -128,7 +192,9 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
             <div className="px-5 pb-4">
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {imageEntries.map(({ media, index }) => {
-                  const qty = quantities[index] ?? 0;
+                  const qtyForThisPhoto = Object.values(quantities)
+                    .filter((s) => s.imageIndex === index)
+                    .reduce((s, x) => s + x.quantity, 0);
                   return (
                     <button
                       key={media.id}
@@ -137,16 +203,16 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
                         "relative flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all",
                         index === activeIndex
                           ? "border-brand-500 ring-2 ring-brand-100"
-                          : qty > 0
+                          : qtyForThisPhoto > 0
                           ? "border-green-400"
                           : "border-gray-200 hover:border-gray-300"
                       )}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={media.presignedUrl} alt="" className="w-full h-full object-cover" />
-                      {qty > 0 && (
+                      {qtyForThisPhoto > 0 && (
                         <span className="absolute -top-1 -right-1 bg-brand-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
-                          {qty}
+                          {qtyForThisPhoto}
                         </span>
                       )}
                     </button>
@@ -161,15 +227,20 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
             <div className="px-5 pb-5">
               <div className="border-t border-gray-100 pt-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
-                  Your selection ({selections.length} photo{selections.length !== 1 ? "s" : ""})
+                  Your selection ({selections.length} pick{selections.length !== 1 ? "s" : ""})
                 </p>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                   {selections.map((sel) => {
                     const media = product.media[sel.imageIndex];
+                    const key = selectionKey(sel.imageIndex, sel.size);
+                    const lineTotal = computeLineTotal(product.price, product.bulkPrices, sel.quantity);
                     return (
-                      <div key={sel.imageIndex} className="flex items-center gap-3 bg-gray-50 rounded-xl p-2.5">
+                      <div key={key} className="flex items-center gap-3 bg-gray-50 rounded-xl p-2.5">
                         <button
-                          onClick={() => setActiveIndex(sel.imageIndex)}
+                          onClick={() => {
+                            setActiveIndex(sel.imageIndex);
+                            if (sel.size) setActiveSize(sel.size);
+                          }}
                           className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -177,24 +248,26 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
                         </button>
                         <span className="flex-1 min-w-0 text-sm text-gray-600 truncate">
                           Photo {sel.imageIndex + 1}
+                          {sel.size && <span className="text-gray-400"> · {sel.size}</span>}
+                          {!priceUnset && <span className="block text-xs font-semibold text-brand-600">{formatPrice(lineTotal)}</span>}
                         </span>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <button
-                            onClick={() => setQty(sel.imageIndex, sel.quantity - 1)}
+                            onClick={() => setQty(sel.imageIndex, sel.size, sel.quantity - 1)}
                             className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors"
                           >
                             <Minus size={12} />
                           </button>
                           <span className="w-6 text-center text-sm font-semibold tabular-nums">{sel.quantity}</span>
                           <button
-                            onClick={() => setQty(sel.imageIndex, sel.quantity + 1)}
+                            onClick={() => setQty(sel.imageIndex, sel.size, sel.quantity + 1)}
                             className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors"
                           >
                             <Plus size={12} />
                           </button>
                         </div>
                         <button
-                          onClick={() => setQty(sel.imageIndex, 0)}
+                          onClick={() => setQty(sel.imageIndex, sel.size, 0)}
                           title="Remove"
                           className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
                         >

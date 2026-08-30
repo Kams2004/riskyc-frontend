@@ -1,30 +1,56 @@
 import { BulkPriceTier } from "@/lib/types";
 
+export interface PriceBreakdownPart {
+  kind: "bulk" | "unit";
+  /** Set when kind is "bulk" — the tier's quantity and flat price. */
+  tierQuantity?: number;
+  tierPrice?: number;
+  /** How many of this part — tiers applied (bulk) or individual units (unit). */
+  count: number;
+  subtotal: number;
+}
+
 /**
- * Computes what a line item actually costs given the product's regular unit
- * price, its optional bulk/grouped-pricing tiers, and the quantity ordered.
- *
- * Rule (mirrors the backend's identical logic in OrderService):
- *  - below the smallest reached tier's quantity → regular unit price × qty
- *  - exactly at a tier's quantity → that tier's flat price
- *  - above a tier's quantity → that tier's flat price for the first
- *    `tier.quantity` units, plus the remainder priced at the tier's implied
- *    per-unit rate (tier.price / tier.quantity) — not the regular unit price
- *
- * When several tiers qualify (quantity has reached more than one), the
- * largest-quantity tier reached is used.
+ * Prices a line by greedily applying the largest bulk tier that still fits,
+ * then the next-largest for whatever quantity is left, and so on, charging
+ * the regular unit price for anything left over once no more tiers fit.
+ * E.g. a 10-for-20,000 tier with a quantity of 12 → one tier (20,000) plus
+ * 2 units at the regular price — never a partial/prorated tier rate.
  */
+export function computeLineBreakdown(
+  unitPrice: number,
+  bulkPrices: BulkPriceTier[] | undefined,
+  quantity: number
+): { parts: PriceBreakdownPart[]; total: number } {
+  if (quantity <= 0) return { parts: [], total: 0 };
+
+  const tiers = (bulkPrices ?? [])
+    .filter((t) => t.quantity > 0 && t.price > 0)
+    .sort((a, b) => b.quantity - a.quantity);
+
+  let remaining = quantity;
+  const parts: PriceBreakdownPart[] = [];
+  let total = 0;
+
+  for (const tier of tiers) {
+    if (remaining >= tier.quantity) {
+      const count = Math.floor(remaining / tier.quantity);
+      const subtotal = count * tier.price;
+      total += subtotal;
+      remaining -= count * tier.quantity;
+      parts.push({ kind: "bulk", tierQuantity: tier.quantity, tierPrice: tier.price, count, subtotal });
+    }
+  }
+  if (remaining > 0) {
+    const subtotal = remaining * unitPrice;
+    total += subtotal;
+    parts.push({ kind: "unit", count: remaining, subtotal });
+  }
+
+  return { parts, total };
+}
+
+/** Convenience wrapper when only the final total is needed. */
 export function computeLineTotal(unitPrice: number, bulkPrices: BulkPriceTier[] | undefined, quantity: number): number {
-  if (quantity <= 0) return 0;
-  const tiers = (bulkPrices ?? []).filter((t) => t.quantity > 0 && t.price > 0);
-  const applicable = tiers
-    .filter((t) => t.quantity <= quantity)
-    .sort((a, b) => b.quantity - a.quantity)[0];
-
-  if (!applicable) return unitPrice * quantity;
-  if (quantity === applicable.quantity) return applicable.price;
-
-  const perUnitBulkRate = applicable.price / applicable.quantity;
-  const remainder = quantity - applicable.quantity;
-  return applicable.price + remainder * perUnitBulkRate;
+  return computeLineBreakdown(unitPrice, bulkPrices, quantity).total;
 }

@@ -123,7 +123,7 @@ function HowToOrderModal({ onClose }: { onClose: () => void }) {
 
 export default function ProductDetailClient({ productId }: { productId: string }) {
   const router = useRouter();
-  const { addToCart, setChatOpen, setChatDraft } = useStore();
+  const { addToCart, setChatOpen, setChatDraft, items: cartItems } = useStore();
   const { categories } = useCategories();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -207,6 +207,10 @@ export default function ProductDetailClient({ productId }: { productId: string }
     : null;
   const priceUnset = product.price <= 0;
   const imageCount = product.media.filter((m) => m.type === "IMAGE").length;
+  // Once the customer has added photo-specific lines for this product, the plain
+  // color/size pickers below no longer describe what's in the cart — blur them
+  // out rather than let two conflicting ways of ordering the same item coexist.
+  const hasPhotoBasedSelection = cartItems.some((i) => i.product.id === product.id && i.selectedImageIndex != null);
   const categoryInfo = categories.find((c) => c.slug === product.categorySlug);
 
   const handleAddToCart = () => {
@@ -228,7 +232,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
         product,
         quantity: sel.quantity,
         selectedColor: "",
-        selectedSize,
+        selectedSize: sel.size ?? "",
         selectedImageIndex: sel.imageIndex,
       });
     }
@@ -468,38 +472,77 @@ export default function ProductDetailClient({ productId }: { productId: string }
             )}
           </div>
 
-          {/* Color */}
-          {product.colors.length > 0 && (
-            <div className="mb-5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-700">
-                  Color: <span className="text-brand-600">{selectedColor}</span>
-                </span>
+          {/* Once photo-specific lines exist in the cart for this product, the plain color/size
+              pickers below no longer reflect what's actually in the cart — blur + disable them
+              rather than let the customer set up a second, conflicting selection by mistake. */}
+          <div className={clsx(hasPhotoBasedSelection && "blur-[2px] opacity-60 pointer-events-none select-none")}>
+            {/* Color */}
+            {product.colors.length > 0 && (
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-700">
+                    Color: <span className="text-brand-600">{selectedColor}</span>
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {product.colors.map((color) => (
+                    <button
+                      key={color.name}
+                      title={color.name}
+                      onClick={() => setSelectedColor(color.name)}
+                      className={clsx(
+                        "flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
+                        selectedColor === color.name
+                          ? "border-brand-500 bg-brand-50 text-brand-700"
+                          : "border-gray-200 hover:border-brand-300 text-gray-700"
+                      )}
+                    >
+                      <span className="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
+                      {color.name}
+                      {selectedColor === color.name && <Check size={14} className="text-brand-500" />}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {product.colors.map((color) => (
-                  <button
-                    key={color.name}
-                    title={color.name}
-                    onClick={() => setSelectedColor(color.name)}
-                    className={clsx(
-                      "flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
-                      selectedColor === color.name
-                        ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-gray-200 hover:border-brand-300 text-gray-700"
-                    )}
-                  >
-                    <span className="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
-                    {color.name}
-                    {selectedColor === color.name && <Check size={14} className="text-brand-500" />}
-                  </button>
-                ))}
+            )}
+
+            {/* Sizes */}
+            {product.sizes && (
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-700">
+                    Size: <span className="text-brand-600">{selectedSize}</span>
+                  </span>
+                  <button className="text-xs text-brand-500 underline">Size Guide</button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={clsx(
+                        "min-w-[44px] px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
+                        selectedSize === size
+                          ? "border-brand-500 bg-brand-500 text-white"
+                          : "border-gray-200 hover:border-brand-300 text-gray-700"
+                      )}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+          </div>
+
+          {hasPhotoBasedSelection && (
+            <p className="-mt-3 mb-5 text-xs text-gray-400 italic">
+              You&apos;ve added photo-specific items to your cart — color/size selection above is disabled to avoid mixing the two.
+            </p>
           )}
 
-          {/* Quantity by photo — offered instead of colors, for products whose photos are the real "variant" */}
-          {product.colors.length === 0 && imageCount > 0 && (
+          {/* Quantity by photo — lets the customer pick a quantity (and size) per photo */}
+          {imageCount > 0 && (
             <div className="mb-5">
               <button
                 onClick={() => setImageQuantityOpen(true)}
@@ -510,38 +553,10 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm font-semibold text-gray-800">Choose quantity by photo</span>
-                  <span className="block text-xs text-gray-400">Pick different quantities for different photos</span>
+                  <span className="block text-xs text-gray-400">Pick different quantities (and sizes) for different photos</span>
                 </span>
                 <ChevronRight size={16} className="text-gray-300 group-hover:text-brand-400 flex-shrink-0" />
               </button>
-            </div>
-          )}
-
-          {/* Sizes */}
-          {product.sizes && (
-            <div className="mb-5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-700">
-                  Size: <span className="text-brand-600">{selectedSize}</span>
-                </span>
-                <button className="text-xs text-brand-500 underline">Size Guide</button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={clsx(
-                      "min-w-[44px] px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
-                      selectedSize === size
-                        ? "border-brand-500 bg-brand-500 text-white"
-                        : "border-gray-200 hover:border-brand-300 text-gray-700"
-                    )}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
