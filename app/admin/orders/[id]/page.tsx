@@ -80,19 +80,20 @@ export default function AdminOrderDetailPage() {
   const stepOrder: OrderStatus[] = ["PENDING", "AWAITING_PAYMENT", "REVIEWING", "VALIDATED"];
   const currentIdx = order.status === "CANCELLED" ? -1 : stepOrder.indexOf(order.status);
 
-  const setStatus = async (status: OrderStatus) => {
+  const setStatus = async (status: OrderStatus, reason?: string) => {
     if (!token) return;
-    const updated = await ordersApi.updateOrderStatus(order.id, status, token);
+    const updated = await ordersApi.updateOrderStatus(order.id, status, token, reason);
     setOrder(updated);
   };
 
   const askReject = () => {
     setConfirm({
       title: "Reject order?",
-      message: `This will cancel order ${order.id}. The customer will need to be notified separately.`,
+      message: "This will cancel the order and notify the customer (in-app and by push, if they've enabled it) with the reason below.",
       confirmLabel: "Reject",
-      onConfirm: () => {
-        setStatus("CANCELLED");
+      input: { label: "Reason for rejection", placeholder: "e.g. Payment screenshot doesn't match the order total", required: true },
+      onConfirm: async (reason) => {
+        await setStatus("CANCELLED", reason);
         setConfirm(null);
       },
     });
@@ -202,6 +203,15 @@ export default function AdminOrderDetailPage() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {order.status === "CANCELLED" && order.rejectionReason && (
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5">
+            <h2 className="text-sm font-semibold mb-1.5 text-red-500 flex items-center gap-2">
+              <XCircle size={15} /> Rejection Reason
+            </h2>
+            <p className={clsx("text-sm leading-relaxed", c.textSecondary)}>{order.rejectionReason}</p>
           </div>
         )}
 

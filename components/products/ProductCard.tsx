@@ -30,10 +30,12 @@ export default function ProductCard({ product }: Props) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
+  const priceUnset = product.price <= 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    addToCart({ product, quantity: 1, selectedColor: firstColor.name, selectedSize: firstSize });
+    if (priceUnset) return;
+    addToCart({ product, quantity: 1, selectedColor: firstColor?.name ?? "", selectedSize: firstSize });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   };
@@ -128,9 +130,15 @@ export default function ProductCard({ product }: Props) {
 
         {/* Price */}
         <div className="flex items-center gap-2 flex-wrap mb-3">
-          <span className="font-bold text-brand-600 text-base">{formatPrice(product.price)}</span>
-          {product.originalPrice && (
-            <span className="text-xs text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
+          {priceUnset ? (
+            <span className="font-bold text-gray-500 text-sm">Price on request</span>
+          ) : (
+            <>
+              <span className="font-bold text-brand-600 text-base">{formatPrice(product.price)}</span>
+              {product.originalPrice && (
+                <span className="text-xs text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
+              )}
+            </>
           )}
         </div>
 
@@ -139,11 +147,14 @@ export default function ProductCard({ product }: Props) {
           {/* Add to Cart — usable even when out of stock; icon only on mobile, full label on sm+ */}
           <button
             onClick={handleAddToCart}
+            disabled={priceUnset}
             className={clsx(
               "flex-1 min-w-0 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap",
-              added ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-brand-500 text-white"
+              priceUnset
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : added ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-brand-500 text-white"
             )}
-            title="Add to cart"
+            title={priceUnset ? "Contact us for pricing" : "Add to cart"}
           >
             {added ? <Check size={13} /> : <ShoppingCart size={13} />}
             <span className="hidden sm:inline">{added ? "Added!" : "Add to Cart"}</span>
@@ -161,7 +172,7 @@ export default function ProductCard({ product }: Props) {
             )}
           >
             <Zap size={13} />
-            Order
+            {priceUnset ? "Ask price" : "Order"}
           </button>
         </div>
       </div>

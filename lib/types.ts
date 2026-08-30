@@ -24,10 +24,17 @@ export interface ProductColor {
 
 export type Badge = "NEW" | "SALE" | "HOT";
 
+/** A "buy N for this total price" tier — independent of the product's regular unit price. */
+export interface BulkPriceTier {
+  quantity: number;
+  price: number;
+}
+
 export interface Product {
   id: string;
   name: string;
   description?: string | null;
+  /** 0 means the admin hasn't set a price yet — display as "Price on request". */
   price: number;
   originalPrice?: number | null;
   categorySlug: string;
@@ -39,6 +46,7 @@ export interface Product {
   badge?: Badge | null;
   hidden: boolean;
   colors: ProductColor[];
+  bulkPrices: BulkPriceTier[];
   media: MediaItem[];
   createdByName?: string | null;
   createdAt?: string;
@@ -117,6 +125,7 @@ export interface Order {
   paymentScreenshotUrl?: string | null;
   statusChangedByName?: string | null;
   statusChangedAt?: string | null;
+  rejectionReason?: string | null;
   packagingStartedByName?: string | null;
   packagingStartedAt?: string | null;
   packagingCompletedByName?: string | null;
@@ -135,6 +144,8 @@ export interface ChatMessage {
   sender: MessageSender;
   text: string;
   imageUrl?: string | null;
+  voiceUrl?: string | null;
+  voiceDurationSeconds?: number | null;
   /** Which staff member sent this (ADMIN messages only) — never show this to a customer. */
   adminSenderName?: string | null;
   timestamp: string;

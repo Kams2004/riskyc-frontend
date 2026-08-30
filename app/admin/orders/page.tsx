@@ -44,19 +44,20 @@ export default function AdminOrdersPage() {
     ordersApi.listOrders(token).then(setOrders).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
 
-  const setStatus = async (orderId: string, status: OrderStatus) => {
+  const setStatus = async (orderId: string, status: OrderStatus, reason?: string) => {
     if (!token) return;
-    const updated = await ordersApi.updateOrderStatus(orderId, status, token);
+    const updated = await ordersApi.updateOrderStatus(orderId, status, token, reason);
     setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
   };
 
   const askReject = (orderId: string) => {
     setConfirm({
       title: "Reject order?",
-      message: `This will cancel order ${orderId}. The customer will need to be notified separately.`,
+      message: "This will cancel the order and notify the customer (in-app and by push, if they've enabled it) with the reason below.",
       confirmLabel: "Reject",
-      onConfirm: () => {
-        setStatus(orderId, "CANCELLED");
+      input: { label: "Reason for rejection", placeholder: "e.g. Payment screenshot doesn't match the order total", required: true },
+      onConfirm: async (reason) => {
+        await setStatus(orderId, "CANCELLED", reason);
         setConfirm(null);
       },
     });

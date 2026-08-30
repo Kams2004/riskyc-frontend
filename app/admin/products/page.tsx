@@ -256,9 +256,15 @@ export default function AdminProductsPage() {
 
                           {/* Price */}
                           <td className="px-4 py-3">
-                            <span className="text-sm font-bold text-brand-500 whitespace-nowrap">{formatPrice(product.price)}</span>
-                            {product.originalPrice && (
-                              <p className={clsx("text-xs line-through whitespace-nowrap", c.textMuted)}>{formatPrice(product.originalPrice)}</p>
+                            {product.price > 0 ? (
+                              <>
+                                <span className="text-sm font-bold text-brand-500 whitespace-nowrap">{formatPrice(product.price)}</span>
+                                {product.originalPrice && (
+                                  <p className={clsx("text-xs line-through whitespace-nowrap", c.textMuted)}>{formatPrice(product.originalPrice)}</p>
+                                )}
+                              </>
+                            ) : (
+                              <span className={clsx("text-xs italic whitespace-nowrap", c.textMuted)}>Price on request</span>
                             )}
                           </td>
 
@@ -384,9 +390,15 @@ export default function AdminProductsPage() {
                           <span className={clsx("text-xs", c.textSecondary)}>{product.rating} ({product.reviews})</span>
                         </div>
                         <div className="flex items-center gap-2 mb-3">
-                          <span className="font-bold text-brand-500">{formatPrice(product.price)}</span>
-                          {product.originalPrice && (
-                            <span className={clsx("text-xs line-through", c.textMuted)}>{formatPrice(product.originalPrice)}</span>
+                          {product.price > 0 ? (
+                            <>
+                              <span className="font-bold text-brand-500">{formatPrice(product.price)}</span>
+                              {product.originalPrice && (
+                                <span className={clsx("text-xs line-through", c.textMuted)}>{formatPrice(product.originalPrice)}</span>
+                              )}
+                            </>
+                          ) : (
+                            <span className={clsx("text-xs italic", c.textMuted)}>Price on request</span>
                           )}
                         </div>
                         <div className="flex items-center gap-1 mb-4">

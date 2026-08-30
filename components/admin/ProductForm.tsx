@@ -7,7 +7,7 @@ import { useAdminColors } from "@/lib/useAdminColors";
 import { useCategories } from "@/lib/useCategories";
 import * as productsApi from "@/lib/api/products";
 import { API_BASE_URL as apiBaseUrl } from "@/lib/apiClient";
-import { Product, ProductColor, Badge, MediaItem } from "@/lib/types";
+import { Product, ProductColor, Badge, MediaItem, BulkPriceTier } from "@/lib/types";
 import ImageMarkupEditor from "@/components/admin/ImageMarkupEditor";
 import {
   Plus,
@@ -42,6 +42,7 @@ interface FormState {
   categorySlug: string;
   subcategorySlug?: string;
   colors: ProductColor[];
+  bulkPrices: BulkPriceTier[];
   sizes: string[];
   rating: number;
   reviews: number;
@@ -57,7 +58,8 @@ const emptyForm = (): FormState => ({
   originalPrice: undefined,
   categorySlug: "",
   subcategorySlug: "",
-  colors: [{ name: "Black", hex: "#1a1a1a" }],
+  colors: [],
+  bulkPrices: [],
   sizes: ["XS", "S", "M", "L", "XL"],
   rating: 4.5,
   reviews: 0,
@@ -102,6 +104,7 @@ export default function ProductForm({ initial, mode }: Props) {
           categorySlug: initial.categorySlug,
           subcategorySlug: initial.subcategorySlug ?? "",
           colors: initial.colors,
+          bulkPrices: initial.bulkPrices ?? [],
           sizes: initial.sizes,
           rating: initial.rating,
           reviews: initial.reviews,
@@ -130,10 +133,9 @@ export default function ProductForm({ initial, mode }: Props) {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "Name is required";
-    if (form.price <= 0) e.price = "Price must be greater than 0";
     if (existingMedia.length === 0 && pendingFiles.length === 0) e.images = "At least one image is required";
-    if (form.colors.length === 0) e.colors = "At least one color required";
-    else if (form.colors.some((c) => !c.name.trim())) e.colors = "Every color needs a name";
+    if (form.colors.some((c) => !c.name.trim())) e.colors = "Every color needs a name";
+    if (form.bulkPrices.some((t) => t.quantity <= 0 || t.price <= 0)) e.bulkPrices = "Every tier needs a quantity and a price greater than 0";
     return e;
   };
 
@@ -161,6 +163,7 @@ export default function ProductForm({ initial, mode }: Props) {
         rating: form.rating,
         reviews: form.reviews,
         colors: form.colors,
+        bulkPrices: [...form.bulkPrices].sort((a, b) => a.quantity - b.quantity),
       };
 
       const product =
@@ -198,6 +201,24 @@ export default function ProductForm({ initial, mode }: Props) {
     setForm((f) => ({
       ...f,
       colors: f.colors.filter((_, idx) => idx !== i),
+    }));
+
+  const addBulkTier = () =>
+    setForm((f) => ({
+      ...f,
+      bulkPrices: [...f.bulkPrices, { quantity: 0, price: 0 }],
+    }));
+
+  const updateBulkTier = (i: number, patch: Partial<BulkPriceTier>) =>
+    setForm((f) => ({
+      ...f,
+      bulkPrices: f.bulkPrices.map((t, idx) => (idx === i ? { ...t, ...patch } : t)),
+    }));
+
+  const removeBulkTier = (i: number) =>
+    setForm((f) => ({
+      ...f,
+      bulkPrices: f.bulkPrices.filter((_, idx) => idx !== i),
     }));
 
   // ── Image / video file picker ───────────────────────────────────
@@ -413,15 +434,15 @@ export default function ProductForm({ initial, mode }: Props) {
           {/* PRICING */}
           <Section title="Pricing" icon={<DollarSign size={15} />} isDark={isDark} c={c}>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Price (XAF)" error={errors.price} isDark={isDark} c={c}>
+              <Field label="Price (XAF) — optional" isDark={isDark} c={c}>
                 <input
                   type="number"
-                  className={inp(errors.price)}
+                  className={inp()}
                   value={form.price || ""}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, price: Number(e.target.value) }))
                   }
-                  placeholder="e.g. 35000"
+                  placeholder="Leave empty for 'Price on request'"
                 />
               </Field>
               <Field label="Original Price — for discount" isDark={isDark} c={c}>
@@ -447,6 +468,89 @@ export default function ProductForm({ initial, mode }: Props) {
                 ({new Intl.NumberFormat("fr-CM", { style: "currency", currency: "XAF", minimumFractionDigits: 0 }).format(form.originalPrice - form.price)} saved)
               </div>
             )}
+
+            {/* Bulk / grouped pricing — "buy N for this total", unrelated to the unit price above */}
+            <div className={clsx("mt-5 pt-5 border-t", isDark ? "border-gray-700" : "border-gray-200")}>
+              <div className="flex items-center justify-between mb-1">
+                <label className={clsx("text-xs font-semibold uppercase tracking-wide", c.textMuted)}>
+                  Bulk / Grouped Pricing — optional
+                </label>
+                <button
+                  type="button"
+                  onClick={addBulkTier}
+                  className="flex items-center gap-1 text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors"
+                >
+                  <Plus size={13} /> Add tier
+                </button>
+              </div>
+              <p className={clsx("text-[11px] mb-3", c.textMuted)}>
+                Offer a flat price for a bulk quantity, e.g. 10 units for 12,000 XAF. Not related to the unit price above.
+              </p>
+
+              {form.bulkPrices.length > 0 && (
+                <div className="space-y-2">
+                  {form.bulkPrices.map((tier, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        className={clsx(inpSm, "w-24")}
+                        value={tier.quantity || ""}
+                        onChange={(e) => updateBulkTier(i, { quantity: Number(e.target.value) })}
+                        placeholder="Qty"
+                      />
+                      <span className={clsx("text-sm", c.textMuted)}>units =</span>
+                      <input
+                        type="number"
+                        min={1}
+                        className={clsx(inpSm, "flex-1")}
+                        value={tier.price || ""}
+                        onChange={(e) => updateBulkTier(i, { price: Number(e.target.value) })}
+                        placeholder="Total price"
+                      />
+                      <span className={clsx("text-xs", c.textMuted)}>XAF</span>
+                      <button
+                        type="button"
+                        onClick={() => removeBulkTier(i)}
+                        className="text-red-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
+                        title="Remove tier"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {errors.bulkPrices && (
+                <p className="text-red-500 text-xs mt-2 flex items-center gap-1">⚠ {errors.bulkPrices}</p>
+              )}
+
+              {/* Live preview — exactly what the shopper will see under the price on the product page */}
+              {form.bulkPrices.some((t) => t.quantity > 0 && t.price > 0) && (
+                <div className={clsx("mt-3 p-3 rounded-xl border", isDark ? "bg-gray-900/50 border-gray-700" : "bg-gray-50 border-gray-200")}>
+                  <p className={clsx("text-[10px] uppercase tracking-wide font-semibold mb-1.5", c.textMuted)}>
+                    Preview — shown under the price on the product page
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {form.bulkPrices
+                      .filter((t) => t.quantity > 0 && t.price > 0)
+                      .sort((a, b) => a.quantity - b.quantity)
+                      .map((t, i) => (
+                        <span
+                          key={i}
+                          className={clsx(
+                            "text-xs font-semibold px-2.5 py-1 rounded-full",
+                            isDark ? "bg-gray-800 text-gray-200" : "bg-white text-gray-700 border border-gray-200"
+                          )}
+                        >
+                          {t.quantity} = {new Intl.NumberFormat("fr-CM", { style: "currency", currency: "XAF", minimumFractionDigits: 0 }).format(t.price)}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </Section>
 
           {/* IMAGES */}

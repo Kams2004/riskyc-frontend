@@ -7,6 +7,9 @@ import { useConversationSocket, useAdminNotificationSocket } from "@/lib/chatSoc
 import { useAdminTheme } from "@/lib/adminTheme";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useVoiceRecorder } from "@/lib/useVoiceRecorder";
+import VoiceRecorderBar from "@/components/chat/VoiceRecorderBar";
+import VoiceMessageBubble from "@/components/chat/VoiceMessageBubble";
 import {
   ArrowLeft,
   Send,
@@ -17,6 +20,7 @@ import {
   Shield,
   Clock,
   Search,
+  Mic,
 } from "lucide-react";
 import clsx from "clsx";
 import { Conversation, ChatMessage } from "@/lib/types";
@@ -55,6 +59,8 @@ export default function AdminChatPage() {
   const [newName, setNewName] = useState("");
   const [showNewForm, setShowNewForm] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [voiceUploading, setVoiceUploading] = useState(false);
+  const voiceRecorder = useVoiceRecorder();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(() => {
@@ -118,6 +124,26 @@ export default function AdminChatPage() {
           : c
       )
     );
+  };
+
+  const handleSendVoice = async (blob: Blob, durationSeconds: number) => {
+    if (!selectedId) return;
+    setVoiceUploading(true);
+    try {
+      const sent = await conversationsApi.sendVoiceMessage(selectedId, "ADMIN", blob, durationSeconds, token ?? undefined);
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === selectedId && !c.messages.some((m) => m.id === sent.id)
+            ? { ...c, messages: [...c.messages, sent], lastMessageAt: sent.timestamp }
+            : c
+        )
+      );
+      voiceRecorder.reset();
+    } catch {
+      voiceRecorder.reset();
+    } finally {
+      setVoiceUploading(false);
+    }
   };
 
   const handleNewConversation = async () => {
@@ -522,6 +548,14 @@ export default function AdminChatPage() {
                               className={clsx("rounded-xl max-w-full max-h-56 object-cover", msg.text ? "mb-1.5" : "")}
                             />
                           )}
+                          {msg.voiceUrl && (
+                            <VoiceMessageBubble
+                              url={msg.voiceUrl}
+                              durationSeconds={msg.voiceDurationSeconds}
+                              messageId={msg.id}
+                              variant={isAdmin ? "sent" : "received"}
+                            />
+                          )}
                           {msg.text && <p>{msg.text}</p>}
                           <p
                             className={clsx(
@@ -558,40 +592,57 @@ export default function AdminChatPage() {
                     : "border-gray-200 bg-white"
                 )}
               >
-                <div className="flex gap-2 items-end">
-                  <textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    placeholder="Type a reply… (Enter to send)"
-                    rows={2}
-                    className={clsx(
-                      "flex-1 border rounded-xl px-4 py-2.5 text-sm resize-none outline-none transition-colors",
-                      isDark
-                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-brand-500"
-                        : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-brand-400"
-                    )}
+                {voiceRecorder.state === "recording" || voiceRecorder.state === "paused" ? (
+                  <VoiceRecorderBar
+                    recorder={voiceRecorder}
+                    onCancel={voiceRecorder.discard}
+                    onSend={handleSendVoice}
+                    uploading={voiceUploading}
                   />
-                  <button
-                    onClick={() => handleSend()}
-                    disabled={!input.trim()}
-                    className={clsx(
-                      "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
-                      input.trim()
-                        ? "bg-brand-500 hover:bg-brand-600 text-white shadow-lg"
-                        : isDark
-                        ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                ) : (
+                  <div className="flex gap-2 items-end">
+                    <textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      placeholder="Type a reply… (Enter to send)"
+                      rows={2}
+                      className={clsx(
+                        "flex-1 border rounded-xl px-4 py-2.5 text-sm resize-none outline-none transition-colors",
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-brand-500"
+                          : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-brand-400"
+                      )}
+                    />
+                    {input.trim() ? (
+                      <button
+                        onClick={() => handleSend()}
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all bg-brand-500 hover:bg-brand-600 text-white shadow-lg"
+                      >
+                        <Send size={16} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={voiceRecorder.start}
+                        title="Record a voice reply"
+                        className={clsx(
+                          "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
+                          isDark ? "bg-gray-700 text-gray-300 hover:bg-brand-500 hover:text-white" : "bg-gray-200 text-gray-500 hover:bg-brand-500 hover:text-white"
+                        )}
+                      >
+                        <Mic size={16} />
+                      </button>
                     )}
-                  >
-                    <Send size={16} />
-                  </button>
-                </div>
+                  </div>
+                )}
+                {voiceRecorder.error && (
+                  <p className="text-center text-[10px] text-red-500 mt-1.5">{voiceRecorder.error}</p>
+                )}
               </div>
             </div>
 

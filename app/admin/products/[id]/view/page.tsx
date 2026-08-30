@@ -261,16 +261,31 @@ export default function AdminProductViewPage() {
             <div className={clsx("rounded-2xl border p-5", c.card)}>
               <h2 className={clsx("text-xs font-semibold uppercase tracking-wider mb-4", c.textMuted)}>Pricing</h2>
               <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="text-3xl font-bold text-brand-500">{formatPrice(product.price)}</span>
-                {product.originalPrice && (
+                {product.price > 0 ? (
                   <>
-                    <span className={clsx("text-lg line-through", c.textMuted)}>{formatPrice(product.originalPrice)}</span>
-                    <span className="bg-green-100 text-green-700 text-sm font-semibold px-2 py-0.5 rounded-full">
-                      Save {formatPrice(product.originalPrice - product.price)} ({discount}%)
-                    </span>
+                    <span className="text-3xl font-bold text-brand-500">{formatPrice(product.price)}</span>
+                    {product.originalPrice && (
+                      <>
+                        <span className={clsx("text-lg line-through", c.textMuted)}>{formatPrice(product.originalPrice)}</span>
+                        <span className="bg-green-100 text-green-700 text-sm font-semibold px-2 py-0.5 rounded-full">
+                          Save {formatPrice(product.originalPrice - product.price)} ({discount}%)
+                        </span>
+                      </>
+                    )}
                   </>
+                ) : (
+                  <span className={clsx("text-lg italic", c.textMuted)}>Price on request</span>
                 )}
               </div>
+              {product.bulkPrices.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200/50">
+                  {product.bulkPrices.map((tier, i) => (
+                    <span key={i} className={clsx("text-xs font-semibold px-2.5 py-1 rounded-full border", c.isDark ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-gray-50 border-gray-200 text-gray-700")}>
+                      {tier.quantity} = {formatPrice(tier.price)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Classification */}

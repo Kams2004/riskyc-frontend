@@ -11,7 +11,14 @@ export interface ConfirmState {
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
-  onConfirm: () => void | Promise<void>;
+  /** Adds a text field to the dialog (e.g. a rejection reason) — its value is passed to onConfirm. */
+  input?: {
+    label: string;
+    placeholder?: string;
+    defaultValue?: string;
+    required?: boolean;
+  };
+  onConfirm: (value?: string) => void | Promise<void>;
 }
 
 interface Props {
@@ -23,11 +30,15 @@ export default function ConfirmDialog({ state, onCancel }: Props) {
   const c = useAdminColors();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState("");
+  const [inputTouched, setInputTouched] = useState(false);
 
   // Reset local state whenever a new confirmation is opened (or closed).
   useEffect(() => {
     setSubmitting(false);
     setError(null);
+    setInputValue(state?.input?.defaultValue ?? "");
+    setInputTouched(false);
   }, [state]);
 
   if (!state) return null;
@@ -38,14 +49,21 @@ export default function ConfirmDialog({ state, onCancel }: Props) {
     confirmLabel = "Confirm",
     cancelLabel = "Cancel",
     destructive = true,
+    input,
     onConfirm,
   } = state;
 
+  const inputMissing = !!input?.required && !inputValue.trim();
+
   const handleConfirm = async () => {
+    if (input?.required && !inputValue.trim()) {
+      setInputTouched(true);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      await onConfirm();
+      await onConfirm(input ? inputValue.trim() : undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       setSubmitting(false);
@@ -92,6 +110,31 @@ export default function ConfirmDialog({ state, onCancel }: Props) {
         <p className={clsx("text-sm mb-3 leading-relaxed", c.textSecondary)}>
           {message}
         </p>
+
+        {input && (
+          <div className="mb-4">
+            <label className={clsx("text-xs font-semibold uppercase tracking-wide block mb-1.5", c.textMuted)}>
+              {input.label}
+            </label>
+            <textarea
+              autoFocus
+              rows={2}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={input.placeholder}
+              className={clsx(
+                "w-full rounded-xl border px-3 py-2 text-sm outline-none transition-colors resize-none",
+                c.isDark
+                  ? "bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:border-brand-500"
+                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-brand-400",
+                inputTouched && inputMissing && "!border-red-400"
+              )}
+            />
+            {inputTouched && inputMissing && (
+              <p className="text-red-500 text-xs mt-1">{input.label} is required</p>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="flex items-start gap-2 text-red-600 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-4">

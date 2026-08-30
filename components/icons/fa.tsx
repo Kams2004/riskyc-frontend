@@ -61,6 +61,11 @@ import {
   faImage,
   faDownload,
   faTruck,
+  faPrint,
+  faBell,
+  faMicrophone,
+  faPause,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faFacebookF,
@@ -126,6 +131,11 @@ export const Store = makeIcon(faStore);
 export const Tag = makeIcon(faTag);
 export const Trash2 = makeIcon(faTrash);
 export const Truck = makeIcon(faTruck);
+export const Printer = makeIcon(faPrint);
+export const Bell = makeIcon(faBell);
+export const Mic = makeIcon(faMicrophone);
+export const Pause = makeIcon(faPause);
+export const Play = makeIcon(faPlay);
 export const Twitter = makeIcon(faXTwitter);
 export const Whatsapp = makeIcon(faWhatsapp);
 export const Upload = makeIcon(faUpload);

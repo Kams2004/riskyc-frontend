@@ -9,6 +9,7 @@ import { listConversations } from "@/lib/api/conversations";
 import { useAdminNotificationSocket } from "@/lib/chatSocket";
 import { adminNavItems } from "@/lib/adminNav";
 import DownloadAppButton from "@/components/shared/DownloadAppButton";
+import NotificationBell from "./NotificationBell";
 import {
   LogOut,
   ChevronRight,
@@ -64,11 +65,14 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
 
       {/* Current admin */}
       {session && (
-        <div className="px-6 py-3 border-b border-white/5">
-          <p className="text-sm font-semibold text-white truncate">
-            {session.firstName} {session.lastName}
-          </p>
-          <p className="text-xs text-brand-300/70 truncate">{session.roleName}</p>
+        <div className="px-6 py-3 border-b border-white/5 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate">
+              {session.firstName} {session.lastName}
+            </p>
+            <p className="text-xs text-brand-300/70 truncate">{session.roleName}</p>
+          </div>
+          <NotificationBell />
         </div>
       )}
 

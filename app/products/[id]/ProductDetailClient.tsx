@@ -136,6 +136,23 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [howToOrderOpen, setHowToOrderOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  // Pressing the device/browser back button while the lightbox is open
+  // should close it instead of navigating away from the product page.
+  const openLightbox = () => {
+    setLightboxOpen(true);
+    window.history.pushState({ lightbox: true }, "");
+  };
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    if (window.history.state?.lightbox) window.history.back();
+  };
+  useEffect(() => {
+    const onPopState = () => setLightboxOpen(false);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -188,15 +205,18 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
+  const priceUnset = product.price <= 0;
   const categoryInfo = categories.find((c) => c.slug === product.categorySlug);
 
   const handleAddToCart = () => {
+    if (priceUnset) return;
     addToCart({ product, quantity: qty, selectedColor, selectedSize });
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const handleOrderNow = () => {
+    if (priceUnset) return;
     addToCart({ product, quantity: qty, selectedColor, selectedSize });
     setCheckoutOpen(true);
   };
@@ -265,7 +285,8 @@ export default function ProductDetailClient({ productId }: { productId: string }
             <img
               src={product.media[imgIdx]?.presignedUrl}
               alt={product.name}
-              className="w-full h-full object-cover transition-opacity duration-300"
+              onClick={openLightbox}
+              className="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in"
             />
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               {product.badge === "NEW" && <span className="badge-new text-sm px-3 py-1">NEW</span>}
@@ -326,6 +347,47 @@ export default function ProductDetailClient({ productId }: { productId: string }
           )}
         </div>
 
+        {/* Fullscreen image lightbox */}
+        {lightboxOpen && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center animate-fade-in"
+            onClick={closeLightbox}
+          >
+            <button
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
+            >
+              <X size={20} />
+            </button>
+            {product.media.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i - 1 + product.media.length) % product.media.length); }}
+                  className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i + 1) % product.media.length); }}
+                  className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
+                >
+                  <ChevronRight size={20} />
+                </button>
+                <span className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-white/10 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  {imgIdx + 1} / {product.media.length}
+                </span>
+              </>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={product.media[imgIdx]?.presignedUrl}
+              alt={product.name}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-[92vw] max-h-[85vh] object-contain"
+            />
+          </div>
+        )}
+
         {/* Product Info */}
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
@@ -356,53 +418,77 @@ export default function ProductDetailClient({ productId }: { productId: string }
             <span className="text-sm text-gray-400">({product.reviews} reviews)</span>
           </div>
 
-          <div className="flex items-baseline gap-3 mb-6 p-4 bg-gray-50 rounded-2xl">
-            <span className="text-3xl font-bold text-brand-600">{formatPrice(product.price)}</span>
-            {product.originalPrice && (
-              <>
-                <span className="text-lg text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
-                <span className="bg-green-100 text-green-700 text-sm font-semibold px-2 py-0.5 rounded-full">
-                  Save {formatPrice(product.originalPrice - product.price)}
-                </span>
-              </>
+          <div className="mb-6 p-4 bg-gray-50 rounded-2xl">
+            <div className="flex items-baseline gap-3">
+              {priceUnset ? (
+                <span className="text-2xl font-bold text-gray-500">Price on request</span>
+              ) : (
+                <>
+                  <span className="text-3xl font-bold text-brand-600">{formatPrice(product.price)}</span>
+                  {product.originalPrice && (
+                    <>
+                      <span className="text-lg text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
+                      <span className="bg-green-100 text-green-700 text-sm font-semibold px-2 py-0.5 rounded-full">
+                        Save {formatPrice(product.originalPrice - product.price)}
+                      </span>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Bulk / grouped pricing — independent of the unit price above */}
+            {product.bulkPrices.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
+                {product.bulkPrices.map((tier, i) => (
+                  <span
+                    key={i}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-full bg-white text-gray-700 border border-gray-200"
+                  >
+                    {tier.quantity} = {formatPrice(tier.price)}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
 
           {/* Color */}
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-gray-700">
-                Color: <span className="text-brand-600">{selectedColor}</span>
-              </span>
-              <span className={clsx("text-xs font-medium",
-                stockCount === undefined ? "text-green-600" : stockCount === 0 ? "text-red-500" : stockCount <= 3 ? "text-orange-500" : "text-green-600"
-              )}>
-                {stockCount === undefined ? "In stock" : stockCount === 0 ? "Out of stock" : stockCount <= 3 ? `Only ${stockCount} left` : `${stockCount} in stock`}
-              </span>
+          {product.colors.length > 0 && (
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-gray-700">
+                  Color: <span className="text-brand-600">{selectedColor}</span>
+                </span>
+                <span className={clsx("text-xs font-medium",
+                  stockCount === undefined ? "text-green-600" : stockCount === 0 ? "text-red-500" : stockCount <= 3 ? "text-orange-500" : "text-green-600"
+                )}>
+                  {stockCount === undefined ? "In stock" : stockCount === 0 ? "Out of stock" : stockCount <= 3 ? `Only ${stockCount} left` : `${stockCount} in stock`}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {product.colors.map((color) => (
+                  <button
+                    key={color.name}
+                    title={color.stock != null ? `${color.name} (${color.stock} left)` : color.name}
+                    onClick={() => setSelectedColor(color.name)}
+                    disabled={color.stock === 0}
+                    className={clsx(
+                      "flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
+                      selectedColor === color.name
+                        ? "border-brand-500 bg-brand-50 text-brand-700"
+                        : color.stock === 0
+                        ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                        : "border-gray-200 hover:border-brand-300 text-gray-700"
+                    )}
+                  >
+                    <span className="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
+                    {color.name}
+                    {selectedColor === color.name && <Check size={14} className="text-brand-500" />}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-3">
-              {product.colors.map((color) => (
-                <button
-                  key={color.name}
-                  title={color.stock != null ? `${color.name} (${color.stock} left)` : color.name}
-                  onClick={() => setSelectedColor(color.name)}
-                  disabled={color.stock === 0}
-                  className={clsx(
-                    "flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
-                    selectedColor === color.name
-                      ? "border-brand-500 bg-brand-50 text-brand-700"
-                      : color.stock === 0
-                      ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-                      : "border-gray-200 hover:border-brand-300 text-gray-700"
-                  )}
-                >
-                  <span className="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
-                  {color.name}
-                  {selectedColor === color.name && <Check size={14} className="text-brand-500" />}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Sizes */}
           {product.sizes && (
@@ -442,7 +528,10 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 <button onClick={() => setQty(Math.min(stockCount ?? Infinity, qty + 1))} disabled={stockCount !== undefined && qty >= stockCount} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold disabled:opacity-30">+</button>
               </div>
               <span className="text-sm text-gray-400">
-                Total: <span className="text-brand-600 font-bold">{formatPrice(product.price * qty)}</span>
+                Total:{" "}
+                <span className="text-brand-600 font-bold">
+                  {priceUnset ? "—" : formatPrice(product.price * qty)}
+                </span>
               </span>
             </div>
           </div>
@@ -452,9 +541,13 @@ export default function ProductDetailClient({ productId }: { productId: string }
             {/* Add to Cart — usable even when out of stock (we'll follow up once restocked) */}
             <button
               onClick={handleAddToCart}
+              disabled={priceUnset}
+              title={priceUnset ? "Contact us to get a price for this product" : undefined}
               className={clsx(
                 "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-base transition-all",
-                addedToCart ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-gray-800 text-white"
+                priceUnset
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : addedToCart ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-gray-800 text-white"
               )}
             >
               {addedToCart ? <><Check size={20} /> Added!</> : <><ShoppingCart size={20} /> Add to Cart</>}
@@ -463,10 +556,11 @@ export default function ProductDetailClient({ productId }: { productId: string }
             {/* Order Now — opens checkout modal */}
             <button
               onClick={handleOrderNow}
-              disabled={isOutOfStock}
+              disabled={isOutOfStock || priceUnset}
+              title={priceUnset ? "Contact us to get a price for this product" : undefined}
               className={clsx(
                 "flex-1 btn-primary py-3.5 rounded-2xl text-base",
-                isOutOfStock && "opacity-50 cursor-not-allowed"
+                (isOutOfStock || priceUnset) && "opacity-50 cursor-not-allowed"
               )}
             >
               <Zap size={20} /> Order Now

@@ -46,11 +46,11 @@ export function listOrders(token: string) {
   return apiFetch<Order[]>("/api/orders", { token });
 }
 
-export function updateOrderStatus(orderId: string, status: OrderStatus, token: string) {
+export function updateOrderStatus(orderId: string, status: OrderStatus, token: string, reason?: string) {
   return apiFetch<Order>(`/api/orders/${orderId}/status`, {
     method: "PATCH",
     token,
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, reason }),
   });
 }
 

@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/data";
 import * as ordersApi from "@/lib/api/orders";
 import { PaymentMethod, Order, CustomerInfo, DeliveryType } from "@/lib/types";
 import { StatusBadge } from "@/components/cart/OrdersList";
+import { downloadReceipt } from "@/lib/generateReceipt";
 import {
   X,
   Copy,
@@ -21,8 +22,10 @@ import {
   Store,
   Truck,
   AlertCircle,
+  Printer,
 } from "@/components/icons/fa";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 
@@ -50,6 +53,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
       case "VALIDATED":
       case "PACKAGING":
       case "PACKAGED":
+      case "CANCELLED":
         return "confirmed";
       default:
         return "method";
@@ -217,7 +221,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 {step === "method" && "Choose Payment Method"}
                 {step === "awaiting" && "Complete Your Payment"}
                 {step === "info" && "Your Information"}
-                {step === "confirmed" && "Order Confirmed! 🎉"}
+                {step === "confirmed" && (order?.status === "CANCELLED" ? "Order Cancelled" : "Order Confirmed! 🎉")}
               </h2>
               {order && <p className="text-xs text-gray-400 font-mono">{order.id}</p>}
             </div>
@@ -484,21 +488,43 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
           {/* ===== STEP 4: Confirmed ===== */}
           {step === "confirmed" && (
             <div className="space-y-5 animate-fade-in text-center">
-              <div className="py-6">
-                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 size={40} className="text-green-500" />
+              {order?.status === "CANCELLED" ? (
+                <div className="py-6">
+                  <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle size={40} className="text-red-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">This order was cancelled</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
+                    Our team could not validate the payment for this order.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Order Received! 🎉</h3>
-                <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
-                  Thank you for your order and for sending your payment proof! Our team will review it and{" "}
-                  <strong>we will reach out to you by call or SMS</strong> to confirm your payment and order.
-                </p>
-              </div>
+              ) : (
+                <div className="py-6">
+                  <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 size={40} className="text-green-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Order Received! 🎉</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
+                    Thank you for your order and for sending your payment proof! Our team will review it and{" "}
+                    <strong>we will reach out to you by call or SMS</strong> to confirm your payment and order.
+                  </p>
+                </div>
+              )}
+
+              {order?.status === "CANCELLED" && order.rejectionReason && (
+                <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-left">
+                  <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">Reason</p>
+                  <p className="text-sm text-red-800">{order.rejectionReason}</p>
+                </div>
+              )}
 
               {order && (
-                <div className="bg-green-50 border border-green-100 rounded-2xl p-4 text-left space-y-2">
+                <div className={clsx(
+                  "rounded-2xl border p-4 text-left space-y-2",
+                  order.status === "CANCELLED" ? "bg-gray-50 border-gray-200" : "bg-green-50 border-green-100"
+                )}>
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-green-800 uppercase tracking-wide">Order Summary</p>
+                    <p className={clsx("text-xs font-semibold uppercase tracking-wide", order.status === "CANCELLED" ? "text-gray-600" : "text-green-800")}>Order Summary</p>
                     <StatusBadge status={order.status} />
                   </div>
                   <div className="flex justify-between text-sm">
@@ -525,19 +551,21 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   )}
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Amount</span>
-                    <span className="font-bold text-green-700">{formatPrice(order.total)}</span>
+                    <span className={clsx("font-bold", order.status === "CANCELLED" ? "text-gray-700" : "text-green-700")}>{formatPrice(order.total)}</span>
                   </div>
                 </div>
               )}
 
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-left">
-                <p className="text-sm font-semibold text-amber-800 mb-1">What happens next?</p>
-                <ul className="text-xs text-amber-700 space-y-1">
-                  <li>• We review your payment screenshot</li>
-                  <li>• You’ll receive a call or SMS to confirm</li>
-                  <li>• Your order will be prepared &amp; shipped</li>
-                </ul>
-              </div>
+              {order?.status !== "CANCELLED" && (
+                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-left">
+                  <p className="text-sm font-semibold text-amber-800 mb-1">What happens next?</p>
+                  <ul className="text-xs text-amber-700 space-y-1">
+                    <li>• We review your payment screenshot</li>
+                    <li>• You’ll receive a call or SMS to confirm</li>
+                    <li>• Your order will be prepared &amp; shipped</li>
+                  </ul>
+                </div>
+              )}
 
               <div className="flex flex-col gap-3">
                 <button onClick={() => setChatOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-brand-200 text-brand-600 hover:bg-brand-50 font-medium text-sm transition-colors">
@@ -546,6 +574,22 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 <button onClick={() => { onClose(); router.push("/products"); }} className="w-full btn-primary py-4 rounded-2xl text-base">
                   <ShoppingBag size={20} />Continue Shopping
                 </button>
+                {order && (
+                  <>
+                    <button
+                      onClick={() => downloadReceipt(order)}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm transition-colors"
+                    >
+                      <Printer size={18} />Download Receipt
+                    </button>
+                    <Link
+                      href={`/track/${order.id}`}
+                      className="text-center text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors py-1"
+                    >
+                      Track your order →
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           )}

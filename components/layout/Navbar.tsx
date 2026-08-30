@@ -30,6 +30,19 @@ import clsx from "clsx";
 // anything past this count moves into the "More" dropdown instead.
 const MAX_NAV_CATEGORIES = 5;
 
+/** Initials avatar for a logged-in customer — same visual language as the admin sidebar's "RF" badge. */
+function CustomerAvatar({ customer, size = 32 }: { customer: Customer; size?: number }) {
+  const initials = `${customer.firstName[0] ?? ""}${customer.lastName[0] ?? ""}`.toUpperCase();
+  return (
+    <span
+      className="flex items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white font-bold flex-shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.4 }}
+    >
+      {initials || <User size={size * 0.55} />}
+    </span>
+  );
+}
+
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -253,8 +266,12 @@ export default function Navbar() {
               onMouseEnter={() => setActiveDropdown("account")}
               onMouseLeave={() => setActiveDropdown(null)}
             >
-              <button className="flex items-center gap-1.5 btn-ghost px-3 py-2 rounded-full text-sm font-medium max-w-[140px]">
-                <User size={18} />
+              <button className="flex items-center gap-1.5 btn-ghost px-2 py-1.5 rounded-full text-sm font-medium max-w-[160px]">
+                {currentCustomer ? (
+                  <CustomerAvatar customer={currentCustomer} size={28} />
+                ) : (
+                  <User size={18} />
+                )}
                 {currentCustomer && (
                   <span className="truncate hidden md:inline">{currentCustomer.firstName}</span>
                 )}
@@ -271,11 +288,14 @@ export default function Navbar() {
                 <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in z-50">
                   {currentCustomer ? (
                     <>
-                      <div className="px-4 py-2 border-b border-gray-100 mb-1">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {currentCustomer.firstName} {currentCustomer.lastName}
-                        </p>
-                        <p className="text-xs text-gray-400 truncate">{currentCustomer.email}</p>
+                      <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-100 mb-1">
+                        <CustomerAvatar customer={currentCustomer} size={36} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {currentCustomer.firstName} {currentCustomer.lastName}
+                          </p>
+                          <p className="text-xs text-gray-400 truncate">{currentCustomer.email}</p>
+                        </div>
                       </div>
                       <Link
                         href="/cart?tab=orders"
@@ -454,11 +474,14 @@ export default function Navbar() {
             <div className="pt-3 mt-1 border-t border-gray-100">
               {currentCustomer ? (
                 <>
-                  <div className="px-3 py-2">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {currentCustomer.firstName} {currentCustomer.lastName}
-                    </p>
-                    <p className="text-xs text-gray-400">{currentCustomer.email}</p>
+                  <div className="flex items-center gap-3 px-3 py-2">
+                    <CustomerAvatar customer={currentCustomer} size={40} />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {currentCustomer.firstName} {currentCustomer.lastName}
+                      </p>
+                      <p className="text-xs text-gray-400">{currentCustomer.email}</p>
+                    </div>
                   </div>
                   <Link
                     href="/cart?tab=orders"

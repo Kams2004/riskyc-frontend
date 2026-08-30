@@ -2,10 +2,13 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useStore } from "@/lib/store";
-import { getConversation, getConversationForCustomer, createConversation, sendMessage, sendImageMessage } from "@/lib/api/conversations";
+import { getConversation, getConversationForCustomer, createConversation, sendMessage, sendImageMessage, sendVoiceMessage } from "@/lib/api/conversations";
 import { useConversationSocket } from "@/lib/chatSocket";
+import { useVoiceRecorder } from "@/lib/useVoiceRecorder";
 import { ChatMessage } from "@/lib/types";
-import { MessageCircle, X, Send, Minimize2, Paperclip } from "@/components/icons/fa";
+import { MessageCircle, X, Send, Minimize2, Paperclip, Mic } from "@/components/icons/fa";
+import VoiceRecorderBar from "@/components/chat/VoiceRecorderBar";
+import VoiceMessageBubble from "@/components/chat/VoiceMessageBubble";
 import clsx from "clsx";
 
 export default function ChatBlob() {
@@ -16,8 +19,11 @@ export default function ChatBlob() {
   const [minimized, setMinimized] = useState(false);
   const [stagedImage, setStagedImage] = useState<File | null>(null);
   const [stagedPreview, setStagedPreview] = useState<string | null>(null);
+  const [sendError, setSendError] = useState(false);
+  const [voiceUploading, setVoiceUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const voiceRecorder = useVoiceRecorder();
 
   useEffect(() => {
     if (!conversationId) return;
@@ -87,10 +93,12 @@ export default function ChatBlob() {
   const handleSend = async () => {
     const text = input.trim();
     if ((!text && !stagedImage) || sending) return;
+    // Keep the text (and staged image) in place until the send actually
+    // succeeds — clearing it optimistically meant a failed send silently
+    // ate the message with no way to retry it.
     const imageToSend = stagedImage;
-    setInput("");
-    clearStagedImage();
     setSending(true);
+    setSendError(false);
     try {
       let convId = conversationId;
       if (!convId) {
@@ -104,10 +112,34 @@ export default function ChatBlob() {
         ? await sendImageMessage(convId, "CUSTOMER", imageToSend, text)
         : await sendMessage({ conversationId: convId, sender: "CUSTOMER", text });
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      setInput("");
+      clearStagedImage();
     } catch {
-      // silently drop — the message stays in the input-less state; user can retry
+      setSendError(true);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleSendVoice = async (blob: Blob, durationSeconds: number) => {
+    setVoiceUploading(true);
+    try {
+      let convId = conversationId;
+      if (!convId) {
+        const name = customer ? `${customer.firstName} ${customer.lastName}` : "Guest";
+        const conv = await createConversation({ customerName: name, customerId: customer?.id });
+        convId = conv.id;
+        setConversationId(convId);
+        setMessages(conv.messages);
+      }
+      const msg = await sendVoiceMessage(convId, "CUSTOMER", blob, durationSeconds);
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      voiceRecorder.reset();
+    } catch {
+      setSendError(true);
+      voiceRecorder.reset();
+    } finally {
+      setVoiceUploading(false);
     }
   };
 
@@ -187,6 +219,14 @@ export default function ChatBlob() {
                       className={clsx("rounded-xl max-w-full max-h-48 object-cover mb-1.5", msg.text ? "" : "mb-0")}
                     />
                   )}
+                  {msg.voiceUrl && (
+                    <VoiceMessageBubble
+                      url={msg.voiceUrl}
+                      durationSeconds={msg.voiceDurationSeconds}
+                      messageId={msg.id}
+                      variant={msg.sender === "CUSTOMER" ? "sent" : "received"}
+                    />
+                  )}
                   {msg.text}
                   <div
                     className={clsx(
@@ -229,38 +269,66 @@ export default function ChatBlob() {
                 </button>
               </div>
             )}
-            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-200 focus-within:border-brand-300 transition-colors">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                title="Attach a photo"
-                className="text-gray-400 hover:text-brand-500 transition-colors flex-shrink-0"
-              >
-                <Paperclip size={16} />
-              </button>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Type a message..."
-                className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
+            {voiceRecorder.state === "recording" || voiceRecorder.state === "paused" ? (
+              <VoiceRecorderBar
+                recorder={voiceRecorder}
+                onCancel={voiceRecorder.discard}
+                onSend={handleSendVoice}
+                uploading={voiceUploading}
               />
-              <button
-                onClick={handleSend}
-                disabled={(!input.trim() && !stagedImage) || sending}
-                className={clsx(
-                  "w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0",
-                  input.trim() || stagedImage
-                    ? "bg-brand-500 text-white hover:bg-brand-600 shadow-sm"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            ) : (
+              <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-200 focus-within:border-brand-300 transition-colors">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach a photo"
+                  className="text-gray-400 hover:text-brand-500 transition-colors flex-shrink-0"
+                >
+                  <Paperclip size={16} />
+                </button>
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => { setInput(e.target.value); setSendError(false); }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  placeholder="Type a message..."
+                  disabled={sending}
+                  className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400 disabled:opacity-60"
+                />
+                {!input.trim() && !stagedImage ? (
+                  <button
+                    onClick={voiceRecorder.start}
+                    title="Record a voice message"
+                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0 bg-gray-200 text-gray-500 hover:bg-brand-500 hover:text-white"
+                  >
+                    <Mic size={14} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSend}
+                    disabled={sending}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0 bg-brand-500 text-white hover:bg-brand-600 shadow-sm"
+                  >
+                    {sending ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Send size={14} />
+                    )}
+                  </button>
                 )}
-              >
-                <Send size={14} />
-              </button>
-            </div>
-            <p className="text-center text-[10px] text-gray-300 mt-1.5">
-              Riskyc Fashion · Douala, Cameroon
-            </p>
+              </div>
+            )}
+            {voiceRecorder.error && (
+              <p className="text-center text-[10px] text-red-500 mt-1.5">{voiceRecorder.error}</p>
+            )}
+            {sendError ? (
+              <p className="text-center text-[10px] text-red-500 mt-1.5">
+                Couldn&apos;t send — check your connection and try again.
+              </p>
+            ) : (
+              <p className="text-center text-[10px] text-gray-300 mt-1.5">
+                Riskyc Fashion · Douala, Cameroon
+              </p>
+            )}
           </div>
         </div>
       )}

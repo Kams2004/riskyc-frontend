@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         // Account/checkout pages carry no SEO value and shouldn't be indexed —
         // the admin panel especially should never show up in search results.
-        disallow: ["/admin", "/cart", "/login", "/register"],
+        disallow: ["/admin", "/cart", "/login", "/register", "/track"],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

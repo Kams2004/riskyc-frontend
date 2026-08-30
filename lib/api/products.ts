@@ -62,6 +62,7 @@ export interface ProductInput {
   rating?: number;
   reviews?: number;
   colors: { name: string; hex: string; stock?: number | null }[];
+  bulkPrices?: { quantity: number; price: number }[];
 }
 
 export function createProduct(data: ProductInput, token: string) {
