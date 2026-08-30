@@ -34,7 +34,11 @@ export default function CartItems({ onCheckout }: Props) {
   }
 
   const total = getCartTotal();
-  const shipping = total >= 50000 ? 0 : 2500;
+  const bulkSavings = items.reduce((sum, item) => {
+    const actual = computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity);
+    const undiscounted = item.product.price * item.quantity;
+    return sum + Math.max(0, undiscounted - actual);
+  }, 0);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -173,6 +177,14 @@ export default function CartItems({ onCheckout }: Props) {
             </div>
           </div>
         ))}
+
+        {/* Add more articles */}
+        <Link
+          href="/products"
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-300 hover:bg-brand-50/50 text-sm font-semibold text-gray-500 hover:text-brand-600 transition-all"
+        >
+          <Plus size={16} /> Add more articles
+        </Link>
       </div>
 
       {/* Order summary */}
@@ -185,27 +197,18 @@ export default function CartItems({ onCheckout }: Props) {
           <div className="space-y-3 mb-5">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Subtotal</span>
-              <span className="font-medium">{formatPrice(total)}</span>
+              <span className="font-medium">{formatPrice(total + bulkSavings)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Shipping</span>
-              <span
-                className={
-                  shipping === 0 ? "text-green-600 font-medium" : "font-medium"
-                }
-              >
-                {shipping === 0 ? "Free 🎉" : formatPrice(shipping)}
-              </span>
-            </div>
-            {shipping > 0 && (
-              <p className="text-xs text-gray-400 bg-gray-50 p-2 rounded-lg">
-                Add {formatPrice(50000 - total)} more for free shipping
-              </p>
+            {bulkSavings > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Bulk pricing savings</span>
+                <span className="text-green-600 font-medium">−{formatPrice(bulkSavings)}</span>
+              </div>
             )}
             <div className="border-t border-gray-100 pt-3 flex justify-between">
               <span className="font-semibold text-gray-900">Total</span>
               <span className="font-bold text-xl text-brand-600">
-                {formatPrice(total + shipping)}
+                {formatPrice(total)}
               </span>
             </div>
           </div>
@@ -224,7 +227,7 @@ export default function CartItems({ onCheckout }: Props) {
             onClick={onCheckout}
             className="w-full btn-primary py-4 text-base rounded-2xl"
           >
-            Proceed to Checkout
+            Pay Now
             <ArrowRight size={18} />
           </button>
 

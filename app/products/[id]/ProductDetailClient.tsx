@@ -237,8 +237,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
       });
     }
     setImageQuantityOpen(false);
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
+    router.push("/cart");
   };
 
   const handleWhatsApp = () => {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
 import { computeLineTotal, computeLineBreakdown } from "@/lib/pricing";
-import { X, Plus, Minus, ShoppingCart, Trash2, ImageIcon, ChevronDown } from "@/components/icons/fa";
+import { X, Plus, Minus, CreditCard, Trash2, ImageIcon, ChevronDown } from "@/components/icons/fa";
 import clsx from "clsx";
 
 export interface ImageQuantitySelection {
@@ -302,7 +302,7 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
                 : "bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20"
             )}
           >
-            <ShoppingCart size={16} /> Add to Cart
+            <CreditCard size={16} /> Checkout
           </button>
         </div>
       </div>
