@@ -11,8 +11,8 @@ interface CartStore {
 
   // Cart actions
   addToCart: (item: CartItem) => void;
-  removeFromCart: (productId: string, color: string) => void;
-  updateQuantity: (productId: string, color: string, quantity: number) => void;
+  removeFromCart: (productId: string, color: string, selectedImageIndex?: number) => void;
+  updateQuantity: (productId: string, color: string, quantity: number, selectedImageIndex?: number) => void;
   clearCart: () => void;
   getCartTotal: () => number;
   getCartCount: () => number;
@@ -58,43 +58,39 @@ export const useStore = create<CartStore>()(
       /* ── Cart ── */
       addToCart: (newItem) =>
         set((state) => {
-          const existing = state.items.find(
-            (i) =>
-              i.product.id === newItem.product.id &&
-              i.selectedColor === newItem.selectedColor &&
-              i.selectedSize === newItem.selectedSize
-          );
+          const sameLine = (i: CartItem) =>
+            i.product.id === newItem.product.id &&
+            i.selectedColor === newItem.selectedColor &&
+            i.selectedSize === newItem.selectedSize &&
+            i.selectedImageIndex === newItem.selectedImageIndex;
+          const existing = state.items.find(sameLine);
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.product.id === newItem.product.id &&
-                i.selectedColor === newItem.selectedColor &&
-                i.selectedSize === newItem.selectedSize
-                  ? { ...i, quantity: i.quantity + newItem.quantity }
-                  : i
+                sameLine(i) ? { ...i, quantity: i.quantity + newItem.quantity } : i
               ),
             };
           }
           return { items: [...state.items, newItem] };
         }),
 
-      removeFromCart: (productId, color) =>
+      removeFromCart: (productId, color, selectedImageIndex) =>
         set((state) => ({
           items: state.items.filter(
-            (i) => !(i.product.id === productId && i.selectedColor === color)
+            (i) => !(i.product.id === productId && i.selectedColor === color && i.selectedImageIndex === selectedImageIndex)
           ),
         })),
 
-      updateQuantity: (productId, color, quantity) =>
+      updateQuantity: (productId, color, quantity, selectedImageIndex) =>
         set((state) => ({
           items:
             quantity <= 0
               ? state.items.filter(
                   (i) =>
-                    !(i.product.id === productId && i.selectedColor === color)
+                    !(i.product.id === productId && i.selectedColor === color && i.selectedImageIndex === selectedImageIndex)
                 )
               : state.items.map((i) =>
-                  i.product.id === productId && i.selectedColor === color
+                  i.product.id === productId && i.selectedColor === color && i.selectedImageIndex === selectedImageIndex
                     ? { ...i, quantity }
                     : i
                 ),

@@ -246,6 +246,11 @@ export default function AdminOrderDetailPage() {
                             {item.selectedSize}
                           </span>
                         )}
+                        {item.selectedImageIndex != null && (
+                          <span className={clsx("text-xs px-2 py-0.5 rounded-full", c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-600")}>
+                            Photo {item.selectedImageIndex + 1}
+                          </span>
+                        )}
                         <span className={clsx("text-xs px-2 py-0.5 rounded-full font-semibold", c.isDark ? "bg-brand-500/15 text-brand-400" : "bg-brand-50 text-brand-600")}>
                           ×{item.quantity}
                         </span>

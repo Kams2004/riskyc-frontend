@@ -54,7 +54,7 @@ export default function CartItems({ onCheckout }: Props) {
 
         {items.map((item) => (
           <div
-            key={`${item.product.id}-${item.selectedColor}-${item.selectedSize}`}
+            key={`${item.product.id}-${item.selectedColor}-${item.selectedSize}-${item.selectedImageIndex ?? ""}`}
             className="card p-4 flex gap-4 border border-gray-100 animate-fade-in"
           >
             {/* Image */}
@@ -64,7 +64,11 @@ export default function CartItems({ onCheckout }: Props) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={item.product.media[0]?.presignedUrl}
+                src={
+                  (item.selectedImageIndex != null
+                    ? item.product.media[item.selectedImageIndex]?.presignedUrl
+                    : undefined) ?? item.product.media[0]?.presignedUrl
+                }
                 alt={item.product.name}
                 className="w-full h-full object-cover hover:scale-105 transition-transform"
               />
@@ -81,22 +85,30 @@ export default function CartItems({ onCheckout }: Props) {
 
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
                 {/* Color badge */}
-                <span className="flex items-center gap-1.5 text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
-                  <span
-                    className="w-3 h-3 rounded-full border border-gray-200"
-                    style={{
-                      backgroundColor:
-                        item.product.colors.find(
-                          (c) => c.name === item.selectedColor
-                        )?.hex || "#ccc",
-                    }}
-                  />
-                  {item.selectedColor}
-                </span>
+                {item.selectedColor && (
+                  <span className="flex items-center gap-1.5 text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
+                    <span
+                      className="w-3 h-3 rounded-full border border-gray-200"
+                      style={{
+                        backgroundColor:
+                          item.product.colors.find(
+                            (c) => c.name === item.selectedColor
+                          )?.hex || "#ccc",
+                      }}
+                    />
+                    {item.selectedColor}
+                  </span>
+                )}
                 {/* Size badge */}
                 {item.selectedSize && (
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
                     Size: {item.selectedSize}
+                  </span>
+                )}
+                {/* Photo badge — shown for items picked via "quantity by photo" */}
+                {item.selectedImageIndex != null && (
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
+                    Photo {item.selectedImageIndex + 1}
                   </span>
                 )}
               </div>
@@ -109,7 +121,8 @@ export default function CartItems({ onCheckout }: Props) {
                       updateQuantity(
                         item.product.id,
                         item.selectedColor,
-                        item.quantity - 1
+                        item.quantity - 1,
+                        item.selectedImageIndex
                       )
                     }
                     className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors"
@@ -124,7 +137,8 @@ export default function CartItems({ onCheckout }: Props) {
                       updateQuantity(
                         item.product.id,
                         item.selectedColor,
-                        item.quantity + 1
+                        item.quantity + 1,
+                        item.selectedImageIndex
                       )
                     }
                     className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors"
@@ -148,7 +162,7 @@ export default function CartItems({ onCheckout }: Props) {
                 {/* Remove */}
                 <button
                   onClick={() =>
-                    removeFromCart(item.product.id, item.selectedColor)
+                    removeFromCart(item.product.id, item.selectedColor, item.selectedImageIndex)
                   }
                   className="text-gray-300 hover:text-red-500 transition-colors"
                   title="Remove item"

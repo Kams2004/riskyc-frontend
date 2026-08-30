@@ -9,6 +9,7 @@ import { useCategories } from "@/lib/useCategories";
 import { Product } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import ProductCard from "@/components/products/ProductCard";
+import ImageQuantityPicker, { ImageQuantitySelection } from "@/components/products/ImageQuantityPicker";
 import CheckoutFlow from "@/components/cart/CheckoutFlow";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import {
@@ -25,6 +26,7 @@ import {
   HelpCircle,
   X,
   MessageCircle,
+  ImageIcon,
 } from "@/components/icons/fa";
 import clsx from "clsx";
 import Link from "next/link";
@@ -138,6 +140,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const [howToOrderOpen, setHowToOrderOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [imageQuantityOpen, setImageQuantityOpen] = useState(false);
 
   // Pressing the device/browser back button while the lightbox is open
   // should close it instead of navigating away from the product page.
@@ -203,6 +206,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
   const priceUnset = product.price <= 0;
+  const imageCount = product.media.filter((m) => m.type === "IMAGE").length;
   const categoryInfo = categories.find((c) => c.slug === product.categorySlug);
 
   const handleAddToCart = () => {
@@ -216,6 +220,21 @@ export default function ProductDetailClient({ productId }: { productId: string }
     if (priceUnset) return;
     addToCart({ product, quantity: qty, selectedColor, selectedSize });
     setCheckoutOpen(true);
+  };
+
+  const handleImageQuantityConfirm = (selections: ImageQuantitySelection[]) => {
+    for (const sel of selections) {
+      addToCart({
+        product,
+        quantity: sel.quantity,
+        selectedColor: "",
+        selectedSize,
+        selectedImageIndex: sel.imageIndex,
+      });
+    }
+    setImageQuantityOpen(false);
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const handleWhatsApp = () => {
@@ -479,6 +498,25 @@ export default function ProductDetailClient({ productId }: { productId: string }
             </div>
           )}
 
+          {/* Quantity by photo — offered instead of colors, for products whose photos are the real "variant" */}
+          {product.colors.length === 0 && imageCount > 0 && (
+            <div className="mb-5">
+              <button
+                onClick={() => setImageQuantityOpen(true)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-300 hover:bg-brand-50/50 transition-all text-left group"
+              >
+                <span className="w-10 h-10 rounded-xl bg-gray-100 group-hover:bg-brand-100 flex items-center justify-center text-gray-500 group-hover:text-brand-600 flex-shrink-0 transition-colors">
+                  <ImageIcon size={18} />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-gray-800">Choose quantity by photo</span>
+                  <span className="block text-xs text-gray-400">Pick different quantities for different photos</span>
+                </span>
+                <ChevronRight size={16} className="text-gray-300 group-hover:text-brand-400 flex-shrink-0" />
+              </button>
+            </div>
+          )}
+
           {/* Sizes */}
           {product.sizes && (
             <div className="mb-5">
@@ -722,6 +760,15 @@ export default function ProductDetailClient({ productId }: { productId: string }
       {/* How to Order modal */}
       {howToOrderOpen && (
         <HowToOrderModal onClose={() => setHowToOrderOpen(false)} />
+      )}
+
+      {/* Quantity-by-photo modal */}
+      {imageQuantityOpen && (
+        <ImageQuantityPicker
+          product={product}
+          onClose={() => setImageQuantityOpen(false)}
+          onConfirm={handleImageQuantityConfirm}
+        />
       )}
     </div>
   );

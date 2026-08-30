@@ -81,7 +81,12 @@ export function downloadReceipt(order: Order) {
   doc.setFontSize(10);
   doc.setTextColor(30, 30, 30);
   for (const item of order.items) {
-    const label = [item.productName, item.selectedColor, item.selectedSize].filter(Boolean).join(" — ");
+    const label = [
+      item.productName,
+      item.selectedColor,
+      item.selectedSize,
+      item.selectedImageIndex != null ? `Photo ${item.selectedImageIndex + 1}` : null,
+    ].filter(Boolean).join(" — ");
     const lines = doc.splitTextToSize(label, pageWidth - margin * 2 - 180);
     doc.text(lines, margin, y);
     doc.text(String(item.quantity), pageWidth - margin - 160, y);

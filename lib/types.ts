@@ -58,6 +58,8 @@ export interface CartItem {
   quantity: number;
   selectedColor: string;
   selectedSize?: string;
+  /** Which of the product's photos this line was ordered against — set only via the "quantity by photo" picker (colorless products). */
+  selectedImageIndex?: number;
 }
 
 // ── Categories ───────────────────────────────────────────────────────────────
@@ -110,6 +112,8 @@ export interface OrderItem {
   quantity: number;
   selectedColor?: string | null;
   selectedSize?: string | null;
+  /** Which of the product's photos this line was ordered against — set only via the "quantity by photo" picker. */
+  selectedImageIndex?: number | null;
   unitPrice: number;
 }
 

@@ -6,6 +6,7 @@ export interface CreateOrderItemInput {
   quantity: number;
   selectedColor?: string;
   selectedSize?: string;
+  selectedImageIndex?: number;
 }
 
 export function createOrder(data: { customerId?: string; items: CreateOrderItemInput[]; customerInfo: CustomerInfo }) {

@@ -122,6 +122,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
           quantity: item.quantity,
           selectedColor: item.selectedColor ?? undefined,
           selectedSize: item.selectedSize ?? undefined,
+          selectedImageIndex: item.selectedImageIndex,
         })),
         customerInfo,
       });
@@ -279,11 +280,26 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-white">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.product.media[0]?.presignedUrl} alt={item.product.name} className="w-full h-full object-cover" />
+                      <img
+                        src={
+                          (item.selectedImageIndex != null
+                            ? item.product.media[item.selectedImageIndex]?.presignedUrl
+                            : undefined) ?? item.product.media[0]?.presignedUrl
+                        }
+                        alt={item.product.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">{item.product.name}</p>
-                      <p className="text-xs text-gray-400">{item.selectedColor} · {item.selectedSize} · ×{item.quantity}</p>
+                      <p className="text-xs text-gray-400">
+                        {[
+                          item.selectedColor || null,
+                          item.selectedSize || null,
+                          item.selectedImageIndex != null ? `Photo ${item.selectedImageIndex + 1}` : null,
+                        ].filter(Boolean).join(" · ")}
+                        {" · ×"}{item.quantity}
+                      </p>
                     </div>
                     <span className="text-sm font-semibold text-brand-600 flex-shrink-0">{formatPrice(computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity))}</span>
                   </div>
