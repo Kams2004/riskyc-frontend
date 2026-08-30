@@ -30,6 +30,10 @@ interface Props {
 export default function VoiceMessageBubble({ url, durationSeconds, messageId, variant }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
+  // True while the browser is still fetching/buffering audio data after a
+  // play request — the file may not be fully downloaded yet, so without
+  // this the button would look dead/unresponsive for a moment.
+  const [buffering, setBuffering] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(durationSeconds ?? 0);
   const bars = useMemo(() => seededBars(messageId), [messageId]);
@@ -43,15 +47,34 @@ export default function VoiceMessageBubble({ url, durationSeconds, messageId, va
     };
     const onEnd = () => {
       setPlaying(false);
+      setBuffering(false);
       setCurrentTime(0);
     };
+    const onWaiting = () => setBuffering(true);
+    const onPlaying = () => {
+      setBuffering(false);
+      setPlaying(true);
+    };
+    const onPause = () => {
+      setPlaying(false);
+      setBuffering(false);
+    };
+    const onCanPlay = () => setBuffering(false);
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("loadedmetadata", onLoaded);
     audio.addEventListener("ended", onEnd);
+    audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("playing", onPlaying);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("canplay", onCanPlay);
     return () => {
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("loadedmetadata", onLoaded);
       audio.removeEventListener("ended", onEnd);
+      audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("playing", onPlaying);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("canplay", onCanPlay);
     };
   }, []);
 
@@ -60,10 +83,11 @@ export default function VoiceMessageBubble({ url, durationSeconds, messageId, va
     if (!audio) return;
     if (playing) {
       audio.pause();
-      setPlaying(false);
     } else {
-      audio.play().catch(() => {});
-      setPlaying(true);
+      // Show the spinner immediately on click — the 'playing'/'canplay'
+      // events (or the catch below, if it fails outright) clear it.
+      setBuffering(true);
+      audio.play().catch(() => setBuffering(false));
     }
   };
 
@@ -76,12 +100,19 @@ export default function VoiceMessageBubble({ url, durationSeconds, messageId, va
       <audio ref={audioRef} src={url} preload="metadata" />
       <button
         onClick={toggle}
+        disabled={buffering}
         className={clsx(
           "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
           sent ? "bg-white/25 text-white hover:bg-white/35" : "bg-brand-500 text-white hover:bg-brand-600"
         )}
       >
-        {playing ? <Pause size={12} /> : <Play size={12} className="ml-0.5" />}
+        {buffering ? (
+          <div className="w-3 h-3 border-2 border-current/40 border-t-current rounded-full animate-spin" />
+        ) : playing ? (
+          <Pause size={12} />
+        ) : (
+          <Play size={12} className="ml-0.5" />
+        )}
       </button>
 
       <div className="flex-1 flex items-center gap-[2px] h-6">

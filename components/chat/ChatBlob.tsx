@@ -21,6 +21,7 @@ export default function ChatBlob() {
   const [stagedPreview, setStagedPreview] = useState<string | null>(null);
   const [sendError, setSendError] = useState(false);
   const [voiceUploading, setVoiceUploading] = useState(false);
+  const [pendingVoiceDuration, setPendingVoiceDuration] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const voiceRecorder = useVoiceRecorder();
@@ -122,7 +123,11 @@ export default function ChatBlob() {
   };
 
   const handleSendVoice = async (blob: Blob, durationSeconds: number) => {
+    // Kept true — and the pending bubble below kept visible — for the whole
+    // request so the customer never sees "not loading" before the real
+    // message has actually landed in the list.
     setVoiceUploading(true);
+    setPendingVoiceDuration(durationSeconds);
     try {
       let convId = conversationId;
       if (!convId) {
@@ -140,6 +145,7 @@ export default function ChatBlob() {
       voiceRecorder.reset();
     } finally {
       setVoiceUploading(false);
+      setPendingVoiceDuration(null);
     }
   };
 
@@ -244,6 +250,18 @@ export default function ChatBlob() {
                 </div>
               </div>
             ))}
+            {pendingVoiceDuration != null && (
+              <div className="flex gap-2 animate-slide-up flex-row-reverse">
+                <div className="max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed bg-brand-500/60 text-white rounded-br-md">
+                  <div className="flex items-center gap-2 min-w-[120px]">
+                    <div className="w-8 h-8 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
+                      <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    </div>
+                    <span className="text-xs text-white/90">Sending voice message…</span>
+                  </div>
+                </div>
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
 

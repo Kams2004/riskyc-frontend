@@ -60,6 +60,7 @@ export default function AdminChatPage() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [voiceUploading, setVoiceUploading] = useState(false);
+  const [pendingVoiceDuration, setPendingVoiceDuration] = useState<number | null>(null);
   const voiceRecorder = useVoiceRecorder();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -128,7 +129,11 @@ export default function AdminChatPage() {
 
   const handleSendVoice = async (blob: Blob, durationSeconds: number) => {
     if (!selectedId) return;
+    // Kept true — and the pending bubble below kept visible — for the whole
+    // request so the admin never sees "not loading" before the real
+    // message has actually landed in the thread.
     setVoiceUploading(true);
+    setPendingVoiceDuration(durationSeconds);
     try {
       const sent = await conversationsApi.sendVoiceMessage(selectedId, "ADMIN", blob, durationSeconds, token ?? undefined);
       setConversations((prev) =>
@@ -143,6 +148,7 @@ export default function AdminChatPage() {
       voiceRecorder.reset();
     } finally {
       setVoiceUploading(false);
+      setPendingVoiceDuration(null);
     }
   };
 
@@ -579,6 +585,19 @@ export default function AdminChatPage() {
                       </div>
                     );
                   })
+                )}
+                {pendingVoiceDuration != null && (
+                  <div className="flex gap-2.5 animate-fade-in flex-row-reverse">
+                    <div className={clsx("w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5", isDark ? "bg-brand-500/20 border border-brand-500/30" : "bg-brand-500 shadow-sm")}>
+                      <Shield size={12} className={isDark ? "text-brand-400" : "text-white"} />
+                    </div>
+                    <div className={clsx("max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed", isDark ? "bg-brand-500/25 border border-brand-500/20 text-brand-100 rounded-br-sm" : "bg-brand-500 text-white rounded-br-sm shadow-sm")}>
+                      <div className="flex items-center gap-2 min-w-[120px]">
+                        <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin flex-shrink-0" />
+                        <span className="text-xs">Sending voice message…</span>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 <div ref={bottomRef} />
               </div>
