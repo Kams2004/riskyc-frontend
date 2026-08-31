@@ -27,7 +27,7 @@ interface CartStore {
 
   // Which conversation this browser/customer owns — created lazily on first message
   conversationId: string | null;
-  setConversationId: (id: string) => void;
+  setConversationId: (id: string | null) => void;
 
   // One-shot prefill (e.g. from a product's "Ask about this product" button) — ChatBlob
   // consumes it into its input/staged-image on open, then it's cleared.

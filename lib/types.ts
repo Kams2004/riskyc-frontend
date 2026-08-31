@@ -172,6 +172,9 @@ export interface Conversation {
   unread: number;
   createdAt: string;
   lastMessageAt?: string | null;
+  /** When each side last opened/viewed this thread — drives read-receipt ticks (a message is "read" once the other side's timestamp is at or after it). */
+  customerReadAt?: string | null;
+  adminReadAt?: string | null;
 }
 
 // ── Notifications ────────────────────────────────────────────────────────────

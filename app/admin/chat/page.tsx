@@ -3,7 +3,7 @@
 import AdminShell from "@/components/admin/AdminShell";
 import { useAdminStore } from "@/lib/adminStore";
 import * as conversationsApi from "@/lib/api/conversations";
-import { useConversationSocket, useAdminNotificationSocket } from "@/lib/chatSocket";
+import { useConversationSocket, useAdminNotificationSocket, useConversationReadStatusSocket } from "@/lib/chatSocket";
 import { useAdminTheme } from "@/lib/adminTheme";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -23,6 +23,8 @@ import {
   Clock,
   Search,
   Mic,
+  Check,
+  CheckCheck,
 } from "lucide-react";
 import clsx from "clsx";
 import { Conversation, ChatMessage } from "@/lib/types";
@@ -80,6 +82,18 @@ export default function AdminChatPage() {
 
   useConversationSocket(selectedId, handleIncoming);
 
+  // Live tick updates — the customer opening/reading this thread.
+  const handleReadStatus = useCallback((status: { conversationId: string; customerReadAt: string | null; adminReadAt: string | null }) => {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === status.conversationId
+          ? { ...c, customerReadAt: status.customerReadAt, adminReadAt: status.adminReadAt }
+          : c
+      )
+    );
+  }, []);
+  useConversationReadStatusSocket(selectedId, handleReadStatus);
+
   const selectedConv: Conversation | undefined = conversations.find(
     (c) => c.id === selectedId
   );
@@ -97,7 +111,9 @@ export default function AdminChatPage() {
     setInput("");
     if (token) {
       conversationsApi.markConversationRead(id, token).catch(() => {});
-      setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)));
+      setConversations((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, unread: 0, adminReadAt: new Date().toISOString() } : c))
+      );
     }
   };
 
@@ -566,11 +582,11 @@ export default function AdminChatPage() {
                           {msg.text && <p>{msg.text}</p>}
                           <p
                             className={clsx(
-                              "text-[10px] mt-1",
+                              "text-[10px] mt-1 flex items-center gap-1",
                               isAdmin
                                 ? isDark
-                                  ? "text-brand-400/60 text-right"
-                                  : "text-white/70 text-right"
+                                  ? "text-brand-400/60 justify-end"
+                                  : "text-white/70 justify-end"
                                 : isDark
                                 ? "text-gray-500"
                                 : "text-gray-400"
@@ -581,6 +597,12 @@ export default function AdminChatPage() {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
+                            {isAdmin &&
+                              (selectedConv.customerReadAt && new Date(selectedConv.customerReadAt) >= new Date(msg.timestamp) ? (
+                                <CheckCheck size={12} className={isDark ? "text-brand-300" : "text-white"} />
+                              ) : (
+                                <Check size={12} />
+                              ))}
                           </p>
                         </div>
                       </div>

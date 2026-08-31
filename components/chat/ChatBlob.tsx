@@ -2,11 +2,12 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useStore } from "@/lib/store";
-import { getConversation, getConversationForCustomer, createConversation, sendMessage, sendImageMessage, sendVoiceMessage } from "@/lib/api/conversations";
-import { useConversationSocket } from "@/lib/chatSocket";
+import { getConversation, getConversationForCustomer, createConversation, sendMessage, sendImageMessage, sendVoiceMessage, markConversationReadByCustomer } from "@/lib/api/conversations";
+import { useConversationSocket, useConversationReadStatusSocket } from "@/lib/chatSocket";
 import { useVoiceRecorder } from "@/lib/useVoiceRecorder";
 import { ChatMessage } from "@/lib/types";
-import { MessageCircle, X, Send, Minimize2, Paperclip, Mic } from "@/components/icons/fa";
+import { ApiError } from "@/lib/apiClient";
+import { MessageCircle, X, Send, Minimize2, Paperclip, Mic, Check, CheckDouble } from "@/components/icons/fa";
 import VoiceRecorderBar from "@/components/chat/VoiceRecorderBar";
 import VoiceMessageBubble from "@/components/chat/VoiceMessageBubble";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -24,6 +25,10 @@ export default function ChatBlob() {
   const [sendError, setSendError] = useState(false);
   const [voiceUploading, setVoiceUploading] = useState(false);
   const [pendingVoiceDuration, setPendingVoiceDuration] = useState<number | null>(null);
+  const [readStatus, setReadStatus] = useState<{ customerReadAt: string | null; adminReadAt: string | null }>({
+    customerReadAt: null,
+    adminReadAt: null,
+  });
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const voiceRecorder = useVoiceRecorder();
@@ -31,9 +36,36 @@ export default function ChatBlob() {
   useEffect(() => {
     if (!conversationId) return;
     getConversation(conversationId)
-      .then((c) => setMessages(c.messages))
+      .then((c) => {
+        setMessages(c.messages);
+        setReadStatus({ customerReadAt: c.customerReadAt ?? null, adminReadAt: c.adminReadAt ?? null });
+      })
+      .catch((e) => {
+        // A conversationId cached from a previous session (e.g. an admin
+        // deleted it, or the DB was reset) 404s forever otherwise — drop it
+        // so the adopt-existing-conversation effect below, or the next
+        // send, starts fresh instead of the widget staying broken.
+        if (e instanceof ApiError && e.status === 404) {
+          setConversationId(null);
+          setMessages([]);
+        }
+      });
+  }, [conversationId, setConversationId]);
+
+  // Live tick updates — the other side opening/reading this thread.
+  useConversationReadStatusSocket(conversationId, (status) => {
+    setReadStatus({ customerReadAt: status.customerReadAt, adminReadAt: status.adminReadAt });
+  });
+
+  // Tell the backend the customer has viewed this thread whenever the widget
+  // is actually open and visible — on open, and again whenever a new message
+  // arrives while it stays open — so the admin's ticks update live.
+  useEffect(() => {
+    if (!chatOpen || minimized || !conversationId) return;
+    markConversationReadByCustomer(conversationId)
+      .then(() => setReadStatus((prev) => ({ ...prev, customerReadAt: new Date().toISOString() })))
       .catch(() => {});
-  }, [conversationId]);
+  }, [chatOpen, minimized, conversationId, messages.length]);
 
   // A logged-in customer may already have a thread an admin started from the
   // order page — adopt it instead of starting a second, disconnected one.
@@ -93,6 +125,16 @@ export default function ChatBlob() {
     setStagedPreview(null);
   };
 
+  /** Starts a brand-new thread and points the widget at it — used both for a first message and to recover from a stale/deleted conversationId. */
+  const createFreshConversation = async () => {
+    const name = customer ? `${customer.firstName} ${customer.lastName}` : "Guest";
+    const conv = await createConversation({ customerName: name, customerId: customer?.id });
+    setConversationId(conv.id);
+    setMessages(conv.messages);
+    setReadStatus({ customerReadAt: null, adminReadAt: null });
+    return conv.id;
+  };
+
   const handleSend = async () => {
     const text = input.trim();
     if ((!text && !stagedImage) || sending) return;
@@ -103,17 +145,24 @@ export default function ChatBlob() {
     setSending(true);
     setSendError(false);
     try {
-      let convId = conversationId;
-      if (!convId) {
-        const name = customer ? `${customer.firstName} ${customer.lastName}` : "Guest";
-        const conv = await createConversation({ customerName: name, customerId: customer?.id });
-        convId = conv.id;
-        setConversationId(convId);
-        setMessages(conv.messages);
+      let convId = conversationId ?? (await createFreshConversation());
+      const doSend = () =>
+        imageToSend
+          ? sendImageMessage(convId, "CUSTOMER", imageToSend, text)
+          : sendMessage({ conversationId: convId, sender: "CUSTOMER", text });
+      let msg;
+      try {
+        msg = await doSend();
+      } catch (e) {
+        // The cached conversation no longer exists server-side — start a
+        // fresh one and retry once instead of failing the send outright.
+        if (e instanceof ApiError && e.status === 404) {
+          convId = await createFreshConversation();
+          msg = await doSend();
+        } else {
+          throw e;
+        }
       }
-      const msg = imageToSend
-        ? await sendImageMessage(convId, "CUSTOMER", imageToSend, text)
-        : await sendMessage({ conversationId: convId, sender: "CUSTOMER", text });
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       setInput("");
       clearStagedImage();
@@ -131,15 +180,18 @@ export default function ChatBlob() {
     setVoiceUploading(true);
     setPendingVoiceDuration(durationSeconds);
     try {
-      let convId = conversationId;
-      if (!convId) {
-        const name = customer ? `${customer.firstName} ${customer.lastName}` : "Guest";
-        const conv = await createConversation({ customerName: name, customerId: customer?.id });
-        convId = conv.id;
-        setConversationId(convId);
-        setMessages(conv.messages);
+      let convId = conversationId ?? (await createFreshConversation());
+      let msg;
+      try {
+        msg = await sendVoiceMessage(convId, "CUSTOMER", blob, durationSeconds);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) {
+          convId = await createFreshConversation();
+          msg = await sendVoiceMessage(convId, "CUSTOMER", blob, durationSeconds);
+        } else {
+          throw e;
+        }
       }
-      const msg = await sendVoiceMessage(convId, "CUSTOMER", blob, durationSeconds);
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       voiceRecorder.reset();
     } catch {
@@ -238,9 +290,9 @@ export default function ChatBlob() {
                   {msg.text}
                   <div
                     className={clsx(
-                      "text-[10px] mt-1",
+                      "text-[10px] mt-1 flex items-center gap-1",
                       msg.sender === "CUSTOMER"
-                        ? "text-brand-200 text-right"
+                        ? "text-brand-200 justify-end"
                         : "text-gray-400"
                     )}
                   >
@@ -248,6 +300,12 @@ export default function ChatBlob() {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
+                    {msg.sender === "CUSTOMER" &&
+                      (readStatus.adminReadAt && new Date(readStatus.adminReadAt) >= new Date(msg.timestamp) ? (
+                        <CheckDouble size={11} className="text-white" />
+                      ) : (
+                        <Check size={11} />
+                      ))}
                   </div>
                 </div>
               </div>

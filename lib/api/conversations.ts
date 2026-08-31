@@ -81,6 +81,11 @@ export function markConversationRead(id: string, token: string) {
   return apiFetch<void>(`/api/conversations/${id}/read`, { method: "POST", token });
 }
 
+/** Customer-side equivalent — no token, matching the rest of the public customer chat API. */
+export function markConversationReadByCustomer(id: string) {
+  return apiFetch<void>(`/api/conversations/${id}/read-by-customer`, { method: "POST" });
+}
+
 export function deleteConversation(id: string, token: string) {
   return apiFetch<void>(`/api/conversations/${id}`, { method: "DELETE", token });
 }

@@ -5,6 +5,12 @@ import { useEffect, useRef } from "react";
 import { API_BASE_URL } from "./apiClient";
 import { ChatMessage, AppNotification, Order } from "./types";
 
+interface ConversationReadStatus {
+  conversationId: string;
+  customerReadAt: string | null;
+  adminReadAt: string | null;
+}
+
 function wsUrl() {
   return API_BASE_URL.replace(/^http/, "ws") + "/ws";
 }
@@ -43,6 +49,44 @@ export function useConversationSocket(conversationId: string | null | undefined,
     const subscribe = () => {
       if (cancelled) return;
       subscription = client.subscribe(`/topic/conversations/${conversationId}`, (frame: IMessage) => {
+        handlerRef.current(JSON.parse(frame.body));
+      });
+    };
+
+    if (client.connected) {
+      subscribe();
+    } else {
+      client.onConnect = subscribe;
+    }
+
+    return () => {
+      cancelled = true;
+      subscription?.unsubscribe();
+    };
+  }, [conversationId]);
+}
+
+/**
+ * Subscribes to `/topic/conversations/{id}/read` — fires whenever either
+ * side opens this thread, so the other side's tick marks (1 sent / 2 read)
+ * update live instead of only on next reload.
+ */
+export function useConversationReadStatusSocket(
+  conversationId: string | null | undefined,
+  onUpdate: (status: ConversationReadStatus) => void
+) {
+  const handlerRef = useRef(onUpdate);
+  handlerRef.current = onUpdate;
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const client = getClient();
+    let subscription: { unsubscribe: () => void } | null = null;
+    let cancelled = false;
+
+    const subscribe = () => {
+      if (cancelled) return;
+      subscription = client.subscribe(`/topic/conversations/${conversationId}/read`, (frame: IMessage) => {
         handlerRef.current(JSON.parse(frame.body));
       });
     };
