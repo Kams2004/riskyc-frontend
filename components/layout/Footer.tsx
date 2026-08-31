@@ -13,7 +13,8 @@ import { useCategories } from "@/lib/useCategories";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 
 export default function Footer() {
-  const { categories } = useCategories();
+  const { categories: allCategories } = useCategories();
+  const categories = allCategories.filter((cat) => cat.productCount > 0);
 
   return (
     <footer className="bg-gray-900 text-gray-300 mt-16">

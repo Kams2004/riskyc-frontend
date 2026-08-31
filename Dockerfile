@@ -14,6 +14,10 @@ COPY . .
 # PUBLIC address, since this code runs in the visitor's browser, not in Docker.
 ARG NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+# Google Cloud Console > Credentials > OAuth client ID (Web application) —
+# see GOOGLE_CLIENT_ID in the backend's config for the matching server-side check.
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build

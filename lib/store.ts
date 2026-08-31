@@ -40,8 +40,10 @@ interface CartStore {
     email: string;
     phone?: string;
     password: string;
+    referralCode?: string;
   }) => Promise<{ ok: true; customer: Customer } | { ok: false; error: string }>;
   loginCustomer: (email: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  loginWithGoogle: (idToken: string, referralCode?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   logoutCustomer: () => void;
 }
 
@@ -130,6 +132,16 @@ export const useStore = create<CartStore>()(
           return { ok: true };
         } catch (e) {
           return { ok: false, error: e instanceof Error ? e.message : "Login failed" };
+        }
+      },
+
+      loginWithGoogle: async (idToken, referralCode) => {
+        try {
+          const customer = await customersApi.loginWithGoogle(idToken, referralCode);
+          set({ customer });
+          return { ok: true };
+        } catch (e) {
+          return { ok: false, error: e instanceof Error ? e.message : "Google sign-in failed" };
         }
       },
 

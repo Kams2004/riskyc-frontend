@@ -8,6 +8,7 @@ services:
         # actually reachable from a browser. Set API_URL in .env once you're
         # behind nginx/HTTPS instead of raw IP:port.
         NEXT_PUBLIC_API_BASE_URL: ${API_URL:-http://167.86.120.214:8082}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     image: riskyc-frontend:latest
     container_name: riskyc-frontend
     restart: unless-stopped

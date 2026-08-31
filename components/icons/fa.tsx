@@ -66,6 +66,9 @@ import {
   faMicrophone,
   faPause,
   faPlay,
+  faGift,
+  faUsers,
+  faPen,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faFacebookF,
@@ -146,3 +149,6 @@ export const XCircle = makeIcon(faCircleXmark);
 export const Zap = makeIcon(faBolt);
 export const ImageIcon = makeIcon(faImage);
 export const Download = makeIcon(faDownload);
+export const Gift = makeIcon(faGift);
+export const Users = makeIcon(faUsers);
+export const Pencil = makeIcon(faPen);

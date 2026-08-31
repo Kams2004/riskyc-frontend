@@ -152,8 +152,8 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   };
 
   const handleCopyCode = () => {
-    const number = selectedMethod ? paymentInfo[selectedMethod].number : "";
-    navigator.clipboard.writeText(number).catch(() => {});
+    const code = selectedMethod ? buildUssdCode(selectedMethod) : "";
+    navigator.clipboard.writeText(code).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -173,23 +173,30 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
   const paymentInfo: Record<
     PaymentMethod,
-    { name: string; number: string; color: string; bg: string; logo: string }
+    { name: string; accountName: string; ussdTemplate: string; color: string; bg: string; logo: string }
   > = {
     ORANGE_MONEY: {
       name: "Orange Money",
-      number: "693 45 67 89",
+      accountName: "IBRAHIMA HAYA",
+      ussdTemplate: "*150*14*244153*694282606*%s#",
       color: "text-orange-600",
       bg: "bg-orange-50 border-orange-200",
       logo: "/orange-money.png",
     },
     MOBILE_MONEY: {
       name: "MTN Mobile Money",
-      number: "677 12 34 56",
+      accountName: "KHAN RAPHEAL",
+      ussdTemplate: "*126*14*673267022*%s#",
       color: "text-yellow-600",
       bg: "bg-yellow-50 border-yellow-200",
       logo: "/MobileMoney.jpg",
     },
   };
+
+  // Bakes the amount to pay into the dial code so the customer can copy one
+  // string straight into their phone's dialer, e.g. *126*14*673267022*12000#
+  const buildUssdCode = (method: PaymentMethod) =>
+    paymentInfo[method].ussdTemplate.replace("%s", String(Math.round(total)));
 
   if (loadingOrder) {
     return (
@@ -370,20 +377,22 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                     <Image src={paymentInfo[selectedMethod].logo} alt={paymentInfo[selectedMethod].name} width={56} height={56} className="w-full h-full object-contain" />
                   </div>
                 </div>
-                <p className="font-semibold text-gray-700 mb-1">Send {formatPrice(total)} to</p>
-                <p className="font-bold text-2xl text-gray-900 tracking-widest mb-1">{paymentInfo[selectedMethod].number}</p>
-                <p className={clsx("font-semibold text-sm", paymentInfo[selectedMethod].color)}>{paymentInfo[selectedMethod].name}</p>
+                <p className="font-semibold text-gray-700 mb-1">Dial this code to send {formatPrice(total)}</p>
+                <p className="font-bold text-xl text-gray-900 tracking-wide mb-1 break-all">{buildUssdCode(selectedMethod)}</p>
+                <p className={clsx("font-semibold text-sm", paymentInfo[selectedMethod].color)}>
+                  {paymentInfo[selectedMethod].name} · {paymentInfo[selectedMethod].accountName}
+                </p>
               </div>
 
               <button onClick={handleCopyCode} className={clsx(
                 "w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 font-semibold text-sm transition-all",
                 copied ? "border-green-400 bg-green-50 text-green-700" : "border-gray-200 hover:border-brand-300 hover:bg-brand-50 text-gray-700"
               )}>
-                {copied ? <><Check size={18} className="text-green-500" />Number Copied!</> : <><Copy size={18} />Copy Number to Pay</>}
+                {copied ? <><Check size={18} className="text-green-500" />Code Copied!</> : <><Copy size={18} />Copy Code to Pay</>}
               </button>
 
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
-                <strong>Instructions:</strong> Open your {paymentInfo[selectedMethod].name} app or dial the USSD code, select &quot;Transfer&quot;, enter the number above, enter the amount <strong>{formatPrice(total)}</strong>, then take a screenshot of the confirmation.
+                <strong>Instructions:</strong> Copy the code above, paste it into your phone&apos;s dialer exactly as shown, and press call — it already includes the amount ({formatPrice(total)}) and account (<strong>{paymentInfo[selectedMethod].accountName}</strong>). Confirm the transfer, then take a screenshot of the confirmation.
               </div>
 
               <div>

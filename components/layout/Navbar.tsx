@@ -18,6 +18,7 @@ import {
   HelpCircle,
   Package,
   MapPin,
+  Gift,
 } from "@/components/icons/fa";
 import { useStore } from "@/lib/store";
 import { useCategories } from "@/lib/useCategories";
@@ -47,7 +48,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { getCartCount, language, setLanguage, items, customer, logoutCustomer } = useStore();
-  const { categories } = useCategories();
+  const { categories: allCategories } = useCategories();
+  // Categories with no storefront-visible products are excluded everywhere
+  // navigation/browsing surfaces list categories — an admin still sees them
+  // in the admin panel (that list comes from useCategories() unfiltered).
+  const categories = allCategories.filter((cat) => cat.productCount > 0);
   const visibleCategories = categories.slice(0, MAX_NAV_CATEGORIES);
   const overflowCategories = categories.slice(MAX_NAV_CATEGORIES);
   const [cartCount, setCartCount] = useState(0);
@@ -305,6 +310,13 @@ export default function Navbar() {
                         <Package size={15} /> My Orders
                       </Link>
                       <Link
+                        href="/account"
+                        onClick={() => setActiveDropdown(null)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                      >
+                        <Gift size={15} /> My Referrals
+                      </Link>
+                      <Link
                         href="/help"
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
@@ -489,6 +501,13 @@ export default function Navbar() {
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
                     <Package size={16} /> My Orders
+                  </Link>
+                  <Link
+                    href="/account"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
+                  >
+                    <Gift size={16} /> My Referrals
                   </Link>
                   <Link
                     href="/help"

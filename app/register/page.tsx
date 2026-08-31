@@ -4,7 +4,8 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus, AlertCircle } from "@/components/icons/fa";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus, AlertCircle, Gift } from "@/components/icons/fa";
 
 function RegisterForm() {
   const router = useRouter();
@@ -18,8 +19,10 @@ function RegisterForm() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState(searchParams.get("ref") || "");
   const [show, setShow] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [googleError, setGoogleError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
@@ -43,6 +46,7 @@ function RegisterForm() {
       email,
       phone: phone.trim() || undefined,
       password,
+      referralCode: referralCode.trim() || undefined,
     });
     setLoading(false);
     if (result.ok) {
@@ -179,6 +183,21 @@ function RegisterForm() {
               )}
             </div>
 
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
+                Referral Code <span className="text-gray-300 normal-case">(optional)</span>
+              </label>
+              <div className="relative">
+                <Gift size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
+                <input
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  placeholder="Got a code from a friend?"
+                  className={inputCls("referralCode")}
+                />
+              </div>
+            </div>
+
             {errors.email && errors.email.includes("already exists") && (
               <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
                 <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
@@ -201,6 +220,25 @@ function RegisterForm() {
               )}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-6">
+            <div className="h-px bg-gray-100 flex-1" />
+            <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
+            <div className="h-px bg-gray-100 flex-1" />
+          </div>
+
+          {googleError && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5 mb-4">
+              <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
+              <p className="text-red-600 text-xs font-medium">{googleError}</p>
+            </div>
+          )}
+
+          <GoogleSignInButton
+            redirectTo={redirectTo}
+            referralCode={referralCode.trim() || undefined}
+            onError={setGoogleError}
+          />
 
           <p className="text-center text-gray-500 text-sm mt-6">
             Already have an account?{" "}

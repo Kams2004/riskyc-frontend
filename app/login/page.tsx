@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle } from "@/components/icons/fa";
 
 function LoginForm() {
@@ -16,6 +17,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
+  const [googleError, setGoogleError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,6 +110,21 @@ function LoginForm() {
               )}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-6">
+            <div className="h-px bg-gray-100 flex-1" />
+            <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
+            <div className="h-px bg-gray-100 flex-1" />
+          </div>
+
+          {googleError && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5 mb-4">
+              <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
+              <p className="text-red-600 text-xs font-medium">{googleError}</p>
+            </div>
+          )}
+
+          <GoogleSignInButton redirectTo={redirectTo} onError={setGoogleError} />
 
           <p className="text-center text-gray-500 text-sm mt-6">
             Don&apos;t have an account?{" "}

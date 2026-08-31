@@ -78,6 +78,8 @@ export interface Category {
   imageUrl?: string | null;
   createdByName?: string | null;
   subcategories: Subcategory[];
+  /** Storefront-visible product count — categories with none are hidden from the nav/footer/homepage. */
+  productCount: number;
 }
 
 // ── Orders ───────────────────────────────────────────────────────────────────
@@ -126,6 +128,7 @@ export interface Order {
   customerInfo?: CustomerInfo | null;
   paymentMethod?: PaymentMethod | null;
   paymentCode?: string | null;
+  paymentAccountName?: string | null;
   paymentScreenshotUrl?: string | null;
   statusChangedByName?: string | null;
   statusChangedAt?: string | null;
@@ -261,4 +264,26 @@ export interface Customer {
   status: CustomerStatus;
   createdAt: string;
   lastLogin?: string | null;
+  /** This customer's own shareable referral code. */
+  referralCode: string;
+  /** Display name shown to people this customer refers/is referred by — editable in Account settings. */
+  acronym: string;
+  /** Acronym of whoever referred this customer in, if anyone. */
+  referredByAcronym?: string | null;
+}
+
+export interface ReferralEntry {
+  acronym: string;
+  joinedAt: string;
+  /** How many people this referral has, in turn, referred — the one extra level shown ("n+2"). */
+  referredCount: number;
+}
+
+export interface ReferralSummary {
+  referralCode: string;
+  acronym: string;
+  referredByAcronym?: string | null;
+  directReferralCount: number;
+  indirectReferralCount: number;
+  referrals: ReferralEntry[];
 }

@@ -34,7 +34,10 @@ function ProductsPageInner() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { categories } = useCategories();
+  const { categories: allCategories } = useCategories();
+  // A category with no storefront-visible products would just be a filter
+  // option that always yields zero results — hide it here too.
+  const categories = useMemo(() => allCategories.filter((c) => c.productCount > 0), [allCategories]);
 
   useEffect(() => {
     listProducts({ size: 200 })

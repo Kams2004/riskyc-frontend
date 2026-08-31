@@ -287,9 +287,15 @@ export default function AdminOrderDetailPage() {
                     </span>
                   </div>
                   {order.paymentCode && (
+                    <div className="flex justify-between text-sm gap-3">
+                      <span className={c.textSecondary}>Code Used</span>
+                      <span className={clsx("font-mono text-right break-all", c.textPrimary)}>{order.paymentCode}</span>
+                    </div>
+                  )}
+                  {order.paymentAccountName && (
                     <div className="flex justify-between text-sm">
-                      <span className={c.textSecondary}>Number Used</span>
-                      <span className={clsx("font-mono", c.textPrimary)}>{order.paymentCode}</span>
+                      <span className={c.textSecondary}>Account</span>
+                      <span className={clsx("font-medium", c.textPrimary)}>{order.paymentAccountName}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">

@@ -13,7 +13,7 @@ const categoryBadges: Record<string, { label: string; cls: string }> = {
 
 export default function CategorySection() {
   const { categories } = useCategories();
-  const categoriesWithImage = categories.filter((cat) => cat.imageUrl);
+  const categoriesWithImage = categories.filter((cat) => cat.imageUrl && cat.productCount > 0);
 
   if (categoriesWithImage.length === 0) return null;
 
