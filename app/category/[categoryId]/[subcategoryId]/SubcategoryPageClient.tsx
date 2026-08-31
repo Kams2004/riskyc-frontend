@@ -7,6 +7,8 @@ import { Product } from "@/lib/types";
 import ProductCard from "@/components/products/ProductCard";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import Link from "next/link";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { localized } from "@/lib/i18n/localized";
 
 export default function SubcategoryPageClient({
   categorySlug,
@@ -15,9 +17,12 @@ export default function SubcategoryPageClient({
   categorySlug: string;
   subcategorySlug: string;
 }) {
+  const { t, language } = useTranslation();
   const { categories, loading: categoriesLoading } = useCategories();
   const category = categories.find((c) => c.slug === categorySlug);
   const subcategory = category?.subcategories.find((s) => s.slug === subcategorySlug);
+  const categoryName = category ? localized(category.name, category.nameFr, language) : "";
+  const subcategoryName = subcategory ? localized(subcategory.name, subcategory.nameFr, language) : "";
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,15 +39,15 @@ export default function SubcategoryPageClient({
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
         <div className="text-6xl">😕</div>
-        <h2 className="text-2xl font-semibold">Subcategory not found</h2>
-        <Link href="/products" className="btn-primary">Browse All Products</Link>
+        <h2 className="text-2xl font-semibold">{t("products.subcategory.notFound")}</h2>
+        <Link href="/products" className="btn-primary">{t("products.category.browseAllProducts")}</Link>
       </div>
     );
   }
 
   if (!category || !subcategory) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-gray-400">Loading...</div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-gray-400">{t("products.category.loading")}</div>
     );
   }
 
@@ -50,21 +55,25 @@ export default function SubcategoryPageClient({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6 flex-wrap">
-        <Link href="/" className="hover:text-brand-500">Home</Link>
+        <Link href="/" className="hover:text-brand-500">{t("products.detail.home")}</Link>
         <span>/</span>
         <Link href={`/category/${categorySlug}`} className="hover:text-brand-500">
-          {category.name}
+          {categoryName}
         </Link>
         <span>/</span>
-        <span className="text-gray-700 font-medium">{subcategory.name}</span>
+        <span className="text-gray-700 font-medium">{subcategoryName}</span>
       </nav>
 
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <span className="text-4xl"><FaIconPreview value={category.icon ?? "fa:solid:tag"} size={32} /></span>
-          <h1 className="section-title">{subcategory.name}</h1>
+          <h1 className="section-title">{subcategoryName}</h1>
         </div>
-        <p className="text-gray-500">{products.length} products found</p>
+        <p className="text-gray-500">
+          {products.length === 1
+            ? t("products.listing.productsFoundOne", { count: products.length })
+            : t("products.listing.productsFoundOther", { count: products.length })}
+        </p>
       </div>
 
       {/* Other subcategories — horizontally scrollable on mobile */}
@@ -73,7 +82,7 @@ export default function SubcategoryPageClient({
           href={`/category/${categorySlug}`}
           className="flex-shrink-0 px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:border-brand-300 hover:text-brand-600 transition-colors whitespace-nowrap"
         >
-          All {category.name}
+          {t("products.category.allOf", { category: categoryName })}
         </Link>
         {category.subcategories.map((sub) => (
           <Link
@@ -85,7 +94,7 @@ export default function SubcategoryPageClient({
                 : "bg-white border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600"
             }`}
           >
-            {sub.name}
+            {localized(sub.name, sub.nameFr, language)}
           </Link>
         ))}
       </div>
@@ -100,11 +109,11 @@ export default function SubcategoryPageClient({
         <div className="text-center py-20">
           <div className="text-5xl mb-4">📦</div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">
-            No products in {subcategory.name} yet
+            {t("products.subcategory.noProductsIn", { name: subcategoryName })}
           </h3>
-          <p className="text-gray-400 mb-6">Check back soon for new arrivals!</p>
+          <p className="text-gray-400 mb-6">{t("products.category.checkBackSoon")}</p>
           <Link href={`/category/${categorySlug}`} className="btn-primary">
-            Browse {category.name}
+            {t("products.subcategory.browseCategory", { category: categoryName })}
           </Link>
         </div>
       ) : (

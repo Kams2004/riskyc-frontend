@@ -9,14 +9,16 @@ import { Product } from "@/lib/types";
 import ProductCard from "@/components/products/ProductCard";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import { SlidersHorizontal, X, ChevronDown, Search } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { localized } from "@/lib/i18n/localized";
 import clsx from "clsx";
 
 const sortOptions = [
-  { value: "default", label: "Featured" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "rating", label: "Best Rated" },
-  { value: "newest", label: "Newest" },
+  { value: "default", labelKey: "products.sort.featured" },
+  { value: "price-asc", labelKey: "products.sort.priceAsc" },
+  { value: "price-desc", labelKey: "products.sort.priceDesc" },
+  { value: "rating", labelKey: "products.sort.rating" },
+  { value: "newest", labelKey: "products.sort.newest" },
 ];
 
 export default function ProductsPage() {
@@ -28,6 +30,7 @@ export default function ProductsPage() {
 }
 
 function ProductsPageInner() {
+  const { t, language } = useTranslation();
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const catParam = searchParams.get("cat") || "";
@@ -139,10 +142,12 @@ function ProductsPageInner() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="section-title">
-            {search ? `Search: "${search}"` : "All Products"}
+            {search ? t("products.listing.searchResults", { query: search }) : t("products.listing.allProducts")}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            {filtered.length} product{filtered.length !== 1 ? "s" : ""} found
+            {filtered.length === 1
+              ? t("products.listing.productsFoundOne", { count: filtered.length })
+              : t("products.listing.productsFoundOther", { count: filtered.length })}
           </p>
         </div>
 
@@ -156,7 +161,7 @@ function ProductsPageInner() {
             >
               {sortOptions.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {t(o.labelKey)}
                 </option>
               ))}
             </select>
@@ -174,7 +179,7 @@ function ProductsPageInner() {
             )}
           >
             <SlidersHorizontal size={16} />
-            Filters
+            {t("products.filters.title")}
             {hasFilters && (
               <span className="w-5 h-5 bg-white text-brand-600 rounded-full text-xs flex items-center justify-center font-bold">
                 {selectedCat.length + selectedSub.length}
@@ -198,7 +203,7 @@ function ProductsPageInner() {
                 : "bg-white text-gray-600 border-gray-200 hover:border-brand-300"
             )}
           >
-            All
+            {t("products.filters.all")}
           </button>
           {categories.map((cat) => (
             <button
@@ -212,7 +217,7 @@ function ProductsPageInner() {
               )}
             >
               <span className="flex items-center"><FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={13} /></span>
-              {cat.name}
+              {localized(cat.name, cat.nameFr, language)}
             </button>
           ))}
         </div>
@@ -231,7 +236,7 @@ function ProductsPageInner() {
                     : "bg-gray-50 text-gray-500 border-gray-200 hover:border-brand-300 hover:text-brand-600"
                 )}
               >
-                {sub.name}
+                {localized(sub.name, sub.nameFr, language)}
               </button>
             ))}
           </div>
@@ -241,10 +246,10 @@ function ProductsPageInner() {
         {filtersOpen && (
           <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-4 mt-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm text-gray-900">More Filters</span>
+              <span className="font-semibold text-sm text-gray-900">{t("products.filters.moreFilters")}</span>
               {hasFilters && (
                 <button onClick={clearFilters} className="text-xs text-brand-500 font-medium flex items-center gap-1">
-                  <X size={12} /> Clear all
+                  <X size={12} /> {t("products.filters.clearAll")}
                 </button>
               )}
             </div>
@@ -255,14 +260,14 @@ function ProductsPageInner() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
+                placeholder={t("products.filters.searchPlaceholder")}
                 className="w-full pl-8 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-400"
               />
             </div>
             {/* Price range */}
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
-                Price Range
+                {t("products.filters.priceRange")}
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -274,7 +279,7 @@ function ProductsPageInner() {
                   onChange={(e) =>
                     setPriceRange([Math.min(Number(e.target.value) || 0, priceRange[1]), priceRange[1]])
                   }
-                  placeholder="Min"
+                  placeholder={t("products.filters.min")}
                   className="w-full min-w-0 px-2.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-400"
                 />
                 <span className="text-gray-400 text-sm flex-shrink-0">–</span>
@@ -287,7 +292,7 @@ function ProductsPageInner() {
                   onChange={(e) =>
                     setPriceRange([priceRange[0], Math.max(Number(e.target.value) || 0, priceRange[0])])
                   }
-                  placeholder="Max"
+                  placeholder={t("products.filters.max")}
                   className="w-full min-w-0 px-2.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-400"
                 />
               </div>
@@ -305,13 +310,13 @@ function ProductsPageInner() {
         <aside className="w-64 flex-shrink-0 hidden lg:block">
           <div className="bg-white rounded-2xl border border-gray-100 p-5 sticky top-24">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Filters</h3>
+              <h3 className="font-semibold text-gray-900">{t("products.filters.title")}</h3>
               {hasFilters && (
                 <button
                   onClick={clearFilters}
                   className="text-xs text-brand-500 hover:text-brand-600 font-medium flex items-center gap-1"
                 >
-                  <X size={12} /> Clear all
+                  <X size={12} /> {t("products.filters.clearAll")}
                 </button>
               )}
             </div>
@@ -319,7 +324,7 @@ function ProductsPageInner() {
             {/* Search */}
             <div className="mb-5">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
-                Search
+                {t("products.filters.search")}
               </label>
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
@@ -327,7 +332,7 @@ function ProductsPageInner() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search products..."
+                  placeholder={t("products.filters.searchPlaceholder")}
                   className="w-full pl-8 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-400"
                 />
               </div>
@@ -336,7 +341,7 @@ function ProductsPageInner() {
             {/* Categories */}
             <div className="mb-5">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 block">
-                Category
+                {t("products.filters.category")}
               </label>
               <div className="space-y-2">
                 {categories.map((cat) => (
@@ -349,7 +354,7 @@ function ProductsPageInner() {
                         className="w-4 h-4 rounded accent-brand-500"
                       />
                       <span className="text-sm text-gray-700 group-hover:text-brand-600 font-medium flex items-center gap-1.5">
-                        <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={13} /> {cat.name}
+                        <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={13} /> {localized(cat.name, cat.nameFr, language)}
                       </span>
                     </label>
                     {selectedCat.includes(cat.slug) && (
@@ -366,7 +371,7 @@ function ProductsPageInner() {
                               className="w-3.5 h-3.5 rounded accent-brand-500"
                             />
                             <span className="text-xs text-gray-500 hover:text-brand-500">
-                              {sub.name}
+                              {localized(sub.name, sub.nameFr, language)}
                             </span>
                           </label>
                         ))}
@@ -380,7 +385,7 @@ function ProductsPageInner() {
             {/* Price range */}
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 block">
-                Price Range
+                {t("products.filters.priceRange")}
               </label>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -393,7 +398,7 @@ function ProductsPageInner() {
                     onChange={(e) =>
                       setPriceRange([Math.min(Number(e.target.value) || 0, priceRange[1]), priceRange[1]])
                     }
-                    placeholder="Min"
+                    placeholder={t("products.filters.min")}
                     className="w-full min-w-0 px-2.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-400"
                   />
                   <span className="text-gray-400 text-sm flex-shrink-0">–</span>
@@ -406,7 +411,7 @@ function ProductsPageInner() {
                     onChange={(e) =>
                       setPriceRange([priceRange[0], Math.max(Number(e.target.value) || 0, priceRange[0])])
                     }
-                    placeholder="Max"
+                    placeholder={t("products.filters.max")}
                     className="w-full min-w-0 px-2.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-400"
                   />
                 </div>

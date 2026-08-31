@@ -21,6 +21,7 @@ import {
   faCompass,
 } from "@fortawesome/free-solid-svg-icons";
 import { Search, X } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import clsx from "clsx";
 
 // ── Icon registry: name → IconDefinition ──────────────────────────────────────
@@ -107,29 +108,30 @@ const ICON_MAP: Record<string, IconDefinition> = {
 };
 
 // ── Curated groups ────────────────────────────────────────────────────────────
-const ICON_GROUPS: { label: string; icons: string[] }[] = [
+// `labelKey` maps to lib/i18n/namespaces/adminProducts.{en,fr}.ts → iconPicker.groups
+const ICON_GROUPS: { labelKey: "fashion" | "shopping" | "sports" | "nature" | "tech" | "food"; icons: string[] }[] = [
   {
-    label: "Fashion & Clothing",
+    labelKey: "fashion",
     icons: ["shirt","vest","hat-cowboy","hat-wizard","glasses","gem","ring","socks","mitten","umbrella","person-dress","person"],
   },
   {
-    label: "Shopping",
+    labelKey: "shopping",
     icons: ["bag-shopping","cart-shopping","store","tags","tag","barcode","receipt","box","boxes-stacked","gift","percent","money-bill","money-bills","credit-card","wallet"],
   },
   {
-    label: "Sports & Activities",
+    labelKey: "sports",
     icons: ["futbol","basketball","football","baseball","volleyball","trophy","medal","dumbbell","person-running","person-biking","person-swimming","bowling-ball"],
   },
   {
-    label: "Nature & Elements",
+    labelKey: "nature",
     icons: ["leaf","seedling","tree","sun","moon","star","fire","snowflake","cloud","rainbow","wind","droplet","feather","dove"],
   },
   {
-    label: "Tech & Interface",
+    labelKey: "tech",
     icons: ["mobile-screen","laptop","desktop","camera","image","images","video","magnifying-glass","bell","heart","bookmark","flag","lock","shield"],
   },
   {
-    label: "Food & Lifestyle",
+    labelKey: "food",
     icons: ["mug-hot","wine-glass","champagne-glasses","cake-candles","utensils","music","headphones","microphone","palette","paintbrush","scissors","compass"],
   },
 ];
@@ -169,6 +171,7 @@ interface Props {
 }
 
 export default function FaIconPicker({ value, onChange, isDark = false }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -204,7 +207,7 @@ export default function FaIconPicker({ value, onChange, isDark = false }: Props)
             ? "bg-gray-800 border-gray-600 text-white hover:border-brand-500"
             : "bg-white border-gray-300 text-gray-700 hover:border-brand-400"
         )}
-        title="Pick icon"
+        title={t("adminProducts.iconPicker.pickIcon")}
       >
         <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
           {selectedDef
@@ -213,7 +216,7 @@ export default function FaIconPicker({ value, onChange, isDark = false }: Props)
           }
         </span>
         <span className={clsx("text-xs truncate", isDark ? "text-gray-400" : "text-gray-500")}>
-          {selectedName ?? "pick icon"}
+          {selectedName ?? t("adminProducts.iconPicker.pickIconPlaceholder")}
         </span>
       </button>
 
@@ -229,7 +232,7 @@ export default function FaIconPicker({ value, onChange, isDark = false }: Props)
             <input
               autoFocus
               type="text"
-              placeholder="Search icons…"
+              placeholder={t("adminProducts.iconPicker.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className={clsx("flex-1 bg-transparent text-sm outline-none", isDark ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400")}
@@ -245,13 +248,13 @@ export default function FaIconPicker({ value, onChange, isDark = false }: Props)
           <div className="overflow-y-auto flex-1 p-3 space-y-4">
             {filteredGroups.length === 0 && (
               <p className={clsx("text-xs text-center py-6", isDark ? "text-gray-500" : "text-gray-400")}>
-                No icons found
+                {t("adminProducts.iconPicker.noIconsFound")}
               </p>
             )}
             {filteredGroups.map((group) => (
-              <div key={group.label}>
+              <div key={group.labelKey}>
                 <p className={clsx("text-[10px] font-semibold uppercase tracking-wider mb-2", isDark ? "text-gray-500" : "text-gray-400")}>
-                  {group.label}
+                  {t(`adminProducts.iconPicker.groups.${group.labelKey}`)}
                 </p>
                 <div className="grid grid-cols-8 gap-1">
                   {group.icons.map((name) => {

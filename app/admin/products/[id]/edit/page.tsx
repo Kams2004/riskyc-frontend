@@ -7,11 +7,13 @@ import { getProduct } from "@/lib/api/products";
 import { Product } from "@/lib/types";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!id) return;
@@ -24,7 +26,7 @@ export default function EditProductPage() {
   if (loading) {
     return (
       <AdminShell>
-        <div className="p-8 text-center text-sm text-gray-400">Loading…</div>
+        <div className="p-8 text-center text-sm text-gray-400">{t("adminProducts.common.loading")}</div>
       </AdminShell>
     );
   }
@@ -33,12 +35,12 @@ export default function EditProductPage() {
     return (
       <AdminShell>
         <div className="p-8 text-center">
-          <p className="text-gray-400">Product not found.</p>
+          <p className="text-gray-400">{t("adminProducts.view.notFound")}</p>
           <Link
             href="/admin/products"
             className="text-brand-400 underline text-sm mt-2 inline-block"
           >
-            ← Back to products
+            {t("adminProducts.view.backToProducts")}
           </Link>
         </div>
       </AdminShell>

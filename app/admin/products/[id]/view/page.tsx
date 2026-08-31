@@ -10,6 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   ArrowLeft,
   Pencil,
@@ -33,6 +34,7 @@ export default function AdminProductViewPage() {
   const router = useRouter();
   const token = useAdminStore((s) => s.session?.token);
   const c = useAdminColors();
+  const { t } = useTranslation();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function AdminProductViewPage() {
   if (loading) {
     return (
       <AdminShell>
-        <div className="p-8 text-center text-sm text-gray-400">Loading…</div>
+        <div className="p-8 text-center text-sm text-gray-400">{t("adminProducts.common.loading")}</div>
       </AdminShell>
     );
   }
@@ -61,9 +63,9 @@ export default function AdminProductViewPage() {
       <AdminShell>
         <div className="p-8 text-center space-y-3">
           <Package size={40} className={clsx("mx-auto opacity-30", c.textMuted)} />
-          <p className={clsx("text-sm", c.textMuted)}>Product not found.</p>
+          <p className={clsx("text-sm", c.textMuted)}>{t("adminProducts.view.notFound")}</p>
           <Link href="/admin/products" className="text-brand-500 underline text-sm">
-            ← Back to products
+            {t("adminProducts.view.backToProducts")}
           </Link>
         </div>
       </AdminShell>
@@ -83,9 +85,9 @@ export default function AdminProductViewPage() {
 
   const handleDelete = () => {
     setConfirm({
-      title: "Delete product?",
-      message: `This will permanently delete "${product.name}". This cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("adminProducts.list.deleteProductTitle"),
+      message: t("adminProducts.list.deleteProductMessage", { name: product.name }),
+      confirmLabel: t("adminProducts.common.delete"),
       onConfirm: async () => {
         if (token) {
           await productsApi.deleteProduct(product.id, token);
@@ -105,18 +107,18 @@ export default function AdminProductViewPage() {
             onClick={() => router.back()}
             className={clsx("flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors", c.isDark ? "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900")}
           >
-            <ArrowLeft size={16} /> Back
+            <ArrowLeft size={16} /> {t("adminProducts.common.back")}
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h1 className={clsx("text-xl font-bold truncate", c.textPrimary)}>{product.name}</h1>
               {product.hidden && (
                 <span className={clsx("flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap", c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-500")}>
-                  <EyeOff size={11} /> HIDDEN
+                  <EyeOff size={11} /> {t("adminProducts.common.hidden")}
                 </span>
               )}
             </div>
-            <p className={clsx("text-xs mt-0.5 font-mono", c.textMuted)}>ID: {product.id}</p>
+            <p className={clsx("text-xs mt-0.5 font-mono", c.textMuted)}>{t("adminProducts.view.idLabel", { id: product.id })}</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
@@ -127,27 +129,27 @@ export default function AdminProductViewPage() {
                   : c.isDark ? "bg-green-500/15 hover:bg-green-500/25 text-green-400" : "bg-green-50 hover:bg-green-100 text-green-600")}
             >
               {product.hidden ? <EyeOff size={13} /> : <Eye size={13} />}
-              {product.hidden ? "Unhide" : "Visible"}
+              {product.hidden ? t("adminProducts.view.unhide") : t("adminProducts.view.visible")}
             </button>
             <Link
               href={`/products/${product.id}`}
               target="_blank"
               className={clsx("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-gray-100 hover:bg-gray-200 text-gray-600")}
             >
-              <ExternalLink size={13} /> Storefront
+              <ExternalLink size={13} /> {t("adminProducts.view.storefront")}
             </Link>
             <Link
               href={`/admin/products/${product.id}/edit`}
               className={clsx("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors", c.btnGhost)}
             >
-              <Pencil size={13} /> Edit
+              <Pencil size={13} /> {t("adminProducts.common.edit")}
             </Link>
             <button
               onClick={handleDelete}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
             >
               <Trash2 size={13} />
-              Delete
+              {t("adminProducts.common.delete")}
             </button>
           </div>
         </div>
@@ -226,7 +228,7 @@ export default function AdminProductViewPage() {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                   <ImageIcon size={40} className={clsx("opacity-30", c.textMuted)} />
-                  <span className={clsx("text-sm", c.textMuted)}>No images</span>
+                  <span className={clsx("text-sm", c.textMuted)}>{t("adminProducts.view.noImages")}</span>
                 </div>
               )}
             </div>
@@ -259,7 +261,7 @@ export default function AdminProductViewPage() {
 
             {/* Pricing */}
             <div className={clsx("rounded-2xl border p-5", c.card)}>
-              <h2 className={clsx("text-xs font-semibold uppercase tracking-wider mb-4", c.textMuted)}>Pricing</h2>
+              <h2 className={clsx("text-xs font-semibold uppercase tracking-wider mb-4", c.textMuted)}>{t("adminProducts.view.pricingHeading")}</h2>
               <div className="flex items-baseline gap-3 flex-wrap">
                 {product.price > 0 ? (
                   <>
@@ -268,13 +270,13 @@ export default function AdminProductViewPage() {
                       <>
                         <span className={clsx("text-lg line-through", c.textMuted)}>{formatPrice(product.originalPrice)}</span>
                         <span className="bg-green-100 text-green-700 text-sm font-semibold px-2 py-0.5 rounded-full">
-                          Save {formatPrice(product.originalPrice - product.price)} ({discount}%)
+                          {t("adminProducts.view.saveAmount", { amount: formatPrice(product.originalPrice - product.price), percent: discount ?? 0 })}
                         </span>
                       </>
                     )}
                   </>
                 ) : (
-                  <span className={clsx("text-lg italic", c.textMuted)}>Price on request</span>
+                  <span className={clsx("text-lg italic", c.textMuted)}>{t("adminProducts.common.priceOnRequest")}</span>
                 )}
               </div>
               {product.bulkPrices.length > 0 && (
@@ -290,26 +292,26 @@ export default function AdminProductViewPage() {
 
             {/* Classification */}
             <div className={clsx("rounded-2xl border p-5", c.card)}>
-              <h2 className={clsx("text-xs font-semibold uppercase tracking-wider mb-4", c.textMuted)}>Classification</h2>
+              <h2 className={clsx("text-xs font-semibold uppercase tracking-wider mb-4", c.textMuted)}>{t("adminProducts.view.classificationHeading")}</h2>
               <div className="grid grid-cols-2 gap-3">
-                <InfoRow icon={<Layers size={14} />} label="Category" value={product.categorySlug} />
-                <InfoRow icon={<Tag size={14} />} label="Subcategory" value={product.subcategorySlug || "—"} />
-                <InfoRow icon={<Star size={14} />} label="Rating" value={`${product.rating} / 5 (${product.reviews} reviews)`} />
-                <InfoRow icon={<Package size={14} />} label="SKU" value={`RC-${product.id.toUpperCase()}`} />
+                <InfoRow icon={<Layers size={14} />} label={t("adminProducts.view.categoryLabel")} value={product.categorySlug} />
+                <InfoRow icon={<Tag size={14} />} label={t("adminProducts.view.subcategoryLabel")} value={product.subcategorySlug || "—"} />
+                <InfoRow icon={<Star size={14} />} label={t("adminProducts.view.ratingLabel")} value={t("adminProducts.view.ratingValue", { rating: product.rating, reviews: product.reviews })} />
+                <InfoRow icon={<Package size={14} />} label={t("adminProducts.view.skuLabel")} value={`RC-${product.id.toUpperCase()}`} />
               </div>
             </div>
 
             {/* Colors & Stock */}
             <div className={clsx("rounded-2xl border p-5", c.card)}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className={clsx("text-xs font-semibold uppercase tracking-wider", c.textMuted)}>Colors & Stock</h2>
+                <h2 className={clsx("text-xs font-semibold uppercase tracking-wider", c.textMuted)}>{t("adminProducts.view.colorsStockHeading")}</h2>
                 <span className={clsx(
                   "text-xs font-semibold px-2.5 py-1 rounded-full",
                   totalStock === 0 ? "bg-red-100 text-red-600"
                   : totalStock <= 10 ? "bg-orange-100 text-orange-600"
                   : "bg-green-100 text-green-700"
                 )}>
-                  {totalStock} total units
+                  {t("adminProducts.view.totalUnits", { count: totalStock })}
                 </span>
               </div>
               <div className="space-y-2">
@@ -331,7 +333,7 @@ export default function AdminProductViewPage() {
                         : stock <= 3 ? "bg-orange-100 text-orange-600"
                         : "bg-green-100 text-green-700"
                       )}>
-                        {stock == null ? "No stock set" : stock === 0 ? "Out of stock" : `${stock} in stock`}
+                        {stock == null ? t("adminProducts.view.noStockSet") : stock === 0 ? t("adminProducts.view.outOfStock") : t("adminProducts.view.inStock", { count: stock })}
                       </span>
                       {/* Mini stock bar */}
                       <div className={clsx("w-20 h-1.5 rounded-full overflow-hidden hidden sm:block flex-shrink-0", c.isDark ? "bg-gray-700" : "bg-gray-200")}>
@@ -349,7 +351,7 @@ export default function AdminProductViewPage() {
             {/* Sizes */}
             {product.sizes && product.sizes.length > 0 && (
               <div className={clsx("rounded-2xl border p-5", c.card)}>
-                <h2 className={clsx("text-xs font-semibold uppercase tracking-wider mb-4", c.textMuted)}>Available Sizes</h2>
+                <h2 className={clsx("text-xs font-semibold uppercase tracking-wider mb-4", c.textMuted)}>{t("adminProducts.view.availableSizesHeading")}</h2>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map((size) => (
                     <span
@@ -370,9 +372,9 @@ export default function AdminProductViewPage() {
 
         {/* ── Description ── */}
         <div className={clsx("rounded-2xl border p-5", c.card)}>
-          <h2 className={clsx("text-xs font-semibold uppercase tracking-wider mb-3", c.textMuted)}>Description</h2>
+          <h2 className={clsx("text-xs font-semibold uppercase tracking-wider mb-3", c.textMuted)}>{t("adminProducts.view.descriptionHeading")}</h2>
           <p className={clsx("text-sm leading-relaxed", c.textSecondary)}>
-            {product.description || <span className={c.textMuted}>No description provided.</span>}
+            {product.description || <span className={c.textMuted}>{t("adminProducts.view.noDescription")}</span>}
           </p>
         </div>
 
@@ -380,7 +382,7 @@ export default function AdminProductViewPage() {
         <div className={clsx("rounded-2xl border p-5", c.card)}>
           <div className="flex items-center gap-2 mb-4">
             <BarChart2 size={16} className="text-brand-500" />
-            <h2 className={clsx("text-xs font-semibold uppercase tracking-wider", c.textMuted)}>Stock Overview</h2>
+            <h2 className={clsx("text-xs font-semibold uppercase tracking-wider", c.textMuted)}>{t("adminProducts.view.stockOverviewHeading")}</h2>
           </div>
           <div className="space-y-3">
             {product.colors.map((col) => {

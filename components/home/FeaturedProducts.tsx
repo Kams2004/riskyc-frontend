@@ -6,8 +6,10 @@ import { listProducts } from "@/lib/api/products";
 import { Product } from "@/lib/types";
 import ProductCard from "@/components/products/ProductCard";
 import { ArrowRight } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function FeaturedProducts() {
+  const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,14 +35,14 @@ export default function FeaturedProducts() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-end justify-between mb-10">
           <div>
-            <h2 className="section-title mb-2">Featured Products</h2>
-            <p className="text-gray-500">Handpicked just for you</p>
+            <h2 className="section-title mb-2">{t("home.featured.sectionTitle")}</h2>
+            <p className="text-gray-500">{t("home.featured.sectionSubtitle")}</p>
           </div>
           <Link
             href="/products"
             className="hidden sm:flex items-center gap-1.5 text-brand-500 hover:text-brand-600 font-medium text-sm group"
           >
-            View All
+            {t("home.featured.viewAll")}
             <ArrowRight
               size={16}
               className="group-hover:translate-x-1 transition-transform"
@@ -55,7 +57,7 @@ export default function FeaturedProducts() {
             ))}
           </div>
         ) : featured.length === 0 ? (
-          <p className="text-center text-gray-400 py-10">No products yet — check back soon.</p>
+          <p className="text-center text-gray-400 py-10">{t("home.featured.empty")}</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {featured.map((product) => (
@@ -66,7 +68,7 @@ export default function FeaturedProducts() {
 
         <div className="text-center mt-8 sm:hidden">
           <Link href="/products" className="btn-secondary">
-            View All Products
+            {t("home.featured.viewAllProducts")}
           </Link>
         </div>
       </div>

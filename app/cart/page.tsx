@@ -7,6 +7,7 @@ import CartItems from "@/components/cart/CartItems";
 import OrdersList from "@/components/cart/OrdersList";
 import CheckoutFlow from "@/components/cart/CheckoutFlow";
 import { ShoppingCart, Package } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import clsx from "clsx";
 
 export default function CartPage() {
@@ -21,6 +22,7 @@ function CartPageInner() {
   const searchParams = useSearchParams();
   const startCheckout = searchParams.get("checkout") === "1";
   const { items } = useStore();
+  const { t } = useTranslation();
 
   const [tab, setTab] = useState<"cart" | "orders">(
     searchParams.get("tab") === "orders" ? "orders" : "cart"
@@ -46,7 +48,7 @@ function CartPageInner() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 min-h-[70vh]">
-      <h1 className="section-title mb-6">My Cart & Orders</h1>
+      <h1 className="section-title mb-6">{t("cart.page.title")}</h1>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-200 mb-8">
@@ -60,7 +62,7 @@ function CartPageInner() {
           )}
         >
           <ShoppingCart size={16} />
-          Cart
+          {t("cart.page.cartTab")}
           {items.length > 0 && (
             <span className="bg-brand-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
               {items.length}
@@ -78,7 +80,7 @@ function CartPageInner() {
           )}
         >
           <Package size={16} />
-          My Orders
+          {t("cart.page.ordersTab")}
         </button>
       </div>
 

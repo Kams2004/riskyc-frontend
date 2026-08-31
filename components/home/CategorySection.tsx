@@ -4,24 +4,27 @@ import Link from "next/link";
 import { useCategories } from "@/lib/useCategories";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import { ArrowRight } from "@/components/icons/fa";
-
-const categoryBadges: Record<string, { label: string; cls: string }> = {
-  dresses: { label: "New", cls: "badge-new" },
-  jerseys: { label: "Hot", cls: "badge-hot" },
-  fashion: { label: "Sale", cls: "badge-sale" },
-};
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { localized } from "@/lib/i18n/localized";
 
 export default function CategorySection() {
   const { categories } = useCategories();
   const categoriesWithImage = categories.filter((cat) => cat.imageUrl && cat.productCount > 0);
+  const { t, language } = useTranslation();
+
+  const categoryBadges: Record<string, { label: string; cls: string }> = {
+    dresses: { label: t("home.categories.badges.new"), cls: "badge-new" },
+    jerseys: { label: t("home.categories.badges.hot"), cls: "badge-hot" },
+    fashion: { label: t("home.categories.badges.sale"), cls: "badge-sale" },
+  };
 
   if (categoriesWithImage.length === 0) return null;
 
   return (
     <section className="py-16 px-4 sm:px-6 max-w-7xl mx-auto">
       <div className="text-center mb-10">
-        <h2 className="section-title mb-2">Shop by Category</h2>
-        <p className="text-gray-500">Find exactly what you&apos;re looking for</p>
+        <h2 className="section-title mb-2">{t("home.categories.sectionTitle")}</h2>
+        <p className="text-gray-500">{t("home.categories.sectionSubtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
@@ -37,7 +40,7 @@ export default function CategorySection() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={cat.imageUrl ?? undefined}
-                alt={cat.name}
+                alt={localized(cat.name, cat.nameFr, language)}
                 className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
               />
 
@@ -50,13 +53,13 @@ export default function CategorySection() {
                   <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={32} />
                 </div>
                 <h3 className="text-white font-display font-bold text-xl leading-tight">
-                  {cat.name}
+                  {localized(cat.name, cat.nameFr, language)}
                 </h3>
                 <p className="text-gray-300 text-sm mt-1">
-                  {cat.subcategories.length} subcategories
+                  {t("home.categories.subcategoriesCount", { count: cat.subcategories.length })}
                 </p>
                 <div className="mt-2 flex items-center gap-1 text-brand-300 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  Shop Now <ArrowRight size={14} />
+                  {t("home.categories.shopNow")} <ArrowRight size={14} />
                 </div>
               </div>
 

@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Tag, Truck, RotateCcw, Shield } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function PromoSection() {
+  const { t } = useTranslation();
   return (
     <>
       {/* Promo Banner */}
@@ -12,19 +16,19 @@ export default function PromoSection() {
             <div className="absolute -right-8 -top-8 w-48 h-48 bg-white/10 rounded-full" />
             <div className="absolute -right-4 bottom-0 w-32 h-32 bg-white/5 rounded-full" />
             <div>
-              <div className="badge-new mb-3 w-fit">Limited Time</div>
+              <div className="badge-new mb-3 w-fit">{t("home.promo.banner1.badge")}</div>
               <h3 className="font-display text-2xl font-bold mb-2">
-                Up to 30% Off<br />Evening Dresses
+                {t("home.promo.banner1.titleLine1")}<br />{t("home.promo.banner1.titleLine2")}
               </h3>
               <p className="text-brand-100 text-sm">
-                Premium collection for special occasions
+                {t("home.promo.banner1.subtitle")}
               </p>
             </div>
             <Link
               href="/category/dresses/evening"
               className="mt-4 w-fit bg-white text-brand-600 hover:bg-brand-50 font-semibold px-5 py-2.5 rounded-full text-sm transition-colors"
             >
-              Shop Dresses →
+              {t("home.promo.banner1.cta")}
             </Link>
           </div>
 
@@ -33,20 +37,20 @@ export default function PromoSection() {
             <div className="absolute -right-8 -top-8 w-48 h-48 bg-gold-400/10 rounded-full" />
             <div>
               <div className="bg-gold-400 text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full w-fit mb-3">
-                NEW ARRIVAL
+                {t("home.promo.banner2.badge")}
               </div>
               <h3 className="font-display text-2xl font-bold mb-2">
-                Street Style<br />Jerseys 2025
+                {t("home.promo.banner2.titleLine1")}<br />{t("home.promo.banner2.titleLine2")}
               </h3>
               <p className="text-gray-300 text-sm">
-                Fresh looks for every vibe
+                {t("home.promo.banner2.subtitle")}
               </p>
             </div>
             <Link
               href="/category/jerseys/hoodies"
               className="mt-4 w-fit bg-gold-400 text-gray-900 hover:bg-gold-500 font-semibold px-5 py-2.5 rounded-full text-sm transition-colors"
             >
-              Shop Jerseys →
+              {t("home.promo.banner2.cta")}
             </Link>
           </div>
         </div>
@@ -58,23 +62,23 @@ export default function PromoSection() {
           {[
             {
               icon: <Truck size={24} className="text-brand-500" />,
-              title: "Fast Delivery",
-              desc: "Doorstep delivery in 24–48h",
+              title: t("home.promo.features.fastDelivery.title"),
+              desc: t("home.promo.features.fastDelivery.desc"),
             },
             {
               icon: <RotateCcw size={24} className="text-brand-500" />,
-              title: "Easy Returns",
-              desc: "7-day hassle-free returns",
+              title: t("home.promo.features.easyReturns.title"),
+              desc: t("home.promo.features.easyReturns.desc"),
             },
             {
               icon: <Tag size={24} className="text-brand-500" />,
-              title: "Best Prices",
-              desc: "Quality at affordable rates",
+              title: t("home.promo.features.bestPrices.title"),
+              desc: t("home.promo.features.bestPrices.desc"),
             },
             {
               icon: <Shield size={24} className="text-brand-500" />,
-              title: "Secure Payment",
-              desc: "Orange Money & MoMo",
+              title: t("home.promo.features.securePayment.title"),
+              desc: t("home.promo.features.securePayment.desc"),
             },
           ].map((f) => (
             <div key={f.title} className="flex items-center gap-4">

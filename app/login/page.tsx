@@ -6,12 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
   const loginCustomer = useStore((s) => s.loginCustomer);
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,14 +43,14 @@ function LoginForm() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg mb-4">
               <span className="text-white font-display font-bold text-xl">RF</span>
             </div>
-            <h1 className="font-display font-bold text-2xl text-gray-900">Welcome Back</h1>
-            <p className="text-gray-400 text-sm mt-1">Log in to your Riskyc Fashion account</p>
+            <h1 className="font-display font-bold text-2xl text-gray-900">{t("account.login.title")}</h1>
+            <p className="text-gray-400 text-sm mt-1">{t("account.login.subtitle")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
-                Email
+                {t("account.login.emailLabel")}
               </label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
@@ -56,7 +58,7 @@ function LoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={t("account.login.emailPlaceholder")}
                   autoFocus
                   required
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none focus:border-brand-400 focus:bg-white transition-colors"
@@ -66,7 +68,7 @@ function LoginForm() {
 
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
-                Password
+                {t("account.login.passwordLabel")}
               </label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
@@ -74,7 +76,7 @@ function LoginForm() {
                   type={show ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
+                  placeholder={t("account.login.passwordPlaceholder")}
                   required
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl pl-10 pr-10 py-3 text-sm focus:outline-none focus:border-brand-400 focus:bg-white transition-colors"
                 />
@@ -105,7 +107,7 @@ function LoginForm() {
               ) : (
                 <>
                   <LogIn size={18} />
-                  Log In
+                  {t("account.login.submit")}
                 </>
               )}
             </button>
@@ -113,7 +115,7 @@ function LoginForm() {
 
           <div className="flex items-center gap-3 my-6">
             <div className="h-px bg-gray-100 flex-1" />
-            <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
+            <span className="text-xs text-gray-400 uppercase tracking-wider">{t("account.common.orDivider")}</span>
             <div className="h-px bg-gray-100 flex-1" />
           </div>
 
@@ -127,12 +129,12 @@ function LoginForm() {
           <GoogleSignInButton redirectTo={redirectTo} onError={setGoogleError} />
 
           <p className="text-center text-gray-500 text-sm mt-6">
-            Don&apos;t have an account?{" "}
+            {t("account.login.noAccount")}{" "}
             <Link
               href={`/register${redirectTo !== "/" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
               className="text-brand-600 font-semibold hover:underline"
             >
-              Sign up
+              {t("account.login.signUp")}
             </Link>
           </p>
         </div>

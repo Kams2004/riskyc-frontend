@@ -6,12 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus, AlertCircle, Gift } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
   const registerCustomer = useStore((s) => s.registerCustomer);
+  const { t } = useTranslation();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -27,11 +29,11 @@ function RegisterForm() {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!firstName.trim()) e.firstName = "Required";
-    if (!lastName.trim()) e.lastName = "Required";
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) e.email = "Valid email required";
-    if (!password.trim() || password.length < 6) e.password = "Min 6 characters";
-    if (confirmPassword !== password) e.confirmPassword = "Passwords do not match";
+    if (!firstName.trim()) e.firstName = t("account.register.errors.required");
+    if (!lastName.trim()) e.lastName = t("account.register.errors.required");
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) e.email = t("account.register.errors.validEmail");
+    if (!password.trim() || password.length < 6) e.password = t("account.register.errors.minPassword");
+    if (confirmPassword !== password) e.confirmPassword = t("account.register.errors.passwordMismatch");
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -69,22 +71,22 @@ function RegisterForm() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg mb-4">
               <span className="text-white font-display font-bold text-xl">RF</span>
             </div>
-            <h1 className="font-display font-bold text-2xl text-gray-900">Create Account</h1>
-            <p className="text-gray-400 text-sm mt-1">Join Riskyc Fashion today</p>
+            <h1 className="font-display font-bold text-2xl text-gray-900">{t("account.register.title")}</h1>
+            <p className="text-gray-400 text-sm mt-1">{t("account.register.subtitle")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
-                  First Name
+                  {t("account.register.firstNameLabel")}
                 </label>
                 <div className="relative">
                   <User size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
                   <input
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Jean"
+                    placeholder={t("account.register.firstNamePlaceholder")}
                     autoFocus
                     className={inputCls("firstName")}
                   />
@@ -93,14 +95,14 @@ function RegisterForm() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
-                  Last Name
+                  {t("account.register.lastNameLabel")}
                 </label>
                 <div className="relative">
                   <User size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
                   <input
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Dupont"
+                    placeholder={t("account.register.lastNamePlaceholder")}
                     className={inputCls("lastName")}
                   />
                 </div>
@@ -110,7 +112,7 @@ function RegisterForm() {
 
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
-                Email
+                {t("account.register.emailLabel")}
               </label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
@@ -118,7 +120,7 @@ function RegisterForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={t("account.register.emailPlaceholder")}
                   className={inputCls("email")}
                 />
               </div>
@@ -127,14 +129,14 @@ function RegisterForm() {
 
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
-                Phone <span className="text-gray-300 normal-case">(optional)</span>
+                {t("account.register.phoneLabel")} <span className="text-gray-300 normal-case">{t("account.register.optional")}</span>
               </label>
               <div className="relative">
                 <Phone size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="6XX XX XX XX"
+                  placeholder={t("account.register.phonePlaceholder")}
                   className={inputCls("phone")}
                 />
               </div>
@@ -142,7 +144,7 @@ function RegisterForm() {
 
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
-                Password
+                {t("account.register.passwordLabel")}
               </label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
@@ -150,7 +152,7 @@ function RegisterForm() {
                   type={show ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 6 characters"
+                  placeholder={t("account.register.passwordPlaceholder")}
                   className={`${inputCls("password")} pr-10`}
                 />
                 <button
@@ -166,7 +168,7 @@ function RegisterForm() {
 
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
-                Confirm Password
+                {t("account.register.confirmPasswordLabel")}
               </label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
@@ -174,7 +176,7 @@ function RegisterForm() {
                   type={show ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter password"
+                  placeholder={t("account.register.confirmPasswordPlaceholder")}
                   className={inputCls("confirmPassword")}
                 />
               </div>
@@ -185,14 +187,14 @@ function RegisterForm() {
 
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
-                Referral Code <span className="text-gray-300 normal-case">(optional)</span>
+                {t("account.register.referralCodeLabel")} <span className="text-gray-300 normal-case">{t("account.register.optional")}</span>
               </label>
               <div className="relative">
                 <Gift size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
                 <input
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                  placeholder="Got a code from a friend?"
+                  placeholder={t("account.register.referralCodePlaceholder")}
                   className={inputCls("referralCode")}
                 />
               </div>
@@ -215,7 +217,7 @@ function RegisterForm() {
               ) : (
                 <>
                   <UserPlus size={18} />
-                  Create Account
+                  {t("account.register.submit")}
                 </>
               )}
             </button>
@@ -223,7 +225,7 @@ function RegisterForm() {
 
           <div className="flex items-center gap-3 my-6">
             <div className="h-px bg-gray-100 flex-1" />
-            <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
+            <span className="text-xs text-gray-400 uppercase tracking-wider">{t("account.common.orDivider")}</span>
             <div className="h-px bg-gray-100 flex-1" />
           </div>
 
@@ -241,12 +243,12 @@ function RegisterForm() {
           />
 
           <p className="text-center text-gray-500 text-sm mt-6">
-            Already have an account?{" "}
+            {t("account.register.alreadyHaveAccount")}{" "}
             <Link
               href={`/login${redirectTo !== "/" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
               className="text-brand-600 font-semibold hover:underline"
             >
-              Log in
+              {t("account.register.logIn")}
             </Link>
           </p>
         </div>

@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import clsx from "clsx";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function AdminShell({
   children,
@@ -21,6 +22,7 @@ export default function AdminShell({
   const { theme } = useAdminTheme();
   const isDark = theme === "dark";
   const session = useAdminStore((s) => s.session);
+  const { t } = useTranslation();
 
   if (isLogin) return <AdminGuard>{children}</AdminGuard>;
 
@@ -69,7 +71,7 @@ export default function AdminShell({
                 <span className="text-white font-bold text-xs">RF</span>
               </div>
               <span className="font-semibold text-sm text-white">
-                Admin Panel
+                {t("adminCommon.sidebar.panelLabel")}
               </span>
             </div>
           </div>
@@ -84,11 +86,10 @@ export default function AdminShell({
                   <ShieldAlert size={26} className="text-red-500" />
                 </div>
                 <h1 className={clsx("text-lg font-bold", isDark ? "text-white" : "text-gray-900")}>
-                  Access restricted
+                  {t("adminCommon.guard.accessRestrictedTitle")}
                 </h1>
                 <p className={clsx("text-sm max-w-sm", isDark ? "text-gray-400" : "text-gray-500")}>
-                  Your role ({session?.roleName}) doesn&apos;t include permission to view this page.
-                  Ask an administrator if you need access.
+                  {t("adminCommon.guard.accessRestrictedBody", { role: session?.roleName ?? "" })}
                 </p>
               </div>
             )}

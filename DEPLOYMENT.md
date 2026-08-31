@@ -225,7 +225,7 @@ still a good sanity check.
 | File | Location | Notes |
 |---|---|---|
 | Frontend `.env` | `~/riskyc/riskyc-frontend/.env` on server | `API_URL` (build-time, needs `full-restart`), `FRONTEND_PORT`, `SITE_URL` (runtime, plain `restart` ok but sitemap cache needs `full-restart`), `GOOGLE_CLIENT_ID` (build-time — feeds `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, needs `full-restart`) |
-| Backend `.env` | `~/riskyc/riskyc-backend/.env` on server | `FRONTEND_URL`, `MINIO_PUBLIC_URL`, `BACKEND_PORT`, `MINIO_API_PORT`, `MINIO_CONSOLE_PORT`, `POSTGRES_PASSWORD`, `MINIO_ROOT_USER`/`PASSWORD`, `JWT_SECRET`, `GOOGLE_CLIENT_ID` (runtime, plain `restart` ok — same value as the frontend's) |
+| Backend `.env` | `~/riskyc/riskyc-backend/.env` on server | `FRONTEND_URL`, `MINIO_PUBLIC_URL`, `BACKEND_PORT`, `MINIO_API_PORT`, `MINIO_CONSOLE_PORT`, `POSTGRES_PASSWORD`, `MINIO_ROOT_USER`/`PASSWORD`, `JWT_SECRET`, `GOOGLE_CLIENT_ID` (runtime, plain `restart` ok — same value as the frontend's), `GOOGLE_TRANSLATE_API_KEY` (runtime, plain `restart` ok — backend-only, never shared with the frontend) |
 
 Both `.env.example` files (in each repo root) document every variable inline
 with both the raw-IP and the HTTPS-domain values — copy from there

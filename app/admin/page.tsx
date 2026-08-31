@@ -16,21 +16,23 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { Order, OrderStatus, Conversation } from "@/lib/types";
-
-const statusLabels: Record<OrderStatus, string> = {
-  PENDING: "Pending",
-  AWAITING_PAYMENT: "Awaiting Payment",
-  REVIEWING: "Under Review",
-  VALIDATED: "Validated",
-  PACKAGING: "Packaging",
-  PACKAGED: "Packaged",
-  CANCELLED: "Cancelled",
-};
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function AdminDashboardPage() {
   const token = useAdminStore((s) => s.session?.token);
   const { categories } = useCategories();
   const c = useAdminColors();
+  const { t } = useTranslation();
+
+  const statusLabels: Record<OrderStatus, string> = {
+    PENDING: t("adminCommon.dashboard.statusPending"),
+    AWAITING_PAYMENT: t("adminCommon.dashboard.statusAwaitingPayment"),
+    REVIEWING: t("adminCommon.dashboard.statusReviewing"),
+    VALIDATED: t("adminCommon.dashboard.statusValidated"),
+    PACKAGING: t("adminCommon.dashboard.statusPackaging"),
+    PACKAGED: t("adminCommon.dashboard.statusPackaged"),
+    CANCELLED: t("adminCommon.dashboard.statusCancelled"),
+  };
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -53,10 +55,10 @@ export default function AdminDashboardPage() {
     .slice(0, 6);
 
   const stats = [
-    { label: "Total Revenue", value: formatPrice(totalRevenue), icon: TrendingUp, color: "from-brand-500 to-brand-700", sub: `${validated} validated order${validated !== 1 ? "s" : ""}` },
-    { label: "Total Orders", value: orders.length, icon: ShoppingBag, color: "from-blue-500 to-blue-700", sub: `${pending} awaiting review` },
-    { label: "Products", value: productCount, icon: Package, color: "from-purple-500 to-purple-700", sub: `${categories.length} categories` },
-    { label: "Chat", value: conversations.length, icon: MessageSquare, color: "from-emerald-500 to-emerald-700", sub: `${totalUnread} unread` },
+    { label: t("adminCommon.dashboard.statTotalRevenue"), value: formatPrice(totalRevenue), icon: TrendingUp, color: "from-brand-500 to-brand-700", sub: t("adminCommon.dashboard.statTotalRevenueSub", { count: validated }) },
+    { label: t("adminCommon.dashboard.statTotalOrders"), value: orders.length, icon: ShoppingBag, color: "from-blue-500 to-blue-700", sub: t("adminCommon.dashboard.statTotalOrdersSub", { count: pending }) },
+    { label: t("adminCommon.dashboard.statProducts"), value: productCount, icon: Package, color: "from-purple-500 to-purple-700", sub: t("adminCommon.dashboard.statProductsSub", { count: categories.length }) },
+    { label: t("adminCommon.dashboard.statChat"), value: conversations.length, icon: MessageSquare, color: "from-emerald-500 to-emerald-700", sub: t("adminCommon.dashboard.statChatSub", { count: totalUnread }) },
   ];
 
   return (
@@ -65,7 +67,7 @@ export default function AdminDashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>Dashboard</h1>
+            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminCommon.dashboard.title")}</h1>
             <p className={clsx("text-sm mt-0.5", c.textSecondary)}>Welcome back, Admin 👋</p>
           </div>
           <div className={clsx("text-xs px-3 py-1.5 rounded-full border", c.dateBadge)}>
@@ -105,13 +107,13 @@ export default function AdminDashboardPage() {
           {/* Recent orders */}
           <div className={clsx("lg:col-span-2 rounded-2xl border p-5", c.card)}>
             <div className="flex items-center justify-between mb-5">
-              <h2 className={clsx("font-semibold", c.sectionHeader)}>Recent Orders</h2>
+              <h2 className={clsx("font-semibold", c.sectionHeader)}>{t("adminCommon.dashboard.recentOrders")}</h2>
               <Link href="/admin/orders" className="text-xs text-brand-500 hover:text-brand-600 flex items-center gap-1">
                 View all <ArrowRight size={12} />
               </Link>
             </div>
             {recentOrders.length === 0 ? (
-              <div className={clsx("text-center py-10 text-sm", c.textMuted)}>No orders yet</div>
+              <div className={clsx("text-center py-10 text-sm", c.textMuted)}>{t("adminCommon.dashboard.noOrders")}</div>
             ) : (
               <div className="space-y-2">
                 {recentOrders.map((order) => {
@@ -149,7 +151,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-4">
             {/* Quick actions */}
             <div className={clsx("rounded-2xl border p-5", c.card)}>
-              <h2 className={clsx("font-semibold mb-4", c.sectionHeader)}>Quick Actions</h2>
+              <h2 className={clsx("font-semibold mb-4", c.sectionHeader)}>{t("adminCommon.dashboard.quickActions")}</h2>
               <div className="space-y-1">
                 {[
                   { href: "/admin/orders", icon: Clock, label: "Review Orders", color: "text-orange-500", count: pending },
@@ -172,7 +174,7 @@ export default function AdminDashboardPage() {
 
             {/* Order status */}
             <div className={clsx("rounded-2xl border p-5", c.card)}>
-              <h2 className={clsx("font-semibold mb-4", c.sectionHeader)}>Order Status</h2>
+              <h2 className={clsx("font-semibold mb-4", c.sectionHeader)}>{t("adminCommon.dashboard.orderStatus")}</h2>
               <div className="space-y-2.5">
                 {(["PENDING", "AWAITING_PAYMENT", "REVIEWING", "VALIDATED", "CANCELLED"] as OrderStatus[]).map((s) => {
                   const count = orders.filter((o) => o.status === s).length;
@@ -195,7 +197,7 @@ export default function AdminDashboardPage() {
               <CheckCircle2 size={28} className="text-brand-500" />
             </div>
             <div>
-              <p className={clsx("text-sm", c.textSecondary)}>Total Confirmed Revenue</p>
+              <p className={clsx("text-sm", c.textSecondary)}>{t("adminCommon.dashboard.revenueBannerTitle")}</p>
               <p className={clsx("text-3xl font-bold mt-0.5", c.textPrimary)}>{formatPrice(totalRevenue)}</p>
               <p className={clsx("text-xs mt-1", c.textMuted)}>From {validated} validated order{validated !== 1 ? "s" : ""}</p>
             </div>

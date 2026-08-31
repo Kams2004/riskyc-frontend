@@ -15,22 +15,24 @@ import {
   LayoutGrid, List, PackageSearch, PackageCheck,
 } from "lucide-react";
 import clsx from "clsx";
-
-const statusMeta: Record<OrderStatus, { label: string; icon: React.ReactNode }> = {
-  PENDING:          { label: "Pending",          icon: <Clock size={12} /> },
-  AWAITING_PAYMENT: { label: "Awaiting Payment", icon: <CreditCard size={12} /> },
-  REVIEWING:        { label: "Under Review",     icon: <Search size={12} /> },
-  VALIDATED:        { label: "Validated",        icon: <CheckCircle2 size={12} /> },
-  PACKAGING:        { label: "Packaging",        icon: <PackageSearch size={12} /> },
-  PACKAGED:         { label: "Packaged",         icon: <PackageCheck size={12} /> },
-  CANCELLED:        { label: "Cancelled",        icon: <XCircle size={12} /> },
-};
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const PAGE_SIZE = 5;
 
 export default function AdminOrdersPage() {
   const token = useAdminStore((s) => s.session?.token);
   const c = useAdminColors();
+  const { t } = useTranslation();
+
+  const statusMeta: Record<OrderStatus, { label: string; icon: React.ReactNode }> = {
+    PENDING:          { label: t("adminOrders.status.pending"),          icon: <Clock size={12} /> },
+    AWAITING_PAYMENT: { label: t("adminOrders.status.awaitingPayment"), icon: <CreditCard size={12} /> },
+    REVIEWING:        { label: t("adminOrders.status.reviewing"),     icon: <Search size={12} /> },
+    VALIDATED:        { label: t("adminOrders.status.validated"),        icon: <CheckCircle2 size={12} /> },
+    PACKAGING:        { label: t("adminOrders.status.packaging"),        icon: <PackageSearch size={12} /> },
+    PACKAGED:         { label: t("adminOrders.status.packaged"),         icon: <PackageCheck size={12} /> },
+    CANCELLED:        { label: t("adminOrders.status.cancelled"),        icon: <XCircle size={12} /> },
+  };
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
@@ -52,10 +54,10 @@ export default function AdminOrdersPage() {
 
   const askReject = (orderId: string) => {
     setConfirm({
-      title: "Reject order?",
-      message: "This will cancel the order and notify the customer (in-app and by push, if they've enabled it) with the reason below.",
-      confirmLabel: "Reject",
-      input: { label: "Reason for rejection", placeholder: "e.g. Payment screenshot doesn't match the order total", required: true },
+      title: t("adminOrders.confirm.rejectTitle"),
+      message: t("adminOrders.confirm.rejectMessage"),
+      confirmLabel: t("adminOrders.confirm.rejectConfirmLabel"),
+      input: { label: t("adminOrders.confirm.rejectReasonLabel"), placeholder: t("adminOrders.confirm.rejectReasonPlaceholder"), required: true },
       onConfirm: async (reason) => {
         await setStatus(orderId, "CANCELLED", reason);
         setConfirm(null);
@@ -94,9 +96,9 @@ export default function AdminOrdersPage() {
         {/* ── Header ── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>Orders</h1>
+            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminOrders.list.title")}</h1>
             <p className={clsx("text-sm mt-0.5", c.textSecondary)}>
-              {orders.length} total order{orders.length !== 1 ? "s" : ""}
+              {t(orders.length === 1 ? "adminOrders.list.totalOrdersOne" : "adminOrders.list.totalOrdersOther", { count: orders.length })}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -104,7 +106,7 @@ export default function AdminOrdersPage() {
               <Search size={15} className="text-gray-400 flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Search order ID…"
+                placeholder={t("adminOrders.list.searchPlaceholder")}
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
                 className={clsx("bg-transparent text-sm outline-none w-44", c.isDark ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400")}
@@ -112,17 +114,17 @@ export default function AdminOrdersPage() {
             </div>
             <div className={clsx("flex items-center rounded-xl border p-1 gap-1",
               c.isDark ? "bg-gray-800 border-gray-700" : "bg-gray-100 border-gray-200")}>
-              <button onClick={() => setViewMode("table")} title="Table view"
+              <button onClick={() => setViewMode("table")} title={t("adminOrders.list.tableView")}
                 className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
                   viewMode === "table" ? "bg-brand-500 text-white shadow-sm"
                   : c.isDark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-800")}>
-                <List size={14} /> Table
+                <List size={14} /> {t("adminOrders.list.tableView")}
               </button>
-              <button onClick={() => setViewMode("grid")} title="Grid view"
+              <button onClick={() => setViewMode("grid")} title={t("adminOrders.list.gridView")}
                 className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
                   viewMode === "grid" ? "bg-brand-500 text-white shadow-sm"
                   : c.isDark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-800")}>
-                <LayoutGrid size={14} /> Grid
+                <LayoutGrid size={14} /> {t("adminOrders.list.gridView")}
               </button>
             </div>
           </div>
@@ -138,7 +140,7 @@ export default function AdminOrdersPage() {
               )}
             >
               {s === "all" ? <Filter size={11} /> : statusMeta[s as OrderStatus].icon}
-              {s === "all" ? "All" : statusMeta[s as OrderStatus].label}
+              {s === "all" ? t("adminOrders.list.filterAll") : statusMeta[s as OrderStatus].label}
               <span className={clsx("rounded-full px-1.5 py-0.5 text-xs",
                 filter === s ? "bg-white/25 text-white" : c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-500"
               )}>
@@ -156,7 +158,7 @@ export default function AdminOrdersPage() {
         ) : filtered.length === 0 ? (
           <div className={clsx("text-center py-20", c.textMuted)}>
             <ShoppingBag className="mx-auto w-12 h-12 mb-3 opacity-30" />
-            <p className="text-sm">No orders found</p>
+            <p className="text-sm">{t("adminOrders.list.empty")}</p>
           </div>
         ) : (
           <>
@@ -175,13 +177,13 @@ export default function AdminOrdersPage() {
                   </colgroup>
                   <thead>
                     <tr className={clsx("border-b text-xs font-semibold uppercase tracking-wider", c.border, c.textMuted)}>
-                      <th className="px-4 py-3 text-left font-semibold">Order ID</th>
-                      <th className="px-4 py-3 text-left font-semibold">Items</th>
-                      <th className="px-4 py-3 text-left font-semibold">Method</th>
-                      <th className="px-4 py-3 text-left font-semibold">Total</th>
-                      <th className="px-4 py-3 text-left font-semibold">Status</th>
-                      <th className="px-4 py-3 text-center font-semibold">Actions</th>
-                      <th className="px-4 py-3 text-center font-semibold">View</th>
+                      <th className="px-4 py-3 text-left font-semibold">{t("adminOrders.list.table.orderId")}</th>
+                      <th className="px-4 py-3 text-left font-semibold">{t("adminOrders.list.table.items")}</th>
+                      <th className="px-4 py-3 text-left font-semibold">{t("adminOrders.list.table.method")}</th>
+                      <th className="px-4 py-3 text-left font-semibold">{t("adminOrders.list.table.total")}</th>
+                      <th className="px-4 py-3 text-left font-semibold">{t("adminOrders.list.table.status")}</th>
+                      <th className="px-4 py-3 text-center font-semibold">{t("adminOrders.list.table.actions")}</th>
+                      <th className="px-4 py-3 text-center font-semibold">{t("adminOrders.list.table.view")}</th>
                     </tr>
                   </thead>
                   <tbody className={clsx("divide-y", c.divide)}>
@@ -333,7 +335,7 @@ export default function AdminOrdersPage() {
                             {order.paymentMethod === "ORANGE_MONEY" ? "🟠 Orange" : "🟡 MoMo"}
                           </span>
                         ) : (
-                          <span className={clsx("text-xs", c.textMuted)}>No payment yet</span>
+                          <span className={clsx("text-xs", c.textMuted)}>{t("adminOrders.list.noPaymentYet")}</span>
                         )}
                         <span className={clsx("text-base font-bold tabular-nums", c.amount)}>
                           {formatPrice(order.total)}

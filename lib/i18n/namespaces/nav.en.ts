@@ -1,0 +1,18 @@
+export const nav = {
+  topBanner: "✨ Free delivery on orders above 50,000 XAF   |   Pay with no extra charges via Orange Money or Mobile Money",
+  home: "Home",
+  allProducts: "All Products",
+  allOfCategory: "All {{category}}",
+  more: "More",
+  searchPlaceholder: "Search products...",
+  toggleLanguage: "Toggle language",
+  switchToFrench: "Switch to Français",
+  switchToEnglish: "Switch to English",
+  myOrders: "My Orders",
+  myReferrals: "My Referrals",
+  helpCenter: "Help Center",
+  contactUs: "Contact Us",
+  logOut: "Log Out",
+  login: "Login",
+  register: "Register",
+};

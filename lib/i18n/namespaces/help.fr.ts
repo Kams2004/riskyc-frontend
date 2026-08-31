@@ -1,0 +1,49 @@
+import type { help as helpEn } from "./help.en";
+
+export const help: typeof helpEn = {
+  page: {
+    title: "Centre d'aide",
+    subtitle: "Réponses aux questions fréquentes sur les commandes, le paiement et la livraison.",
+  },
+  perks: {
+    fastDelivery: "Livraison rapide",
+    fastDeliverySub: "2 à 4 jours ouvrés",
+    securePay: "Paiement sécurisé",
+    securePaySub: "Orange & MTN Money",
+    easyReturn: "Retour facile",
+    easyReturnSub: "Sous 7 jours",
+  },
+  faq: {
+    question1: "Comment passer une commande ?",
+    answer1: "Parcourez nos produits, ajoutez des articles à votre panier, puis passez à la caisse. Choisissez Orange Money ou MTN Mobile Money pour payer, et téléversez votre capture d'écran de paiement pour confirmer.",
+    question2: "Quels moyens de paiement acceptez-vous ?",
+    answer2: "Nous acceptons les transferts Orange Money et MTN Mobile Money. Composez *150# pour Orange Money ou *126# pour MTN MoMo, ou utilisez directement leurs applications.",
+    question3: "Combien de temps prend la livraison ?",
+    answer3: "La livraison prend généralement 2 à 4 jours ouvrés au Cameroun. Les commandes de plus de 50 000 XAF bénéficient de la livraison gratuite.",
+    question4: "Puis-je suivre ma commande ?",
+    answer4: "Oui — créez un compte ou connectez-vous, puis consultez la section « Mes commandes » dans le menu du compte, dans l'en-tête.",
+    question5: "Quelle est votre politique de retour ?",
+    answer5: "Les articles peuvent être retournés dans les 7 jours suivant la livraison s'ils n'ont pas été portés et sont dans leur état d'origine. Contactez-nous via le chat pour lancer un retour.",
+  },
+  support: {
+    stillNeedHelp: "Besoin d'aide supplémentaire ?",
+    teamAvailable: "Notre équipe support est là pour vous.",
+    chatWithUs: "Discuter avec nous",
+    emailSupport: "Contacter par e-mail",
+  },
+  contact: {
+    title: "Contactez-nous",
+    subtitle: "Nous serions ravis de vous entendre — contactez-nous de la manière qui vous convient le mieux.",
+    whatsapp: "WhatsApp",
+    callUs: "Appelez-nous",
+    email: "E-mail",
+    visitStore: "Visitez notre boutique",
+    addressLine1: "Marché Central, Douala",
+    addressLine2: "Précisément au Marché des Pommes",
+    getDirections: "Obtenir l'itinéraire",
+    openingHours: "Horaires d'ouverture",
+    hoursLine1: "Lundi – Samedi : 8h00 – 18h30",
+    hoursLine2: "Dimanche : Fermé",
+    chatWithUsLive: "Discuter avec nous en direct",
+  },
+};

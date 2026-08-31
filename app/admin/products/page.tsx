@@ -9,6 +9,7 @@ import { formatPrice } from "@/lib/data";
 import { Product } from "@/lib/types";
 import Link from "next/link";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useState, useEffect } from "react";
 import {
   Plus, Pencil, Trash2, Search, Star, Package,
@@ -23,6 +24,7 @@ export default function AdminProductsPage() {
   const token = useAdminStore((s) => s.session?.token);
   const { categories } = useCategories();
   const c = useAdminColors();
+  const { t } = useTranslation();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -58,9 +60,9 @@ export default function AdminProductsPage() {
 
   const askDelete = (id: string, name: string) => {
     setConfirm({
-      title: "Delete product?",
-      message: `This will permanently delete "${name}". This cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("adminProducts.list.deleteProductTitle"),
+      message: t("adminProducts.list.deleteProductMessage", { name }),
+      confirmLabel: t("adminProducts.common.delete"),
       onConfirm: async () => {
         if (token) {
           await productsApi.deleteProduct(id, token);
@@ -75,18 +77,18 @@ export default function AdminProductsPage() {
     <div className={clsx("flex items-center justify-between flex-wrap gap-3 px-1", c.textSecondary)}>
       <div className="flex items-center gap-3 text-sm">
         <span>
-          {filtered.length === 0 ? "No products"
-            : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, filtered.length)} of ${filtered.length}`}
+          {filtered.length === 0 ? t("adminProducts.list.noProducts")
+            : t("adminProducts.list.paginationRange", { from: (safePage - 1) * pageSize + 1, to: Math.min(safePage * pageSize, filtered.length), total: filtered.length })}
         </span>
         <select value={pageSize} onChange={(e) => handlePgSize(Number(e.target.value))}
           className={clsx("text-sm rounded-lg px-2 py-1 border outline-none",
             c.isDark ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-white border-gray-300 text-gray-700")}>
-          {PAGE_SIZES.map((s) => <option key={s} value={s}>{s} / page</option>)}
+          {PAGE_SIZES.map((s) => <option key={s} value={s}>{t("adminProducts.list.pageSizeOption", { size: s })}</option>)}
         </select>
       </div>
       <div className="flex items-center gap-1">
-        <PagBtn onClick={() => setPage(1)} disabled={safePage === 1} title="First"><ChevronsLeft size={14} /></PagBtn>
-        <PagBtn onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1} title="Prev"><ChevronLeft size={14} /></PagBtn>
+        <PagBtn onClick={() => setPage(1)} disabled={safePage === 1} title={t("adminProducts.list.firstPage")}><ChevronsLeft size={14} /></PagBtn>
+        <PagBtn onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1} title={t("adminProducts.list.prevPage")}><ChevronLeft size={14} /></PagBtn>
         {Array.from({ length: totalPages }, (_, i) => i + 1)
           .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
           .reduce<(number | "…")[]>((acc, p, i, arr) => {
@@ -95,10 +97,10 @@ export default function AdminProductsPage() {
           }, [])
           .map((p, i) => p === "…"
             ? <span key={`e${i}`} className="px-1 text-xs text-gray-500">…</span>
-            : <PagBtn key={p} onClick={() => setPage(p as number)} active={safePage === p} title={`Page ${p}`}>{p}</PagBtn>
+            : <PagBtn key={p} onClick={() => setPage(p as number)} active={safePage === p} title={t("adminProducts.list.pageN", { page: p as number })}>{p}</PagBtn>
           )}
-        <PagBtn onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} title="Next"><ChevronRight size={14} /></PagBtn>
-        <PagBtn onClick={() => setPage(totalPages)} disabled={safePage === totalPages} title="Last"><ChevronsRight size={14} /></PagBtn>
+        <PagBtn onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} title={t("adminProducts.list.nextPage")}><ChevronRight size={14} /></PagBtn>
+        <PagBtn onClick={() => setPage(totalPages)} disabled={safePage === totalPages} title={t("adminProducts.list.lastPage")}><ChevronsRight size={14} /></PagBtn>
       </div>
     </div>
   );
@@ -110,14 +112,14 @@ export default function AdminProductsPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>Products</h1>
+            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminProducts.list.title")}</h1>
             <p className={clsx("text-sm mt-0.5", c.textSecondary)}>
-              {products.length} products across {categories.length} categories
+              {t("adminProducts.list.subtitle", { count: products.length, categories: categories.length })}
             </p>
           </div>
           <Link href="/admin/products/new"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20">
-            <Plus size={16} /> Add Product
+            <Plus size={16} /> {t("adminProducts.list.addProduct")}
           </Link>
         </div>
 
@@ -127,13 +129,13 @@ export default function AdminProductsPage() {
             <div className={clsx("flex items-center gap-2 border rounded-xl px-3 py-2",
               c.isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300")}>
               <Search size={15} className="text-gray-400 flex-shrink-0" />
-              <input type="text" placeholder="Search products…" value={search}
+              <input type="text" placeholder={t("adminProducts.list.searchPlaceholder")} value={search}
                 onChange={(e) => handleSearch(e.target.value)}
                 className={clsx("bg-transparent text-sm outline-none w-44",
                   c.isDark ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400")} />
             </div>
             <div className="flex gap-2 flex-wrap">
-              {[{ slug: "all", label: "All" }, ...categories.map((cat) => ({ slug: cat.slug, label: cat.name }))].map((cat) => (
+              {[{ slug: "all", label: t("adminProducts.list.allFilter") }, ...categories.map((cat) => ({ slug: cat.slug, label: cat.name }))].map((cat) => (
                 <button key={cat.slug} onClick={() => handleCat(cat.slug)}
                   className={clsx("px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
                     catFilter === cat.slug ? "bg-brand-500 text-white shadow-sm" : c.filterInactive)}>
@@ -144,17 +146,17 @@ export default function AdminProductsPage() {
           </div>
           <div className={clsx("flex items-center rounded-xl border p-1 gap-1",
             c.isDark ? "bg-gray-800 border-gray-700" : "bg-gray-100 border-gray-200")}>
-            <button onClick={() => setViewMode("table")} title="Table view"
+            <button onClick={() => setViewMode("table")} title={t("adminProducts.list.tableView")}
               className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
                 viewMode === "table" ? "bg-brand-500 text-white shadow-sm"
                 : c.isDark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-800")}>
-              <List size={14} /> Table
+              <List size={14} /> {t("adminProducts.list.tableView")}
             </button>
-            <button onClick={() => setViewMode("grid")} title="Grid view"
+            <button onClick={() => setViewMode("grid")} title={t("adminProducts.list.gridView")}
               className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
                 viewMode === "grid" ? "bg-brand-500 text-white shadow-sm"
                 : c.isDark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-800")}>
-              <LayoutGrid size={14} /> Grid
+              <LayoutGrid size={14} /> {t("adminProducts.list.gridView")}
             </button>
           </div>
         </div>
@@ -167,7 +169,7 @@ export default function AdminProductsPage() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <Package size={40} className={clsx("mx-auto mb-3 opacity-30", c.textMuted)} />
-            <p className={clsx("text-sm", c.textMuted)}>No products found</p>
+            <p className={clsx("text-sm", c.textMuted)}>{t("adminProducts.list.noProductsFound")}</p>
           </div>
         ) : (
           <>
@@ -197,13 +199,13 @@ export default function AdminProductsPage() {
                   <thead>
                     <tr className={clsx("border-b text-xs font-semibold uppercase tracking-wider", c.border, c.textMuted)}>
                       <th className="px-4 py-3 text-left font-semibold" />
-                      <th className="px-4 py-3 text-left font-semibold">Product</th>
-                      <th className="px-4 py-3 text-left font-semibold">Category</th>
-                      <th className="px-4 py-3 text-left font-semibold">Price</th>
-                      <th className="px-4 py-3 text-center font-semibold">Rating</th>
-                      <th className="px-4 py-3 text-center font-semibold">Badge</th>
-                      <th className="px-4 py-3 text-center font-semibold">Visibility</th>
-                      <th className="px-4 py-3 text-center font-semibold">Actions</th>
+                      <th className="px-4 py-3 text-left font-semibold">{t("adminProducts.list.colProduct")}</th>
+                      <th className="px-4 py-3 text-left font-semibold">{t("adminProducts.list.colCategory")}</th>
+                      <th className="px-4 py-3 text-left font-semibold">{t("adminProducts.list.colPrice")}</th>
+                      <th className="px-4 py-3 text-center font-semibold">{t("adminProducts.list.colRating")}</th>
+                      <th className="px-4 py-3 text-center font-semibold">{t("adminProducts.list.colBadge")}</th>
+                      <th className="px-4 py-3 text-center font-semibold">{t("adminProducts.list.colVisibility")}</th>
+                      <th className="px-4 py-3 text-center font-semibold">{t("adminProducts.list.colActions")}</th>
                     </tr>
                   </thead>
 
@@ -228,7 +230,7 @@ export default function AdminProductsPage() {
                               <p className={clsx("text-sm font-semibold leading-tight", c.textPrimary)}>{product.name}</p>
                               {product.hidden && (
                                 <span className={clsx("flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap", c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-500")}>
-                                  <EyeOff size={9} /> HIDDEN
+                                  <EyeOff size={9} /> {t("adminProducts.common.hidden")}
                                 </span>
                               )}
                             </div>
@@ -241,7 +243,7 @@ export default function AdminProductsPage() {
                               {product.colors.length > 6 && <span className={clsx("text-xs", c.textMuted)}>+{product.colors.length - 6}</span>}
                             </div>
                             {product.createdByName && (
-                              <p className={clsx("text-[10px] mt-1", c.textMuted)}>Added by {product.createdByName}</p>
+                              <p className={clsx("text-[10px] mt-1", c.textMuted)}>{t("adminProducts.common.addedBy", { name: product.createdByName })}</p>
                             )}
                           </td>
 
@@ -262,7 +264,7 @@ export default function AdminProductsPage() {
                                 )}
                               </>
                             ) : (
-                              <span className={clsx("text-xs italic whitespace-nowrap", c.textMuted)}>Price on request</span>
+                              <span className={clsx("text-xs italic whitespace-nowrap", c.textMuted)}>{t("adminProducts.common.priceOnRequest")}</span>
                             )}
                           </td>
 
@@ -290,7 +292,7 @@ export default function AdminProductsPage() {
                           <td className="px-4 py-3 text-center">
                             <button
                               onClick={() => setHidden(product.id, !product.hidden)}
-                              title={product.hidden ? "Unhide product" : "Hide product"}
+                              title={product.hidden ? t("adminProducts.list.unhideProduct") : t("adminProducts.list.hideProduct")}
                               className={clsx("inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap",
                                 product.hidden
                                   ? c.isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-600 hover:bg-gray-300"
@@ -305,16 +307,16 @@ export default function AdminProductsPage() {
                               <Link href={`/admin/products/${product.id}/view`}
                                 className={clsx("inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap",
                                   c.isDark ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-blue-50 text-blue-600 hover:bg-blue-100")}>
-                                <Eye size={12} /> View
+                                <Eye size={12} /> {t("adminProducts.common.view")}
                               </Link>
                               <Link href={`/admin/products/${product.id}/edit`}
                                 className={clsx("inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap", c.btnGhost)}>
-                                <Pencil size={12} /> Edit
+                                <Pencil size={12} /> {t("adminProducts.common.edit")}
                               </Link>
                               <button onClick={() => askDelete(product.id, product.name)}
                                 className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap bg-red-500/10 text-red-500 hover:bg-red-500/20">
                                 <Trash2 size={12} />
-                                Del
+                                {t("adminProducts.list.del")}
                               </button>
                             </div>
                           </td>
@@ -342,7 +344,7 @@ export default function AdminProductsPage() {
                         {product.hidden && (
                           <div className="absolute top-2 left-2">
                             <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-900/80 text-white backdrop-blur-sm">
-                              <EyeOff size={11} /> HIDDEN
+                              <EyeOff size={11} /> {t("adminProducts.common.hidden")}
                             </span>
                           </div>
                         )}
@@ -377,7 +379,7 @@ export default function AdminProductsPage() {
                               )}
                             </>
                           ) : (
-                            <span className={clsx("text-xs italic", c.textMuted)}>Price on request</span>
+                            <span className={clsx("text-xs italic", c.textMuted)}>{t("adminProducts.common.priceOnRequest")}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-1 mb-4">
@@ -391,7 +393,7 @@ export default function AdminProductsPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => setHidden(product.id, !product.hidden)}
-                            title={product.hidden ? "Unhide product" : "Hide product"}
+                            title={product.hidden ? t("adminProducts.list.unhideProduct") : t("adminProducts.list.hideProduct")}
                             className={clsx("inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-colors",
                               product.hidden
                                 ? c.isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-600 hover:bg-gray-300"
@@ -401,14 +403,14 @@ export default function AdminProductsPage() {
                           <Link href={`/admin/products/${product.id}/view`}
                             className={clsx("inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-colors",
                               c.isDark ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-blue-50 text-blue-600 hover:bg-blue-100")}>
-                            <Eye size={13} /> View
+                            <Eye size={13} /> {t("adminProducts.common.view")}
                           </Link>
                           <Link href={`/admin/products/${product.id}/edit`}
                             className={clsx("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-colors", c.btnGhost)}>
-                            <Pencil size={13} /> Edit
+                            <Pencil size={13} /> {t("adminProducts.common.edit")}
                           </Link>
                           <button onClick={() => askDelete(product.id, product.name)}
-                            title="Delete product"
+                            title={t("adminProducts.list.deleteProductTooltip")}
                             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20">
                             <Trash2 size={13} />
                           </button>

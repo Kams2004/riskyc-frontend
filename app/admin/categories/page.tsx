@@ -7,6 +7,7 @@ import { Category } from "@/lib/types";
 import { useAdminColors } from "@/lib/useAdminColors";
 import FaIconPicker, { FaIconPreview } from "@/components/admin/FaIconPicker";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useState, useEffect, useRef } from "react";
 import {
   Plus,
@@ -33,6 +34,7 @@ function slugify(name: string) {
 export default function AdminCategoriesPage() {
   const token = useAdminStore((s) => s.session?.token);
   const c = useAdminColors();
+  const { t } = useTranslation();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +107,7 @@ export default function AdminCategoriesPage() {
       setCategories((prev) => prev.map((cat) => (cat.id === id ? { ...updated, subcategories: cat.subcategories } : cat)));
       setEditing(null);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to update category");
+      setFormError(err instanceof Error ? err.message : t("adminProducts.categories.updateCategoryError"));
     }
   };
 
@@ -133,7 +135,7 @@ export default function AdminCategoriesPage() {
       );
       setEditing(null);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to update subcategory");
+      setFormError(err instanceof Error ? err.message : t("adminProducts.categories.updateSubcategoryError"));
     }
   };
 
@@ -156,7 +158,7 @@ export default function AdminCategoriesPage() {
       setCategories((prev) => [...prev, created]);
       setAdding(null);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to create category");
+      setFormError(err instanceof Error ? err.message : t("adminProducts.categories.createCategoryError"));
     }
   };
 
@@ -178,17 +180,19 @@ export default function AdminCategoriesPage() {
       );
       setAdding(null);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to add subcategory");
+      setFormError(err instanceof Error ? err.message : t("adminProducts.categories.addSubcategoryError"));
     }
   };
 
   const askDeleteCategory = (id: string, name: string, subCount: number) => {
     setConfirm({
-      title: "Delete category?",
-      message: `This will permanently delete "${name}"${
-        subCount > 0 ? ` and its ${subCount} subcategor${subCount !== 1 ? "ies" : "y"}` : ""
-      }. This cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("adminProducts.categories.deleteCategoryTitle"),
+      message: subCount === 0
+        ? t("adminProducts.categories.deleteCategoryMessage", { name })
+        : subCount === 1
+        ? t("adminProducts.categories.deleteCategoryMessageWithSubsOne", { name, count: subCount })
+        : t("adminProducts.categories.deleteCategoryMessageWithSubsOther", { name, count: subCount }),
+      confirmLabel: t("adminProducts.common.delete"),
       onConfirm: async () => {
         if (token) {
           await categoriesApi.deleteCategory(id, token);
@@ -201,9 +205,9 @@ export default function AdminCategoriesPage() {
 
   const askDeleteSubcategory = (catId: string, subId: string, name: string) => {
     setConfirm({
-      title: "Delete subcategory?",
-      message: `This will permanently delete "${name}". This cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("adminProducts.categories.deleteSubcategoryTitle"),
+      message: t("adminProducts.categories.deleteSubcategoryMessage", { name }),
+      confirmLabel: t("adminProducts.common.delete"),
       onConfirm: async () => {
         if (token) {
           await categoriesApi.deleteSubcategory(subId, token);
@@ -238,10 +242,12 @@ export default function AdminCategoriesPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>Categories</h1>
+            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminProducts.categories.title")}</h1>
             <p className={clsx("text-sm mt-0.5", c.textSecondary)}>
-              {categories.length} categories ·{" "}
-              {categories.reduce((s, cat) => s + cat.subcategories.length, 0)} subcategories
+              {t("adminProducts.categories.subtitle", {
+                catCount: categories.length,
+                subCount: categories.reduce((s, cat) => s + cat.subcategories.length, 0),
+              })}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -249,14 +255,14 @@ export default function AdminCategoriesPage() {
               <button
                 onClick={() => setView("list")}
                 className={clsx("p-2 transition-colors", view === "list" ? "bg-brand-500 text-white" : c.isDark ? "bg-gray-800 text-gray-400 hover:bg-gray-700" : "bg-white text-gray-500 hover:bg-gray-50")}
-                title="List view"
+                title={t("adminProducts.categories.listView")}
               >
                 <LayoutList size={16} />
               </button>
               <button
                 onClick={() => setView("grid")}
                 className={clsx("p-2 transition-colors", view === "grid" ? "bg-brand-500 text-white" : c.isDark ? "bg-gray-800 text-gray-400 hover:bg-gray-700" : "bg-white text-gray-500 hover:bg-gray-50")}
-                title="Grid view"
+                title={t("adminProducts.categories.gridView")}
               >
                 <LayoutGrid size={16} />
               </button>
@@ -265,7 +271,7 @@ export default function AdminCategoriesPage() {
               onClick={startAddCat}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20"
             >
-              <Plus size={16} /> Add Category
+              <Plus size={16} /> {t("adminProducts.categories.addCategory")}
             </button>
           </div>
         </div>
@@ -282,20 +288,20 @@ export default function AdminCategoriesPage() {
         {/* New category form */}
         {adding === "new-cat" && (
           <div className={clsx("rounded-2xl border p-5 space-y-4", c.card)}>
-            <p className={clsx("text-sm font-semibold", c.textPrimary)}>New Category</p>
+            <p className={clsx("text-sm font-semibold", c.textPrimary)}>{t("adminProducts.categories.newCategoryTitle")}</p>
             <div className="flex flex-wrap gap-3 items-end">
               <div>
-                <p className={clsx("text-xs font-semibold mb-1.5", c.textSecondary)}>Icon</p>
+                <p className={clsx("text-xs font-semibold mb-1.5", c.textSecondary)}>{t("adminProducts.categories.iconLabel")}</p>
                 <FaIconPicker value={newIcon} onChange={setNewIcon} isDark={c.isDark} />
               </div>
               <div className="flex-1 min-w-[140px]">
-                <p className={clsx("text-xs font-semibold mb-1.5", c.textSecondary)}>Name</p>
+                <p className={clsx("text-xs font-semibold mb-1.5", c.textSecondary)}>{t("adminProducts.categories.nameLabel")}</p>
                 <input
                   className={clsx(inlineInput, "w-full")}
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && saveAddCat()}
-                  placeholder="Category name"
+                  placeholder={t("adminProducts.categories.categoryNamePlaceholder")}
                   autoFocus
                 />
               </div>
@@ -305,13 +311,13 @@ export default function AdminCategoriesPage() {
                   disabled={!newName.trim()}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
                 >
-                  <Save size={14} /> Save
+                  <Save size={14} /> {t("adminProducts.common.save")}
                 </button>
                 <button
                   onClick={() => setAdding(null)}
                   className={clsx("flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-gray-100 hover:bg-gray-200 text-gray-600")}
                 >
-                  <X size={14} /> Cancel
+                  <X size={14} /> {t("adminProducts.common.cancel")}
                 </button>
               </div>
             </div>
@@ -327,7 +333,7 @@ export default function AdminCategoriesPage() {
           ) : categories.length === 0 && (
             <div className="text-center py-20">
               <FolderOpen size={40} className={clsx("mx-auto mb-3 opacity-30", c.textMuted)} />
-              <p className={clsx("text-sm", c.textMuted)}>No categories yet</p>
+              <p className={clsx("text-sm", c.textMuted)}>{t("adminProducts.categories.noCategoriesYet")}</p>
             </div>
           )}
 
@@ -352,7 +358,7 @@ export default function AdminCategoriesPage() {
                     <button
                       onClick={() => triggerImageUpload(cat.id)}
                       disabled={uploadingId === cat.id}
-                      title={cat.imageUrl ? "Change cover image" : "Upload cover image"}
+                      title={cat.imageUrl ? t("adminProducts.categories.changeCoverImageTitle") : t("adminProducts.categories.uploadCoverImageTitle")}
                       className="p-2 rounded-lg bg-white/90 text-gray-700 hover:bg-white transition-colors"
                     >
                       {uploadingId === cat.id ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
@@ -360,7 +366,7 @@ export default function AdminCategoriesPage() {
                     {cat.imageUrl && (
                       <button
                         onClick={() => handleDeleteImage(cat.id)}
-                        title="Remove cover image"
+                        title={t("adminProducts.categories.removeCoverImageTitle")}
                         className="p-2 rounded-lg bg-white/90 text-red-600 hover:bg-white transition-colors"
                       >
                         <Trash2 size={14} />
@@ -382,10 +388,10 @@ export default function AdminCategoriesPage() {
                       />
                       <div className="flex gap-2">
                         <button onClick={() => saveEditCat(cat.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-brand-500 text-white text-xs font-semibold">
-                          <Save size={12} /> Save
+                          <Save size={12} /> {t("adminProducts.common.save")}
                         </button>
                         <button onClick={() => setEditing(null)} className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs", c.isDark ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-600")}>
-                          <X size={12} /> Cancel
+                          <X size={12} /> {t("adminProducts.common.cancel")}
                         </button>
                       </div>
                     </div>
@@ -398,7 +404,7 @@ export default function AdminCategoriesPage() {
                         <p className={clsx("font-semibold text-sm truncate", c.textPrimary)}>{cat.name}</p>
                         <p className={clsx("text-xs font-mono", c.textMuted)}>{cat.id}</p>
                         {cat.createdByName && (
-                          <p className={clsx("text-[10px]", c.textMuted)}>Added by {cat.createdByName}</p>
+                          <p className={clsx("text-[10px]", c.textMuted)}>{t("adminProducts.common.addedBy", { name: cat.createdByName })}</p>
                         )}
                       </div>
                     </>
@@ -407,7 +413,7 @@ export default function AdminCategoriesPage() {
                 {/* Subcategory pills */}
                 <div className="flex-1 px-4 py-3 flex flex-wrap gap-1.5 content-start">
                   {cat.subcategories.length === 0 && !isAddingSub ? (
-                    <span className={clsx("text-xs italic", c.textMuted)}>No subcategories</span>
+                    <span className={clsx("text-xs italic", c.textMuted)}>{t("adminProducts.categories.noSubcategories")}</span>
                   ) : cat.subcategories.map((sub) => {
                     const isEditingSub = editing === `sub-${cat.id}-${sub.id}`;
                     if (isEditingSub) {
@@ -437,7 +443,7 @@ export default function AdminCategoriesPage() {
                         key={sub.id}
                         onClick={() => startEditSub(cat.id, sub.id, sub.name)}
                         className={clsx("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors group", c.isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}
-                        title="Click to edit"
+                        title={t("adminProducts.categories.clickToEditTooltip")}
                       >
                         <Tag size={10} />{sub.name}
                         <Pencil size={9} className="opacity-0 group-hover:opacity-60 transition-opacity" />
@@ -451,7 +457,7 @@ export default function AdminCategoriesPage() {
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") saveAddSub(cat.id); if (e.key === "Escape") setAdding(null); }}
-                        placeholder="Subcategory name"
+                        placeholder={t("adminProducts.categories.subcategoryNamePlaceholder")}
                         autoFocus
                       />
                       <button
@@ -459,7 +465,7 @@ export default function AdminCategoriesPage() {
                         disabled={!newName.trim()}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white text-xs font-semibold flex-shrink-0"
                       >
-                        <Save size={12} /> Add
+                        <Save size={12} /> {t("adminProducts.common.add")}
                       </button>
                       <button
                         onClick={() => setAdding(null)}
@@ -472,16 +478,20 @@ export default function AdminCategoriesPage() {
                 </div>
                 {/* Grid card footer */}
                 <div className={clsx("flex items-center justify-between px-4 py-3 border-t", c.divide)}>
-                  <span className={clsx("text-xs", c.textMuted)}>{cat.subcategories.length} sub{cat.subcategories.length !== 1 ? "s" : ""}</span>
+                  <span className={clsx("text-xs", c.textMuted)}>
+                    {cat.subcategories.length === 1
+                      ? t("adminProducts.categories.subCountOne", { count: cat.subcategories.length })
+                      : t("adminProducts.categories.subCountOther", { count: cat.subcategories.length })}
+                  </span>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => startAddSub(cat.id)} className={clsx("flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200")}>
-                      <Plus size={11} /> Sub
+                      <Plus size={11} /> {t("adminProducts.categories.subButton")}
                     </button>
                     <button onClick={() => startEditCat(cat.id, cat.name, cat.icon ?? "fa:solid:tag")} className={clsx("flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors", c.btnGhost)}>
-                      <Pencil size={11} /> Edit
+                      <Pencil size={11} /> {t("adminProducts.common.edit")}
                     </button>
                     <button onClick={() => askDeleteCategory(cat.id, cat.name, cat.subcategories.length)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20">
-                      <Trash2 size={11} />Delete
+                      <Trash2 size={11} />{t("adminProducts.common.delete")}
                     </button>
                   </div>
                 </div>
@@ -520,7 +530,7 @@ export default function AdminCategoriesPage() {
                       <button
                         onClick={() => triggerImageUpload(cat.id)}
                         disabled={uploadingId === cat.id}
-                        title="Change cover image"
+                        title={t("adminProducts.categories.changeCoverImageTitle")}
                         className="absolute inset-0 bg-black/0 hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover/img:opacity-100"
                       >
                         {uploadingId === cat.id ? <Loader2 size={12} className="animate-spin text-white" /> : <Upload size={12} className="text-white" />}
@@ -531,11 +541,11 @@ export default function AdminCategoriesPage() {
                   {isEditingCat ? (
                     <div className="flex flex-wrap items-center gap-3 flex-1">
                       <div>
-                        <p className={clsx("text-xs font-semibold mb-1", c.textSecondary)}>Icon</p>
+                        <p className={clsx("text-xs font-semibold mb-1", c.textSecondary)}>{t("adminProducts.categories.iconLabel")}</p>
                         <FaIconPicker value={editIcon} onChange={setEditIcon} isDark={c.isDark} />
                       </div>
                       <div className="flex-1 min-w-[140px]">
-                        <p className={clsx("text-xs font-semibold mb-1", c.textSecondary)}>Name</p>
+                        <p className={clsx("text-xs font-semibold mb-1", c.textSecondary)}>{t("adminProducts.categories.nameLabel")}</p>
                         <input
                           className={clsx(inlineInput, "w-full")}
                           value={editValue}
@@ -546,7 +556,7 @@ export default function AdminCategoriesPage() {
                       </div>
                       <div className="flex gap-2 self-end">
                         <button onClick={() => saveEditCat(cat.id)} className="flex items-center gap-1 px-2.5 py-2 rounded-lg bg-brand-500 text-white text-xs font-semibold">
-                          <Save size={12} /> Save
+                          <Save size={12} /> {t("adminProducts.common.save")}
                         </button>
                         <button onClick={() => setEditing(null)} className={clsx("flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs", c.isDark ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-600")}>
                           <X size={12} />
@@ -565,7 +575,12 @@ export default function AdminCategoriesPage() {
                       <div className="min-w-0">
                         <p className={clsx("font-semibold text-sm", c.textPrimary)}>{cat.name}</p>
                         <p className={clsx("text-xs", c.textSecondary)}>
-                          ID: <span className="font-mono">{cat.id}</span> · {cat.subcategories.length} subcategor{cat.subcategories.length !== 1 ? "ies" : "y"}
+                          {t("adminProducts.categories.idAndSubcategories", {
+                            id: cat.id,
+                            subcategories: cat.subcategories.length === 1
+                              ? t("adminProducts.categories.subcategoryCountOne", { count: cat.subcategories.length })
+                              : t("adminProducts.categories.subcategoryCountOther", { count: cat.subcategories.length }),
+                          })}
                         </p>
                       </div>
                     </div>
@@ -577,20 +592,20 @@ export default function AdminCategoriesPage() {
                         onClick={() => startAddSub(cat.id)}
                         className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200")}
                       >
-                        <Plus size={12} /> Sub
+                        <Plus size={12} /> {t("adminProducts.categories.subButton")}
                       </button>
                       <button
                         onClick={() => startEditCat(cat.id, cat.name, cat.icon ?? "fa:solid:tag")}
                         className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors", c.btnGhost)}
                       >
-                        <Pencil size={12} /> Edit
+                        <Pencil size={12} /> {t("adminProducts.common.edit")}
                       </button>
                       <button
                         onClick={() => askDeleteCategory(cat.id, cat.name, cat.subcategories.length)}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
                       >
                         <Trash2 size={12} />
-                        Delete
+                        {t("adminProducts.common.delete")}
                       </button>
                     </div>
                   )}
@@ -601,7 +616,7 @@ export default function AdminCategoriesPage() {
                   <div className={clsx("divide-y", c.divide)}>
                     {cat.subcategories.length === 0 && !isAddingSub && (
                       <div className={clsx("px-6 py-4 text-xs italic", c.textMuted)}>
-                        No subcategories yet — click &quot;+ Sub&quot; to add one.
+                        {t("adminProducts.categories.noSubcategoriesYetHint")}
                       </div>
                     )}
 
@@ -623,7 +638,7 @@ export default function AdminCategoriesPage() {
                                 autoFocus
                               />
                               <button onClick={() => saveEditSub(cat.id, sub.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-brand-500 text-white text-xs font-semibold">
-                                <Save size={12} /> Save
+                                <Save size={12} /> {t("adminProducts.common.save")}
                               </button>
                               <button onClick={() => setEditing(null)} className={clsx("p-1.5 rounded-lg text-xs", c.isDark ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-600")}>
                                 <X size={12} />
@@ -640,14 +655,14 @@ export default function AdminCategoriesPage() {
                                   onClick={() => startEditSub(cat.id, sub.id, sub.name)}
                                   className={clsx("flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors", c.btnGhost)}
                                 >
-                                  <Pencil size={11} /> Edit
+                                  <Pencil size={11} /> {t("adminProducts.common.edit")}
                                 </button>
                                 <button
                                   onClick={() => askDeleteSubcategory(cat.id, sub.id, sub.name)}
                                   className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
                                 >
                                   <Trash2 size={11} />
-                                  Delete
+                                  {t("adminProducts.common.delete")}
                                 </button>
                               </div>
                             </>
@@ -666,7 +681,7 @@ export default function AdminCategoriesPage() {
                           value={newName}
                           onChange={(e) => setNewName(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") saveAddSub(cat.id); if (e.key === "Escape") setAdding(null); }}
-                          placeholder="Subcategory name"
+                          placeholder={t("adminProducts.categories.subcategoryNamePlaceholder")}
                           autoFocus
                         />
                         <button
@@ -674,7 +689,7 @@ export default function AdminCategoriesPage() {
                           disabled={!newName.trim()}
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white text-xs font-semibold"
                         >
-                          <Save size={12} /> Add
+                          <Save size={12} /> {t("adminProducts.common.add")}
                         </button>
                         <button
                           onClick={() => setAdding(null)}

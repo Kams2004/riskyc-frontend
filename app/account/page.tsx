@@ -15,21 +15,23 @@ import {
   AlertCircle,
 } from "@/components/icons/fa";
 import clsx from "clsx";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, t: (path: string, vars?: Record<string, string | number>) => string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (days <= 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 30) return `${days}d ago`;
+  if (days <= 0) return t("account.dashboard.timeAgo.today");
+  if (days === 1) return t("account.dashboard.timeAgo.yesterday");
+  if (days < 30) return t("account.dashboard.timeAgo.daysAgo", { days });
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  return `${Math.floor(months / 12)}y ago`;
+  if (months < 12) return t("account.dashboard.timeAgo.monthsAgo", { months });
+  return t("account.dashboard.timeAgo.yearsAgo", { years: Math.floor(months / 12) });
 }
 
 export default function AccountPage() {
   const router = useRouter();
   const customer = useStore((s) => s.customer);
+  const { t } = useTranslation();
   const [hydrated, setHydrated] = useState(false);
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,7 @@ export default function AccountPage() {
     customersApi
       .getReferralSummary(customer.id)
       .then(setSummary)
-      .catch(() => setError("Couldn't load your referral info. Please try again."))
+      .catch(() => setError(t("account.dashboard.referrals.loadError")))
       .finally(() => setLoading(false));
   }, [hydrated, customer, router]);
 
@@ -80,7 +82,7 @@ export default function AccountPage() {
   const handleSaveAcronym = async () => {
     const trimmed = acronym.trim();
     if (!trimmed) {
-      setAcronymError("Display name cannot be empty");
+      setAcronymError(t("account.dashboard.displayName.emptyError"));
       return;
     }
     setSavingAcronym(true);
@@ -91,7 +93,7 @@ export default function AccountPage() {
       setSummary((s) => (s ? { ...s, acronym: updated.acronym } : s));
       setEditingAcronym(false);
     } catch (e) {
-      setAcronymError(e instanceof Error ? e.message : "Couldn't save your display name");
+      setAcronymError(e instanceof Error ? e.message : t("account.dashboard.displayName.saveError"));
     } finally {
       setSavingAcronym(false);
     }
@@ -100,7 +102,7 @@ export default function AccountPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-6">
       <div>
-        <h1 className="font-display font-bold text-2xl text-gray-900">My Account</h1>
+        <h1 className="font-display font-bold text-2xl text-gray-900">{t("account.dashboard.title")}</h1>
         <p className="text-gray-400 text-sm mt-1">
           {customer.firstName} {customer.lastName} · {customer.email}
         </p>
@@ -108,9 +110,9 @@ export default function AccountPage() {
 
       {/* Display name (acronym) */}
       <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-        <h2 className="font-semibold text-gray-900 mb-1">Display Name</h2>
+        <h2 className="font-semibold text-gray-900 mb-1">{t("account.dashboard.displayName.title")}</h2>
         <p className="text-sm text-gray-400 mb-4">
-          Shown to people you refer (and to whoever referred you) instead of your real name.
+          {t("account.dashboard.displayName.description")}
         </p>
         {editingAcronym ? (
           <div className="flex flex-col sm:flex-row gap-2">
@@ -127,7 +129,7 @@ export default function AccountPage() {
                 disabled={savingAcronym}
                 className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
               >
-                {savingAcronym ? "Saving…" : "Save"}
+                {savingAcronym ? t("account.dashboard.displayName.saving") : t("account.dashboard.displayName.save")}
               </button>
               <button
                 onClick={() => {
@@ -137,7 +139,7 @@ export default function AccountPage() {
                 }}
                 className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-semibold transition-colors"
               >
-                Cancel
+                {t("account.dashboard.displayName.cancel")}
               </button>
             </div>
           </div>
@@ -148,7 +150,7 @@ export default function AccountPage() {
               onClick={() => setEditingAcronym(true)}
               className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-brand-600 transition-colors"
             >
-              <Pencil size={13} /> Edit
+              <Pencil size={13} /> {t("account.dashboard.displayName.edit")}
             </button>
           </div>
         )}
@@ -159,10 +161,10 @@ export default function AccountPage() {
       <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-3xl p-6 shadow-lg text-white">
         <div className="flex items-center gap-2 mb-1">
           <Gift size={18} />
-          <h2 className="font-semibold">Invite Friends</h2>
+          <h2 className="font-semibold">{t("account.dashboard.invite.title")}</h2>
         </div>
         <p className="text-sm text-white/80 mb-4">
-          Share your link or code — when a friend signs up with it, they&apos;ll show up in your referrals below.
+          {t("account.dashboard.invite.description")}
         </p>
 
         <div className="space-y-2">
@@ -173,7 +175,7 @@ export default function AccountPage() {
               onClick={() => handleCopy(shareLink, "link")}
               className="flex-shrink-0 flex items-center gap-1.5 bg-white/20 hover:bg-white/30 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
             >
-              {copiedField === "link" ? <><Check size={13} />Copied</> : <><Copy size={13} />Copy Link</>}
+              {copiedField === "link" ? <><Check size={13} />{t("account.dashboard.invite.copied")}</> : <><Copy size={13} />{t("account.dashboard.invite.copyLink")}</>}
             </button>
           </div>
           <div className="flex items-center gap-2 bg-white/15 rounded-xl px-4 py-2.5">
@@ -183,13 +185,13 @@ export default function AccountPage() {
               onClick={() => handleCopy(summary?.referralCode ?? customer.referralCode, "code")}
               className="flex-shrink-0 flex items-center gap-1.5 bg-white/20 hover:bg-white/30 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
             >
-              {copiedField === "code" ? <><Check size={13} />Copied</> : <><Copy size={13} />Copy Code</>}
+              {copiedField === "code" ? <><Check size={13} />{t("account.dashboard.invite.copied")}</> : <><Copy size={13} />{t("account.dashboard.invite.copyCode")}</>}
             </button>
           </div>
         </div>
 
         {summary?.referredByAcronym && (
-          <p className="text-xs text-white/70 mt-4">You joined using a referral code from <strong>{summary.referredByAcronym}</strong>.</p>
+          <p className="text-xs text-white/70 mt-4">{t("account.dashboard.invite.referredBy", { acronym: summary.referredByAcronym })}</p>
         )}
       </div>
 
@@ -208,40 +210,40 @@ export default function AccountPage() {
         <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Users size={18} className="text-brand-500" />
-            <h2 className="font-semibold text-gray-900">Your Referrals</h2>
+            <h2 className="font-semibold text-gray-900">{t("account.dashboard.referrals.title")}</h2>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-5">
             <div className="bg-brand-50 rounded-2xl p-4 text-center">
               <p className="text-2xl font-bold text-brand-600">{summary.directReferralCount}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Direct referrals</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t("account.dashboard.referrals.direct")}</p>
             </div>
             <div className="bg-gray-50 rounded-2xl p-4 text-center">
               <p className="text-2xl font-bold text-gray-700">{summary.indirectReferralCount}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Referred by your referrals</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t("account.dashboard.referrals.indirect")}</p>
             </div>
           </div>
 
           {summary.referrals.length === 0 ? (
             <div className="text-center py-8">
               <Gift className="mx-auto w-10 h-10 mb-3 text-gray-200" />
-              <p className="text-sm text-gray-400">No referrals yet — share your link above to get started.</p>
+              <p className="text-sm text-gray-400">{t("account.dashboard.referrals.empty")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto -mx-2">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-gray-400 uppercase tracking-wide">
-                    <th className="px-2 py-2 font-medium">Referred</th>
-                    <th className="px-2 py-2 font-medium">Joined</th>
-                    <th className="px-2 py-2 font-medium text-right">Their referrals</th>
+                    <th className="px-2 py-2 font-medium">{t("account.dashboard.referrals.tableReferred")}</th>
+                    <th className="px-2 py-2 font-medium">{t("account.dashboard.referrals.tableJoined")}</th>
+                    <th className="px-2 py-2 font-medium text-right">{t("account.dashboard.referrals.tableTheirReferrals")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {summary.referrals.map((r, i) => (
                     <tr key={i} className={clsx(i > 0 && "border-t border-gray-50")}>
                       <td className="px-2 py-3 font-mono font-semibold text-gray-800">{r.acronym}</td>
-                      <td className="px-2 py-3 text-gray-500">{timeAgo(r.joinedAt)}</td>
+                      <td className="px-2 py-3 text-gray-500">{timeAgo(r.joinedAt, t)}</td>
                       <td className="px-2 py-3 text-right font-semibold text-brand-600">{r.referredCount}</td>
                     </tr>
                   ))}

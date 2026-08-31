@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Undo2, Trash2, Check, X, Loader2 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import clsx from "clsx";
 
 interface Point {
@@ -16,10 +17,11 @@ interface Stroke {
 }
 
 const PEN_COLORS = ["#ff2d55", "#111111", "#ffffff", "#ffd60a", "#0a84ff"];
+// `labelKey` maps to lib/i18n/namespaces/adminProducts.{en,fr}.ts → markup.penThin/penMedium/penThick
 const PEN_SIZES = [
-  { label: "Thin", value: 3 },
-  { label: "Medium", value: 6 },
-  { label: "Thick", value: 12 },
+  { labelKey: "penThin" as const, value: 3 },
+  { labelKey: "penMedium" as const, value: 6 },
+  { labelKey: "penThick" as const, value: 12 },
 ];
 
 interface Props {
@@ -31,6 +33,7 @@ interface Props {
 
 /** Draws freehand pen strokes directly onto an image — WhatsApp-style markup: pick a color, draw, undo per stroke, clear all, then flatten and save. */
 export default function ImageMarkupEditor({ imageUrl, onSave, onCancel }: Props) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgElRef = useRef<HTMLImageElement | null>(null);
   const drawingRef = useRef(false);
@@ -173,7 +176,7 @@ export default function ImageMarkupEditor({ imageUrl, onSave, onCancel }: Props)
       <div className="relative w-full max-w-2xl bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 flex-shrink-0">
-          <h3 className="text-white font-semibold text-sm">Draw on image</h3>
+          <h3 className="text-white font-semibold text-sm">{t("adminProducts.markup.heading")}</h3>
           <button
             onClick={onCancel}
             className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-300"
@@ -185,7 +188,7 @@ export default function ImageMarkupEditor({ imageUrl, onSave, onCancel }: Props)
         {/* Canvas area */}
         <div className="relative flex-1 min-h-0 bg-black flex items-center justify-center p-2 overflow-hidden">
           {loadError ? (
-            <p className="text-red-400 text-sm p-8 text-center">Couldn&apos;t load this image for editing.</p>
+            <p className="text-red-400 text-sm p-8 text-center">{t("adminProducts.markup.loadError")}</p>
           ) : (
             <div className="relative max-w-full max-h-full" style={{ touchAction: "none" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -233,7 +236,7 @@ export default function ImageMarkupEditor({ imageUrl, onSave, onCancel }: Props)
                 <button
                   key={s.value}
                   onClick={() => setPenWidth(s.value)}
-                  title={s.label}
+                  title={t(`adminProducts.markup.${s.labelKey}`)}
                   className={clsx(
                     "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
                     penWidth === s.value ? "bg-brand-500" : "bg-gray-800 hover:bg-gray-700"
@@ -251,14 +254,14 @@ export default function ImageMarkupEditor({ imageUrl, onSave, onCancel }: Props)
                 disabled={strokes.length === 0}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-gray-200 transition-colors"
               >
-                <Undo2 size={13} /> Undo
+                <Undo2 size={13} /> {t("adminProducts.markup.undo")}
               </button>
               <button
                 onClick={handleClearAll}
                 disabled={strokes.length === 0}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-red-400 transition-colors"
               >
-                <Trash2 size={13} /> Erase all
+                <Trash2 size={13} /> {t("adminProducts.markup.eraseAll")}
               </button>
             </div>
           </div>
@@ -268,7 +271,7 @@ export default function ImageMarkupEditor({ imageUrl, onSave, onCancel }: Props)
               onClick={onCancel}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
             >
-              Cancel
+              {t("adminProducts.common.cancel")}
             </button>
             <button
               onClick={handleSave}
@@ -276,7 +279,7 @@ export default function ImageMarkupEditor({ imageUrl, onSave, onCancel }: Props)
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white transition-colors"
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-              {saving ? "Saving…" : "Save"}
+              {saving ? t("adminProducts.markup.saving") : t("adminProducts.common.save")}
             </button>
           </div>
         </div>

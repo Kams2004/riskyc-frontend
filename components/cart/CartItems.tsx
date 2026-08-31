@@ -4,6 +4,8 @@ import { useStore } from "@/lib/store";
 import { formatPrice } from "@/lib/data";
 import { computeLineTotal } from "@/lib/pricing";
 import { Trash2, ShoppingBag, Plus, Minus, ArrowRight } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { localized } from "@/lib/i18n/localized";
 import Link from "next/link";
 
 interface Props {
@@ -13,6 +15,7 @@ interface Props {
 export default function CartItems({ onCheckout }: Props) {
   const { items, removeFromCart, updateQuantity, getCartTotal, clearCart } =
     useStore();
+  const { t, language } = useTranslation();
 
   if (items.length === 0) {
     return (
@@ -21,13 +24,13 @@ export default function CartItems({ onCheckout }: Props) {
           <ShoppingBag size={40} className="text-gray-300" />
         </div>
         <h3 className="text-xl font-semibold text-gray-600">
-          Your cart is empty
+          {t("cart.items.emptyTitle")}
         </h3>
         <p className="text-gray-400 text-sm">
-          Add some products to get started
+          {t("cart.items.emptySubtitle")}
         </p>
         <Link href="/products" className="btn-primary mt-2">
-          Start Shopping
+          {t("cart.common.startShopping")}
         </Link>
       </div>
     );
@@ -46,13 +49,13 @@ export default function CartItems({ onCheckout }: Props) {
       <div className="lg:col-span-2 space-y-4">
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-gray-700">
-            {items.length} item{items.length !== 1 ? "s" : ""} in cart
+            {t(items.length !== 1 ? "cart.items.countOther" : "cart.items.countOne", { count: items.length })}
           </h2>
           <button
             onClick={clearCart}
             className="text-xs text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors"
           >
-            <Trash2 size={13} /> Clear all
+            <Trash2 size={13} /> {t("cart.items.clearAll")}
           </button>
         </div>
 
@@ -73,7 +76,7 @@ export default function CartItems({ onCheckout }: Props) {
                     ? item.product.media[item.selectedImageIndex]?.presignedUrl
                     : undefined) ?? item.product.media[0]?.presignedUrl
                 }
-                alt={item.product.name}
+                alt={localized(item.product.name, item.product.nameFr, language)}
                 className="w-full h-full object-cover hover:scale-105 transition-transform"
               />
             </Link>
@@ -84,7 +87,7 @@ export default function CartItems({ onCheckout }: Props) {
                 href={`/products/${item.product.id}`}
                 className="font-semibold text-gray-900 text-sm sm:text-base hover:text-brand-600 transition-colors line-clamp-2"
               >
-                {item.product.name}
+                {localized(item.product.name, item.product.nameFr, language)}
               </Link>
 
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
@@ -106,13 +109,13 @@ export default function CartItems({ onCheckout }: Props) {
                 {/* Size badge */}
                 {item.selectedSize && (
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
-                    Size: {item.selectedSize}
+                    {t("cart.items.sizeLabel", { size: item.selectedSize })}
                   </span>
                 )}
                 {/* Photo badge — shown for items picked via "quantity by photo" */}
                 {item.selectedImageIndex != null && (
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
-                    Photo {item.selectedImageIndex + 1}
+                    {t("cart.items.photoLabel", { index: item.selectedImageIndex + 1 })}
                   </span>
                 )}
               </div>
@@ -158,7 +161,7 @@ export default function CartItems({ onCheckout }: Props) {
                   </div>
                   {item.quantity > 1 && (
                     <div className="text-xs text-gray-400">
-                      {formatPrice(computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity) / item.quantity)} each
+                      {formatPrice(computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity) / item.quantity)} {t("cart.items.each")}
                     </div>
                   )}
                 </div>
@@ -169,7 +172,7 @@ export default function CartItems({ onCheckout }: Props) {
                     removeFromCart(item.product.id, item.selectedColor, item.selectedImageIndex)
                   }
                   className="text-gray-300 hover:text-red-500 transition-colors"
-                  title="Remove item"
+                  title={t("cart.items.removeItem")}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -183,7 +186,7 @@ export default function CartItems({ onCheckout }: Props) {
           href="/products"
           className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-300 hover:bg-brand-50/50 text-sm font-semibold text-gray-500 hover:text-brand-600 transition-all"
         >
-          <Plus size={16} /> Add more articles
+          <Plus size={16} /> {t("cart.items.addMore")}
         </Link>
       </div>
 
@@ -191,22 +194,22 @@ export default function CartItems({ onCheckout }: Props) {
       <div className="lg:col-span-1">
         <div className="card border border-gray-100 p-6 sticky top-24">
           <h3 className="font-display font-bold text-lg text-gray-900 mb-5">
-            Order Summary
+            {t("cart.summary.title")}
           </h3>
 
           <div className="space-y-3 mb-5">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Subtotal</span>
+              <span className="text-gray-500">{t("cart.summary.subtotal")}</span>
               <span className="font-medium">{formatPrice(total + bulkSavings)}</span>
             </div>
             {bulkSavings > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Bulk pricing savings</span>
+                <span className="text-gray-500">{t("cart.summary.bulkSavings")}</span>
                 <span className="text-green-600 font-medium">−{formatPrice(bulkSavings)}</span>
               </div>
             )}
             <div className="border-t border-gray-100 pt-3 flex justify-between">
-              <span className="font-semibold text-gray-900">Total</span>
+              <span className="font-semibold text-gray-900">{t("cart.summary.total")}</span>
               <span className="font-bold text-xl text-brand-600">
                 {formatPrice(total)}
               </span>
@@ -216,10 +219,10 @@ export default function CartItems({ onCheckout }: Props) {
           {/* Payment methods note */}
           <div className="flex gap-2 mb-5">
             <div className="flex-1 flex items-center justify-center gap-1 bg-orange-50 border border-orange-100 rounded-xl p-2">
-              <span className="text-orange-500 font-bold text-xs">🟠 Orange Money</span>
+              <span className="text-orange-500 font-bold text-xs">{t("cart.summary.orangeMoney")}</span>
             </div>
             <div className="flex-1 flex items-center justify-center gap-1 bg-yellow-50 border border-yellow-100 rounded-xl p-2">
-              <span className="text-yellow-600 font-bold text-xs">🟡 MoMo</span>
+              <span className="text-yellow-600 font-bold text-xs">{t("cart.summary.momo")}</span>
             </div>
           </div>
 
@@ -227,7 +230,7 @@ export default function CartItems({ onCheckout }: Props) {
             onClick={onCheckout}
             className="w-full btn-primary py-4 text-base rounded-2xl"
           >
-            Pay Now
+            {t("cart.checkout.payNow")}
             <ArrowRight size={18} />
           </button>
 
@@ -235,7 +238,7 @@ export default function CartItems({ onCheckout }: Props) {
             href="/products"
             className="block text-center text-sm text-gray-400 hover:text-brand-500 mt-3 transition-colors"
           >
-            ← Continue Shopping
+            {t("cart.summary.continueShopping")}
           </Link>
         </div>
       </div>

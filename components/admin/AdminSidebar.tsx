@@ -10,6 +10,9 @@ import { useAdminNotificationSocket } from "@/lib/chatSocket";
 import { adminNavItems } from "@/lib/adminNav";
 import DownloadAppButton from "@/components/shared/DownloadAppButton";
 import NotificationBell from "./NotificationBell";
+import { Globe } from "@/components/icons/fa";
+import { useStore } from "@/lib/store";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   LogOut,
   ChevronRight,
@@ -19,6 +22,21 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 
+// Maps each nav item's href to its translation key suffix (under
+// adminCommon.sidebar.nav) — adminNavItems (lib/adminNav.ts) stays the
+// single source of truth for hrefs/icons/permissions; this file only
+// overrides the display label.
+const NAV_LABEL_KEYS: Record<string, string> = {
+  "/admin": "dashboard",
+  "/admin/orders": "orders",
+  "/admin/treatment": "treatment",
+  "/admin/products": "products",
+  "/admin/categories": "categories",
+  "/admin/customers": "customers",
+  "/admin/users": "users",
+  "/admin/chat": "chat",
+};
+
 export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const session = useAdminStore((s) => s.session);
@@ -26,6 +44,9 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
   const { theme, toggle } = useAdminTheme();
   const [totalUnread, setTotalUnread] = useState(0);
   const isDark = theme === "dark";
+  const { t } = useTranslation();
+  const language = useStore((s) => s.language);
+  const setLanguage = useStore((s) => s.setLanguage);
 
   const refreshUnread = useCallback(() => {
     if (!session) return;
@@ -54,10 +75,10 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
           </div>
           <div className="min-w-0">
             <p className="font-bold text-sm leading-tight text-white">
-              Riskyc Fashion
+              {t("adminCommon.sidebar.brandName")}
             </p>
             <p className="text-xs text-brand-200/60">
-              Admin Panel
+              {t("adminCommon.sidebar.panelLabel")}
             </p>
           </div>
         </div>
@@ -78,7 +99,10 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {visibleNavItems.map(({ href, label, icon: Icon, exact }) => {
+        {visibleNavItems.map(({ href, label: fallbackLabel, icon: Icon, exact }) => {
+          const label = NAV_LABEL_KEYS[href]
+            ? t(`adminCommon.sidebar.nav.${NAV_LABEL_KEYS[href]}`)
+            : fallbackLabel;
           const active = exact
             ? pathname === href
             : pathname.startsWith(href);
@@ -131,20 +155,33 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
           {isDark ? (
             <>
               <Sun size={18} className="text-gold-400" />
-              <span>Light Mode</span>
+              <span>{t("adminCommon.sidebar.lightMode")}</span>
               <span className="ml-auto text-[10px] bg-white/5 text-gray-500 px-2 py-0.5 rounded-full">
-                Dark
+                {t("adminCommon.sidebar.darkBadge")}
               </span>
             </>
           ) : (
             <>
               <Moon size={18} className="text-indigo-400" />
-              <span>Dark Mode</span>
+              <span>{t("adminCommon.sidebar.darkMode")}</span>
               <span className="ml-auto text-[10px] bg-white/5 text-gray-500 px-2 py-0.5 rounded-full">
-                Light
+                {t("adminCommon.sidebar.lightBadge")}
               </span>
             </>
           )}
+        </button>
+
+        {/* Language toggle */}
+        <button
+          onClick={() => setLanguage(language === "en" ? "fr" : "en")}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-gray-400 hover:bg-white/5 hover:text-white"
+          title={t("adminCommon.sidebar.toggleLanguage")}
+        >
+          <Globe size={18} className="text-gray-500 group-hover:text-brand-300" />
+          <span>{t("adminCommon.sidebar.toggleLanguage")}</span>
+          <span className="ml-auto text-[10px] bg-white/5 text-gray-500 px-2 py-0.5 rounded-full">
+            {language.toUpperCase()}
+          </span>
         </button>
 
         {/* Download App */}
@@ -157,7 +194,7 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-gray-400 hover:bg-white/5 hover:text-white"
         >
           <Store size={18} className="text-gray-500 group-hover:text-brand-300" />
-          View Store
+          {t("adminCommon.sidebar.viewStore")}
         </Link>
 
         {/* Logout */}
@@ -166,7 +203,7 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-gray-400 hover:bg-red-500/10 hover:text-red-400"
         >
           <LogOut size={18} className="text-gray-500 group-hover:text-red-400" />
-          Logout
+          {t("adminCommon.sidebar.logout")}
         </button>
       </div>
     </aside>

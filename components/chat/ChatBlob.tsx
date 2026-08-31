@@ -9,10 +9,12 @@ import { ChatMessage } from "@/lib/types";
 import { MessageCircle, X, Send, Minimize2, Paperclip, Mic } from "@/components/icons/fa";
 import VoiceRecorderBar from "@/components/chat/VoiceRecorderBar";
 import VoiceMessageBubble from "@/components/chat/VoiceMessageBubble";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import clsx from "clsx";
 
 export default function ChatBlob() {
   const { chatOpen, setChatOpen, customer, conversationId, setConversationId, chatDraft, setChatDraft } = useStore();
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -171,9 +173,9 @@ export default function ChatBlob() {
             </div>
             <div className="flex-1">
               <p className="text-white font-semibold text-sm leading-tight">
-                Riskyc Fashion Support
+                {t("chat.widget.title")}
               </p>
-              <p className="text-brand-100 text-xs">Usually replies in minutes</p>
+              <p className="text-brand-100 text-xs">{t("chat.widget.subtitle")}</p>
             </div>
             <button
               onClick={() => setMinimized(!minimized)}
@@ -193,7 +195,7 @@ export default function ChatBlob() {
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
             {messages.length === 0 && (
               <div className="text-center text-xs text-gray-400 pt-8">
-                Send us a message and our team will get back to you shortly.
+                {t("chat.widget.emptyState")}
               </div>
             )}
             {messages.map((msg) => (
@@ -221,7 +223,7 @@ export default function ChatBlob() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={msg.imageUrl}
-                      alt="Shared photo"
+                      alt={t("chat.widget.sharedPhotoAlt")}
                       className={clsx("rounded-xl max-w-full max-h-48 object-cover mb-1.5", msg.text ? "" : "mb-0")}
                     />
                   )}
@@ -257,7 +259,7 @@ export default function ChatBlob() {
                     <div className="w-8 h-8 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
                       <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     </div>
-                    <span className="text-xs text-white/90">Sending voice message…</span>
+                    <span className="text-xs text-white/90">{t("chat.voice.sending")}</span>
                   </div>
                 </div>
               </div>
@@ -277,11 +279,11 @@ export default function ChatBlob() {
             {stagedPreview && (
               <div className="relative inline-block mb-2 ml-1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={stagedPreview} alt="Attached" className="h-16 w-16 rounded-xl object-cover border border-gray-200" />
+                <img src={stagedPreview} alt={t("chat.widget.attachedPhotoAlt")} className="h-16 w-16 rounded-xl object-cover border border-gray-200" />
                 <button
                   onClick={clearStagedImage}
                   className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800 text-white flex items-center justify-center shadow"
-                  title="Remove photo"
+                  title={t("chat.widget.removePhoto")}
                 >
                   <X size={11} />
                 </button>
@@ -298,7 +300,7 @@ export default function ChatBlob() {
               <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-200 focus-within:border-brand-300 transition-colors">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  title="Attach a photo"
+                  title={t("chat.widget.attachPhoto")}
                   className="text-gray-400 hover:text-brand-500 transition-colors flex-shrink-0"
                 >
                   <Paperclip size={16} />
@@ -308,14 +310,14 @@ export default function ChatBlob() {
                   value={input}
                   onChange={(e) => { setInput(e.target.value); setSendError(false); }}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  placeholder="Type a message..."
+                  placeholder={t("chat.widget.placeholder")}
                   disabled={sending}
                   className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400 disabled:opacity-60"
                 />
                 {!input.trim() && !stagedImage ? (
                   <button
                     onClick={voiceRecorder.start}
-                    title="Record a voice message"
+                    title={t("chat.widget.recordVoice")}
                     className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0 bg-gray-200 text-gray-500 hover:bg-brand-500 hover:text-white"
                   >
                     <Mic size={14} />
@@ -340,11 +342,11 @@ export default function ChatBlob() {
             )}
             {sendError ? (
               <p className="text-center text-[10px] text-red-500 mt-1.5">
-                Couldn&apos;t send — check your connection and try again.
+                {t("chat.widget.sendError")}
               </p>
             ) : (
               <p className="text-center text-[10px] text-gray-300 mt-1.5">
-                Riskyc Fashion · Douala, Cameroon
+                {t("chat.widget.footerTag")}
               </p>
             )}
           </div>

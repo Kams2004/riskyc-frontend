@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminStore } from "@/lib/adminStore";
 import { Eye, EyeOff, Lock, Mail, LogIn, AlertCircle, Clock } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function AdminLoginPage() {
   return (
@@ -18,6 +19,7 @@ function AdminLoginPageInner() {
   const searchParams = useSearchParams();
   const expired = searchParams.get("expired") === "1";
   const login = useAdminStore((s) => s.login);
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -53,21 +55,21 @@ function AdminLoginPageInner() {
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-xl mb-4">
               <span className="text-white font-display font-bold text-2xl">RF</span>
             </div>
-            <h1 className="text-white font-display font-bold text-2xl">Admin Panel</h1>
-            <p className="text-gray-500 text-sm mt-1">Riskyc Fashion</p>
+            <h1 className="text-white font-display font-bold text-2xl">{t("adminCommon.login.title")}</h1>
+            <p className="text-gray-500 text-sm mt-1">{t("adminCommon.login.subtitle")}</p>
           </div>
 
           {expired && (
             <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5 mb-4">
               <Clock size={15} className="text-amber-400 flex-shrink-0" />
-              <p className="text-amber-400 text-xs font-medium">Your session expired — please log in again.</p>
+              <p className="text-amber-400 text-xs font-medium">{t("adminCommon.login.sessionExpired")}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                Email
+                {t("adminCommon.login.emailLabel")}
               </label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
@@ -75,7 +77,7 @@ function AdminLoginPageInner() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@riskyc.com"
+                  placeholder={t("adminCommon.login.emailPlaceholder")}
                   autoFocus
                   required
                   className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
@@ -85,7 +87,7 @@ function AdminLoginPageInner() {
 
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                Password
+                {t("adminCommon.login.passwordLabel")}
               </label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
@@ -93,7 +95,7 @@ function AdminLoginPageInner() {
                   type={show ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
+                  placeholder={t("adminCommon.login.passwordPlaceholder")}
                   required
                   className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl pl-10 pr-10 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
                 />
@@ -124,7 +126,7 @@ function AdminLoginPageInner() {
               ) : (
                 <>
                   <LogIn size={18} />
-                  Sign In
+                  {t("adminCommon.login.signIn")}
                 </>
               )}
             </button>

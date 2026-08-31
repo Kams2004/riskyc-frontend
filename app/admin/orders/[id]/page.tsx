@@ -16,31 +16,33 @@ import {
   CreditCard, Package, ZoomIn, MessageSquare,
 } from "lucide-react";
 import clsx from "clsx";
-
-const statusMeta: Record<OrderStatus, { label: string }> = {
-  PENDING:          { label: "Pending" },
-  AWAITING_PAYMENT: { label: "Awaiting Payment" },
-  REVIEWING:        { label: "Under Review" },
-  VALIDATED:        { label: "Validated ✓" },
-  PACKAGING:        { label: "Packaging" },
-  PACKAGED:         { label: "Packaged ✓" },
-  CANCELLED:        { label: "Cancelled" },
-};
-
-const steps: { key: OrderStatus; label: string }[] = [
-  { key: "PENDING",          label: "Order Placed" },
-  { key: "AWAITING_PAYMENT", label: "Payment" },
-  { key: "REVIEWING",        label: "Review" },
-  { key: "VALIDATED",        label: "Validated" },
-  { key: "PACKAGING",        label: "Packaging" },
-  { key: "PACKAGED",         label: "Packaged" },
-];
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const token = useAdminStore((s) => s.session?.token);
   const c = useAdminColors();
+  const { t } = useTranslation();
+
+  const statusMeta: Record<OrderStatus, { label: string }> = {
+    PENDING:          { label: t("adminOrders.status.pending") },
+    AWAITING_PAYMENT: { label: t("adminOrders.status.awaitingPayment") },
+    REVIEWING:        { label: t("adminOrders.status.reviewing") },
+    VALIDATED:        { label: `${t("adminOrders.status.validated")} ✓` },
+    PACKAGING:        { label: t("adminOrders.status.packaging") },
+    PACKAGED:         { label: `${t("adminOrders.status.packaged")} ✓` },
+    CANCELLED:        { label: t("adminOrders.status.cancelled") },
+  };
+
+  const steps: { key: OrderStatus; label: string }[] = [
+    { key: "PENDING",          label: t("adminOrders.steps.orderPlaced") },
+    { key: "AWAITING_PAYMENT", label: t("adminOrders.steps.payment") },
+    { key: "REVIEWING",        label: t("adminOrders.steps.review") },
+    { key: "VALIDATED",        label: t("adminOrders.steps.validated") },
+    { key: "PACKAGING",        label: t("adminOrders.steps.packaging") },
+    { key: "PACKAGED",         label: t("adminOrders.steps.packaged") },
+  ];
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +63,7 @@ export default function AdminOrderDetailPage() {
   if (loading) {
     return (
       <AdminShell>
-        <div className="p-8 text-center text-sm text-gray-400">Loading…</div>
+        <div className="p-8 text-center text-sm text-gray-400">{t("adminOrders.detail.loading")}</div>
       </AdminShell>
     );
   }
@@ -70,9 +72,9 @@ export default function AdminOrderDetailPage() {
     return (
       <AdminShell>
         <div className="p-8 text-center space-y-3">
-          <p className={clsx("text-sm", c.textMuted)}>Order not found.</p>
+          <p className={clsx("text-sm", c.textMuted)}>{t("adminOrders.detail.notFound")}</p>
           <Link href="/admin/orders" className="text-brand-500 underline text-sm">
-            ← Back to orders
+            {t("adminOrders.detail.backToOrders")}
           </Link>
         </div>
       </AdminShell>
@@ -91,10 +93,14 @@ export default function AdminOrderDetailPage() {
 
   const askReject = () => {
     setConfirm({
-      title: "Reject order?",
-      message: "This will cancel the order and notify the customer (in-app and by push, if they've enabled it) with the reason below.",
-      confirmLabel: "Reject",
-      input: { label: "Reason for rejection", placeholder: "e.g. Payment screenshot doesn't match the order total", required: true },
+      title: t("adminOrders.confirm.rejectTitle"),
+      message: t("adminOrders.confirm.rejectMessage"),
+      confirmLabel: t("adminOrders.confirm.rejectConfirmLabel"),
+      input: {
+        label: t("adminOrders.confirm.rejectReasonLabel"),
+        placeholder: t("adminOrders.confirm.rejectReasonPlaceholder"),
+        required: true,
+      },
       onConfirm: async (reason) => {
         await setStatus("CANCELLED", reason);
         setConfirm(null);
@@ -136,7 +142,7 @@ export default function AdminOrderDetailPage() {
             onClick={() => router.back()}
             className={clsx("flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg transition-colors", c.isDark ? "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900")}
           >
-            <ArrowLeft size={16} /> Back
+            <ArrowLeft size={16} /> {t("adminOrders.detail.back")}
           </button>
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap">
@@ -146,8 +152,10 @@ export default function AdminOrderDetailPage() {
               </span>
             </div>
             <p className={clsx("text-xs mt-0.5", c.textMuted)}>
-              Placed on {new Date(order.createdAt).toLocaleDateString("en-GB", {
-                day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+              {t("adminOrders.detail.placedOn", {
+                date: new Date(order.createdAt).toLocaleDateString("en-GB", {
+                  day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+                }),
               })}
             </p>
           </div>
@@ -156,18 +164,18 @@ export default function AdminOrderDetailPage() {
             <div className="flex gap-3">
               <button onClick={() => setStatus("VALIDATED")}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition-colors">
-                <CheckCircle2 size={16} /> Validate Order
+                <CheckCircle2 size={16} /> {t("adminOrders.detail.validateOrder")}
               </button>
               <button onClick={askReject}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-500 text-sm font-semibold border border-red-500/20 transition-colors">
-                <XCircle size={16} /> Cancel
+                <XCircle size={16} /> {t("adminOrders.detail.cancel")}
               </button>
             </div>
           )}
           {order.status === "AWAITING_PAYMENT" && (
             <button onClick={askReject}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-500 text-sm font-semibold border border-red-500/20 transition-colors">
-              <XCircle size={16} /> Cancel Order
+              <XCircle size={16} /> {t("adminOrders.detail.cancelOrder")}
             </button>
           )}
         </div>
@@ -175,7 +183,7 @@ export default function AdminOrderDetailPage() {
         {/* ── Progress timeline ── */}
         {order.status !== "CANCELLED" && (
           <div className={clsx("rounded-2xl border p-5", c.card)}>
-            <h2 className={clsx("text-sm font-semibold mb-5", c.textPrimary)}>Order Progress</h2>
+            <h2 className={clsx("text-sm font-semibold mb-5", c.textPrimary)}>{t("adminOrders.detail.progressHeading")}</h2>
             <div className="flex items-center">
               {steps.map((step, i) => {
                 const done = i <= currentIdx;
@@ -212,7 +220,7 @@ export default function AdminOrderDetailPage() {
         {order.status === "CANCELLED" && order.rejectionReason && (
           <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5">
             <h2 className="text-sm font-semibold mb-1.5 text-red-500 flex items-center gap-2">
-              <XCircle size={15} /> Rejection Reason
+              <XCircle size={15} /> {t("adminOrders.detail.rejectionReasonHeading")}
             </h2>
             <p className={clsx("text-sm leading-relaxed", c.textSecondary)}>{order.rejectionReason}</p>
           </div>
@@ -226,7 +234,7 @@ export default function AdminOrderDetailPage() {
             {/* Order items */}
             <div className={clsx("rounded-2xl border p-5", c.card)}>
               <h2 className={clsx("font-semibold mb-4 flex items-center gap-2", c.textPrimary)}>
-                <Package size={16} className="text-brand-500" /> Order Items
+                <Package size={16} className="text-brand-500" /> {t("adminOrders.detail.orderItemsHeading")}
               </h2>
               <div className="space-y-3">
                 {order.items.map((item, i) => (
@@ -251,7 +259,7 @@ export default function AdminOrderDetailPage() {
                         )}
                         {item.selectedImageIndex != null && (
                           <span className={clsx("text-xs px-2 py-0.5 rounded-full", c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-600")}>
-                            Photo {item.selectedImageIndex + 1}
+                            {t("adminOrders.detail.photoLabel", { index: item.selectedImageIndex + 1 })}
                           </span>
                         )}
                         <span className={clsx("text-xs px-2 py-0.5 rounded-full font-semibold", c.isDark ? "bg-brand-500/15 text-brand-400" : "bg-brand-50 text-brand-600")}>
@@ -261,14 +269,14 @@ export default function AdminOrderDetailPage() {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className={clsx("text-sm font-bold", c.textPrimary)}>{formatPrice(item.unitPrice * item.quantity)}</p>
-                      <p className={clsx("text-xs", c.textMuted)}>{formatPrice(item.unitPrice)} each</p>
+                      <p className={clsx("text-xs", c.textMuted)}>{formatPrice(item.unitPrice)} {t("adminOrders.detail.each")}</p>
                     </div>
                   </div>
                 ))}
               </div>
               {/* Total */}
               <div className={clsx("mt-4 pt-4 border-t flex justify-between", c.border)}>
-                <span className={clsx("font-medium", c.textSecondary)}>Total</span>
+                <span className={clsx("font-medium", c.textSecondary)}>{t("adminOrders.detail.total")}</span>
                 <span className={clsx("text-xl font-bold", c.textPrimary)}>{formatPrice(order.total)}</span>
               </div>
             </div>
@@ -276,35 +284,35 @@ export default function AdminOrderDetailPage() {
             {/* Payment info */}
             <div className={clsx("rounded-2xl border p-5", c.card)}>
               <h2 className={clsx("font-semibold mb-4 flex items-center gap-2", c.textPrimary)}>
-                <CreditCard size={16} className="text-brand-500" /> Payment Info
+                <CreditCard size={16} className="text-brand-500" /> {t("adminOrders.detail.paymentInfoHeading")}
               </h2>
               {order.paymentMethod ? (
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className={c.textSecondary}>Method</span>
+                    <span className={c.textSecondary}>{t("adminOrders.detail.method")}</span>
                     <span className={clsx("font-medium", c.textPrimary)}>
-                      {order.paymentMethod === "ORANGE_MONEY" ? "🟠 Orange Money" : "🟡 MTN Mobile Money"}
+                      {order.paymentMethod === "ORANGE_MONEY" ? t("adminOrders.payment.orangeMoneyFull") : t("adminOrders.payment.momoFull")}
                     </span>
                   </div>
                   {order.paymentCode && (
                     <div className="flex justify-between text-sm gap-3">
-                      <span className={c.textSecondary}>Code Used</span>
+                      <span className={c.textSecondary}>{t("adminOrders.detail.codeUsed")}</span>
                       <span className={clsx("font-mono text-right break-all", c.textPrimary)}>{order.paymentCode}</span>
                     </div>
                   )}
                   {order.paymentAccountName && (
                     <div className="flex justify-between text-sm">
-                      <span className={c.textSecondary}>Account</span>
+                      <span className={c.textSecondary}>{t("adminOrders.detail.account")}</span>
                       <span className={clsx("font-medium", c.textPrimary)}>{order.paymentAccountName}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className={c.textSecondary}>Amount</span>
+                    <span className={c.textSecondary}>{t("adminOrders.detail.amount")}</span>
                     <span className="font-bold text-brand-500">{formatPrice(order.total)}</span>
                   </div>
                 </div>
               ) : (
-                <p className={clsx("text-sm", c.textMuted)}>No payment method selected yet.</p>
+                <p className={clsx("text-sm", c.textMuted)}>{t("adminOrders.detail.noPaymentMethod")}</p>
               )}
             </div>
 
@@ -313,16 +321,16 @@ export default function AdminOrderDetailPage() {
               <div className={clsx("rounded-2xl border p-5", c.card)}>
                 <h2 className={clsx("font-semibold mb-4 flex items-center gap-2", c.textPrimary)}>
                   <CheckCircle2 size={16} className="text-blue-500" />
-                  Payment Proof
+                  {t("adminOrders.detail.paymentProofHeading")}
                   <span className="ml-auto text-xs bg-blue-500/15 text-blue-500 border border-blue-500/20 px-2 py-0.5 rounded-full">
-                    Submitted by customer
+                    {t("adminOrders.detail.submittedByCustomer")}
                   </span>
                 </h2>
                 <div className="relative group cursor-zoom-in" onClick={() => setZoomImg(true)}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={order.paymentScreenshotUrl ?? undefined}
-                    alt="Payment proof"
+                    alt={t("adminOrders.detail.paymentProofAlt")}
                     className={clsx("w-full max-h-64 object-contain rounded-xl border", c.border, c.isDark ? "bg-gray-900" : "bg-gray-50")}
                   />
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 rounded-xl flex items-center justify-center transition-opacity">
@@ -333,11 +341,11 @@ export default function AdminOrderDetailPage() {
                   <div className="flex gap-3 mt-4">
                     <button onClick={() => setStatus("VALIDATED")}
                       className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold text-sm transition-colors">
-                      <CheckCircle2 size={16} /> Approve & Validate
+                      <CheckCircle2 size={16} /> {t("adminOrders.detail.approveValidate")}
                     </button>
                     <button onClick={askReject}
                       className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-500 font-semibold text-sm border border-red-500/20 transition-colors">
-                      <XCircle size={16} /> Reject
+                      <XCircle size={16} /> {t("adminOrders.detail.reject")}
                     </button>
                   </div>
                 )}
@@ -351,12 +359,12 @@ export default function AdminOrderDetailPage() {
             {/* Order meta / timeline */}
             <div className={clsx("rounded-2xl border p-5", c.card)}>
               <h2 className={clsx("font-semibold mb-4 flex items-center gap-2", c.textPrimary)}>
-                <Clock size={16} className="text-brand-500" /> Timeline
+                <Clock size={16} className="text-brand-500" /> {t("adminOrders.detail.timelineHeading")}
               </h2>
               <div className="space-y-3">
                 {[
-                  { label: "Created",     value: new Date(order.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) },
-                  { label: "Last Update", value: new Date(order.updatedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) },
+                  { label: t("adminOrders.detail.created"),     value: new Date(order.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) },
+                  { label: t("adminOrders.detail.lastUpdate"), value: new Date(order.updatedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) },
                 ].map((row) => (
                   <div key={row.label} className="flex justify-between text-sm">
                     <span className={c.textSecondary}>{row.label}</span>
@@ -364,14 +372,14 @@ export default function AdminOrderDetailPage() {
                   </div>
                 ))}
                 <div className="flex justify-between text-sm items-center">
-                  <span className={c.textSecondary}>Status</span>
+                  <span className={c.textSecondary}>{t("adminOrders.detail.status")}</span>
                   <span className={clsx("text-xs font-semibold px-2 py-0.5 rounded-full", c.status[order.status])}>
                     {statusMeta[order.status].label}
                   </span>
                 </div>
                 {order.statusChangedByName && (
                   <div className="flex justify-between text-sm">
-                    <span className={c.textSecondary}>Changed by</span>
+                    <span className={c.textSecondary}>{t("adminOrders.detail.changedBy")}</span>
                     <span className={clsx("text-xs", c.textPrimary)}>
                       {order.statusChangedByName}
                       {order.statusChangedAt && ` · ${new Date(order.statusChangedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`}
@@ -380,7 +388,7 @@ export default function AdminOrderDetailPage() {
                 )}
                 {order.packagingStartedByName && (
                   <div className="flex justify-between text-sm">
-                    <span className={c.textSecondary}>Packaging started</span>
+                    <span className={c.textSecondary}>{t("adminOrders.detail.packagingStarted")}</span>
                     <span className={clsx("text-xs", c.textPrimary)}>
                       {order.packagingStartedByName}
                       {order.packagingStartedAt && ` · ${new Date(order.packagingStartedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`}
@@ -389,7 +397,7 @@ export default function AdminOrderDetailPage() {
                 )}
                 {order.packagingCompletedByName && (
                   <div className="flex justify-between text-sm">
-                    <span className={c.textSecondary}>Packaging done</span>
+                    <span className={c.textSecondary}>{t("adminOrders.detail.packagingDone")}</span>
                     <span className={clsx("text-xs", c.textPrimary)}>
                       {order.packagingCompletedByName}
                       {order.packagingCompletedAt && ` · ${new Date(order.packagingCompletedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`}
@@ -403,7 +411,7 @@ export default function AdminOrderDetailPage() {
                   below or Treatment instead. */}
               {!statusLocked && (
               <div className={clsx("mt-4 pt-4 border-t", c.border)}>
-                <p className={clsx("text-xs font-medium uppercase tracking-wide mb-2", c.textMuted)}>Change Status</p>
+                <p className={clsx("text-xs font-medium uppercase tracking-wide mb-2", c.textMuted)}>{t("adminOrders.detail.changeStatus")}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {(["PENDING", "AWAITING_PAYMENT", "REVIEWING", "VALIDATED", "CANCELLED"] as OrderStatus[])
                     .filter((s) => s !== order.status)
@@ -428,17 +436,17 @@ export default function AdminOrderDetailPage() {
             {/* Message customer */}
             <div className={clsx("rounded-2xl border p-5", c.card)}>
               <h2 className={clsx("font-semibold mb-1 flex items-center gap-2", c.textPrimary)}>
-                <MessageSquare size={16} className="text-brand-500" /> Message Customer
+                <MessageSquare size={16} className="text-brand-500" /> {t("adminOrders.detail.messageCustomerHeading")}
               </h2>
               <p className={clsx("text-xs mb-3", c.textMuted)}>
                 {order.customerId
-                  ? "Sends to this customer's live chat — same thread as the storefront chat widget."
-                  : "This was a guest checkout with no account, so there's no chat thread to deliver to — contact them by phone instead."}
+                  ? t("adminOrders.detail.messageHintWithChat")
+                  : t("adminOrders.detail.messageHintGuest")}
               </p>
               <textarea
                 value={chatMsg}
                 onChange={(e) => setChatMsg(e.target.value)}
-                placeholder="Type a message to the customer…"
+                placeholder={t("adminOrders.detail.messagePlaceholder")}
                 rows={3}
                 disabled={!order.customerId}
                 className={clsx(
@@ -453,7 +461,7 @@ export default function AdminOrderDetailPage() {
                 disabled={!chatMsg.trim() || !order.customerId}
                 className="mt-2 w-full py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
               >
-                {chatSent ? "✓ Message Sent!" : "Send Message"}
+                {chatSent ? t("adminOrders.detail.messageSent") : t("adminOrders.detail.sendMessage")}
               </button>
             </div>
           </div>
@@ -465,7 +473,7 @@ export default function AdminOrderDetailPage() {
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
           onClick={() => setZoomImg(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={order.paymentScreenshotUrl ?? undefined} alt="Payment proof fullscreen"
+          <img src={order.paymentScreenshotUrl ?? undefined} alt={t("adminOrders.detail.paymentProofFullscreenAlt")}
             className="max-w-full max-h-full rounded-xl shadow-2xl object-contain" />
         </div>
       )}

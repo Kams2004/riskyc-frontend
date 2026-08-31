@@ -29,6 +29,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { localized } from "@/lib/i18n/localized";
 
 interface Props {
   orderId: string | null;
@@ -40,6 +42,7 @@ type Step = "method" | "awaiting" | "info" | "confirmed";
 export default function CheckoutFlow({ orderId, onClose }: Props) {
   const router = useRouter();
   const { items, getCartTotal, clearCart, setChatOpen, customer } = useStore();
+  const { t, language } = useTranslation();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(!!orderId);
@@ -132,7 +135,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
       setOrder(finalOrder);
       setStep("confirmed");
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Something went wrong placing your order. Please try again.");
+      setSubmitError(e instanceof Error ? e.message : t("cart.checkout.genericError"));
     } finally {
       setSending(false);
     }
@@ -140,12 +143,12 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
   const validateInfo = (): boolean => {
     const errors: Partial<Record<keyof CustomerInfo, string>> = {};
-    if (!customerInfo.firstName.trim()) errors.firstName = "Required";
-    if (!customerInfo.lastName.trim()) errors.lastName = "Required";
-    if (!customerInfo.phone.trim()) errors.phone = "Required";
+    if (!customerInfo.firstName.trim()) errors.firstName = t("cart.checkout.required");
+    if (!customerInfo.lastName.trim()) errors.lastName = t("cart.checkout.required");
+    if (!customerInfo.phone.trim()) errors.phone = t("cart.checkout.required");
     if (customerInfo.deliveryType === "DELIVERY") {
-      if (!customerInfo.town?.trim()) errors.town = "Required for delivery";
-      if (!customerInfo.street?.trim()) errors.street = "Required for delivery";
+      if (!customerInfo.town?.trim()) errors.town = t("cart.checkout.requiredForDelivery");
+      if (!customerInfo.street?.trim()) errors.street = t("cart.checkout.requiredForDelivery");
     }
     setInfoErrors(errors);
     return Object.keys(errors).length === 0;
@@ -227,10 +230,10 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
             )}
             <div>
               <h2 className="font-display font-bold text-lg text-gray-900">
-                {step === "method" && "Choose Payment Method"}
-                {step === "awaiting" && "Complete Your Payment"}
-                {step === "info" && "Your Information"}
-                {step === "confirmed" && (order?.status === "CANCELLED" ? "Order Cancelled" : "Order Confirmed! 🎉")}
+                {step === "method" && t("cart.checkout.chooseMethod")}
+                {step === "awaiting" && t("cart.checkout.completePayment")}
+                {step === "info" && t("cart.checkout.yourInformation")}
+                {step === "confirmed" && (order?.status === "CANCELLED" ? t("cart.checkout.orderCancelled") : t("cart.checkout.orderConfirmed"))}
               </h2>
               {order && <p className="text-xs text-gray-400 font-mono">{order.id}</p>}
             </div>
@@ -244,10 +247,10 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
         <div className="px-6 pt-4 pb-2">
           <div className="flex items-center gap-1">
             {[
-              { key: "method", label: "Payment" },
-              { key: "awaiting", label: "Proof" },
-              { key: "info", label: "Info" },
-              { key: "confirmed", label: "Done" },
+              { key: "method", label: t("cart.checkout.stepPayment") },
+              { key: "awaiting", label: t("cart.checkout.stepProof") },
+              { key: "info", label: t("cart.checkout.stepInfo") },
+              { key: "confirmed", label: t("cart.checkout.stepDone") },
             ].map((s, i) => {
               const stepOrder = ["method", "awaiting", "info", "confirmed"];
               const currentIdx = stepOrder.indexOf(step);
@@ -293,17 +296,17 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                             ? item.product.media[item.selectedImageIndex]?.presignedUrl
                             : undefined) ?? item.product.media[0]?.presignedUrl
                         }
-                        alt={item.product.name}
+                        alt={localized(item.product.name, item.product.nameFr, language)}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{item.product.name}</p>
+                      <p className="text-sm font-medium text-gray-800 truncate">{localized(item.product.name, item.product.nameFr, language)}</p>
                       <p className="text-xs text-gray-400">
                         {[
                           item.selectedColor || null,
                           item.selectedSize || null,
-                          item.selectedImageIndex != null ? `Photo ${item.selectedImageIndex + 1}` : null,
+                          item.selectedImageIndex != null ? t("cart.items.photoLabel", { index: item.selectedImageIndex + 1 }) : null,
                         ].filter(Boolean).join(" · ")}
                         {" · ×"}{item.quantity}
                       </p>
@@ -314,20 +317,20 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
               </div>
 
               <div className="flex justify-between items-center bg-brand-50 rounded-xl px-4 py-3">
-                <span className="font-semibold text-gray-700">Total to pay</span>
+                <span className="font-semibold text-gray-700">{t("cart.checkout.totalToPay")}</span>
                 <span className="font-bold text-2xl text-brand-600">{formatPrice(total)}</span>
               </div>
 
-              <p className="text-sm text-gray-500 text-center">Select your preferred payment method to continue</p>
+              <p className="text-sm text-gray-500 text-center">{t("cart.checkout.selectMethodPrompt")}</p>
 
               <button onClick={() => handleSelectMethod("ORANGE_MONEY")} className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100 transition-all group text-left">
                 <div className="w-14 h-14 rounded-2xl bg-white border border-orange-200 flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 transition-transform overflow-hidden p-1">
                   <Image src="/orange-money.png" alt="Orange Money" width={48} height={48} className="w-full h-full object-contain" />
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 text-base">Orange Money</p>
-                  <p className="text-sm text-orange-600">Pay via Orange Money transfer</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Dial *150# or use Orange Money app</p>
+                  <p className="font-bold text-gray-900 text-base">{t("cart.checkout.orangeMoneyName")}</p>
+                  <p className="text-sm text-orange-600">{t("cart.checkout.orangeMoneyDesc")}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{t("cart.checkout.orangeMoneyHint")}</p>
                 </div>
                 <ArrowLeft size={20} className="ml-auto text-orange-400 rotate-180 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -337,9 +340,9 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   <Image src="/MobileMoney.jpg" alt="MTN Mobile Money" width={48} height={48} className="w-full h-full object-contain" />
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 text-base">MTN Mobile Money</p>
-                  <p className="text-sm text-yellow-600">Pay via MTN MoMo transfer</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Dial *126# or use MoMo app</p>
+                  <p className="font-bold text-gray-900 text-base">{t("cart.checkout.momoName")}</p>
+                  <p className="text-sm text-yellow-600">{t("cart.checkout.momoDesc")}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{t("cart.checkout.momoHint")}</p>
                 </div>
                 <ArrowLeft size={20} className="ml-auto text-yellow-400 rotate-180 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -347,20 +350,20 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
               {/* Auth prompt */}
               {!customer && (
                 <div className="border border-brand-100 bg-brand-50 rounded-2xl p-4 space-y-2">
-                  <p className="text-sm font-semibold text-brand-700">Want to track your orders, cart &amp; favorites?</p>
-                  <p className="text-xs text-gray-500">Create an account or log in to keep everything saved.</p>
+                  <p className="text-sm font-semibold text-brand-700">{t("cart.checkout.authPrompt")}</p>
+                  <p className="text-xs text-gray-500">{t("cart.checkout.authSubtitle")}</p>
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => router.push("/register?redirect=" + encodeURIComponent("/cart?checkout=1"))}
                       className="flex-1 py-2 rounded-xl bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-colors"
                     >
-                      Sign Up
+                      {t("cart.checkout.signUp")}
                     </button>
                     <button
                       onClick={() => router.push("/login?redirect=" + encodeURIComponent("/cart?checkout=1"))}
                       className="flex-1 py-2 rounded-xl border border-brand-300 text-brand-600 text-xs font-semibold hover:bg-brand-100 transition-colors"
                     >
-                      Log In
+                      {t("cart.checkout.logIn")}
                     </button>
                   </div>
                 </div>
@@ -377,7 +380,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                     <Image src={paymentInfo[selectedMethod].logo} alt={paymentInfo[selectedMethod].name} width={56} height={56} className="w-full h-full object-contain" />
                   </div>
                 </div>
-                <p className="font-semibold text-gray-700 mb-1">Dial this code to send {formatPrice(total)}</p>
+                <p className="font-semibold text-gray-700 mb-1">{t("cart.checkout.dialCodeToSend", { amount: formatPrice(total) })}</p>
                 <p className="font-bold text-xl text-gray-900 tracking-wide mb-1 break-all">{buildUssdCode(selectedMethod)}</p>
                 <p className={clsx("font-semibold text-sm", paymentInfo[selectedMethod].color)}>
                   {paymentInfo[selectedMethod].name} · {paymentInfo[selectedMethod].accountName}
@@ -388,15 +391,15 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 "w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 font-semibold text-sm transition-all",
                 copied ? "border-green-400 bg-green-50 text-green-700" : "border-gray-200 hover:border-brand-300 hover:bg-brand-50 text-gray-700"
               )}>
-                {copied ? <><Check size={18} className="text-green-500" />Code Copied!</> : <><Copy size={18} />Copy Code to Pay</>}
+                {copied ? <><Check size={18} className="text-green-500" />{t("cart.checkout.codeCopied")}</> : <><Copy size={18} />{t("cart.checkout.copyCode")}</>}
               </button>
 
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
-                <strong>Instructions:</strong> Copy the code above, paste it into your phone&apos;s dialer exactly as shown, and press call — it already includes the amount ({formatPrice(total)}) and account (<strong>{paymentInfo[selectedMethod].accountName}</strong>). Confirm the transfer, then take a screenshot of the confirmation.
+                <strong>{t("cart.checkout.instructionsLabel")}</strong> {t("cart.checkout.instructionsBefore", { amount: formatPrice(total) })}<strong>{paymentInfo[selectedMethod].accountName}</strong>{t("cart.checkout.instructionsAfter")}
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3">After paying, upload your payment screenshot:</p>
+                <p className="text-sm font-semibold text-gray-700 mb-3">{t("cart.checkout.uploadPrompt")}</p>
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                 {!screenshotFile ? (
                   <button onClick={() => fileInputRef.current?.click()} className="w-full border-2 border-dashed border-gray-300 hover:border-brand-400 rounded-2xl p-8 flex flex-col items-center gap-3 transition-colors group">
@@ -404,15 +407,15 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                       <Upload size={22} className="text-gray-400 group-hover:text-brand-500" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-medium text-gray-600 group-hover:text-brand-600">Click to upload screenshot</p>
-                      <p className="text-xs text-gray-400 mt-0.5">PNG, JPG up to 5MB</p>
+                      <p className="text-sm font-medium text-gray-600 group-hover:text-brand-600">{t("cart.checkout.uploadCta")}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t("cart.checkout.uploadHint")}</p>
                     </div>
                   </button>
                 ) : (
                   <div className="space-y-3">
                     <div className="relative rounded-2xl overflow-hidden border border-gray-200">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={screenshotPreview ?? undefined} alt="Payment proof" className="w-full max-h-52 object-contain bg-gray-50" />
+                      <img src={screenshotPreview ?? undefined} alt={t("cart.checkout.paymentProofAlt")} className="w-full max-h-52 object-contain bg-gray-50" />
                       <button onClick={() => { setScreenshotFile(null); setScreenshotPreview(null); setScreenshotName(""); }} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-red-50 transition-colors">
                         <X size={14} className="text-gray-600" />
                       </button>
@@ -424,12 +427,12 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
               {screenshotFile && (
                 <button onClick={handleSendProof} className="w-full btn-primary py-4 rounded-2xl text-base">
-                  <Upload size={20} />Send Payment Proof &amp; Continue
+                  <Upload size={20} />{t("cart.checkout.sendProof")}
                 </button>
               )}
 
               <button onClick={() => setChatOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-500 transition-colors text-sm font-medium">
-                <MessageCircle size={18} />Need help? Chat with us
+                <MessageCircle size={18} />{t("cart.checkout.needHelp")}
               </button>
             </div>
           )}
@@ -437,18 +440,18 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
           {/* ===== STEP 3: Customer info ===== */}
           {step === "info" && (
             <div className="space-y-5 animate-fade-in">
-              <p className="text-sm text-gray-500">Please fill in your details so we can validate your payment and deliver your order.</p>
+              <p className="text-sm text-gray-500">{t("cart.checkout.infoSubtitle")}</p>
 
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3">How would you like to receive your order?</p>
+                <p className="text-sm font-semibold text-gray-700 mb-3">{t("cart.checkout.deliveryQuestion")}</p>
                 <div className="grid grid-cols-2 gap-3">
                   <button onClick={() => setCustomerInfo((p) => ({ ...p, deliveryType: "DELIVERY" as DeliveryType }))} className={clsx("flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all", customerInfo.deliveryType === "DELIVERY" ? "border-brand-500 bg-brand-50 text-brand-700" : "border-gray-200 bg-white text-gray-500 hover:border-gray-300")}>
                     <Truck size={28} className={customerInfo.deliveryType === "DELIVERY" ? "text-brand-500" : "text-gray-400"} />
-                    <div className="text-center"><p className="font-bold text-sm">Delivery</p><p className="text-xs opacity-70">We ship to you</p></div>
+                    <div className="text-center"><p className="font-bold text-sm">{t("cart.checkout.delivery")}</p><p className="text-xs opacity-70">{t("cart.checkout.deliveryDesc")}</p></div>
                   </button>
                   <button onClick={() => setCustomerInfo((p) => ({ ...p, deliveryType: "PICKUP" as DeliveryType }))} className={clsx("flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all", customerInfo.deliveryType === "PICKUP" ? "border-brand-500 bg-brand-50 text-brand-700" : "border-gray-200 bg-white text-gray-500 hover:border-gray-300")}>
                     <Store size={28} className={customerInfo.deliveryType === "PICKUP" ? "text-brand-500" : "text-gray-400"} />
-                    <div className="text-center"><p className="font-bold text-sm">Pick Up</p><p className="text-xs opacity-70">Collect at shop</p></div>
+                    <div className="text-center"><p className="font-bold text-sm">{t("cart.checkout.pickup")}</p><p className="text-xs opacity-70">{t("cart.checkout.pickupDesc")}</p></div>
                   </button>
                 </div>
               </div>
@@ -456,39 +459,39 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
               {customerInfo.deliveryType === "PICKUP" && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 flex gap-2">
                   <Store size={16} className="flex-shrink-0 mt-0.5" />
-                  <span>You&apos;ll pick up your order at our shop. We&apos;ll contact you when it&apos;s ready.</span>
+                  <span>{t("cart.checkout.pickupNotice")}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><User size={12} /> First Name</label>
-                  <input type="text" value={customerInfo.firstName} onChange={(e) => setCustomerInfo((p) => ({ ...p, firstName: e.target.value }))} placeholder="Jean" className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.firstName ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
+                  <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><User size={12} /> {t("cart.checkout.firstName")}</label>
+                  <input type="text" value={customerInfo.firstName} onChange={(e) => setCustomerInfo((p) => ({ ...p, firstName: e.target.value }))} placeholder={t("cart.checkout.firstNamePlaceholder")} className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.firstName ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
                   {infoErrors.firstName && <p className="text-xs text-red-500 mt-1">{infoErrors.firstName}</p>}
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><User size={12} /> Last Name</label>
-                  <input type="text" value={customerInfo.lastName} onChange={(e) => setCustomerInfo((p) => ({ ...p, lastName: e.target.value }))} placeholder="Dupont" className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.lastName ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
+                  <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><User size={12} /> {t("cart.checkout.lastName")}</label>
+                  <input type="text" value={customerInfo.lastName} onChange={(e) => setCustomerInfo((p) => ({ ...p, lastName: e.target.value }))} placeholder={t("cart.checkout.lastNamePlaceholder")} className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.lastName ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
                   {infoErrors.lastName && <p className="text-xs text-red-500 mt-1">{infoErrors.lastName}</p>}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><Phone size={12} /> Phone Number</label>
-                <input type="tel" value={customerInfo.phone} onChange={(e) => setCustomerInfo((p) => ({ ...p, phone: e.target.value }))} placeholder="6XX XX XX XX" className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.phone ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
+                <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><Phone size={12} /> {t("cart.checkout.phone")}</label>
+                <input type="tel" value={customerInfo.phone} onChange={(e) => setCustomerInfo((p) => ({ ...p, phone: e.target.value }))} placeholder={t("cart.checkout.phonePlaceholder")} className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.phone ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
                 {infoErrors.phone && <p className="text-xs text-red-500 mt-1">{infoErrors.phone}</p>}
               </div>
 
               {customerInfo.deliveryType === "DELIVERY" && (
                 <>
                   <div>
-                    <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><MapPin size={12} /> Town / City</label>
-                    <input type="text" value={customerInfo.town ?? ""} onChange={(e) => setCustomerInfo((p) => ({ ...p, town: e.target.value }))} placeholder="Douala" className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.town ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
+                    <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><MapPin size={12} /> {t("cart.checkout.town")}</label>
+                    <input type="text" value={customerInfo.town ?? ""} onChange={(e) => setCustomerInfo((p) => ({ ...p, town: e.target.value }))} placeholder={t("cart.checkout.townPlaceholder")} className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.town ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
                     {infoErrors.town && <p className="text-xs text-red-500 mt-1">{infoErrors.town}</p>}
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><MapPin size={12} /> Street / Quarter</label>
-                    <input type="text" value={customerInfo.street ?? ""} onChange={(e) => setCustomerInfo((p) => ({ ...p, street: e.target.value }))} placeholder="Rue de la Paix, Akwa" className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.street ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
+                    <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1"><MapPin size={12} /> {t("cart.checkout.street")}</label>
+                    <input type="text" value={customerInfo.street ?? ""} onChange={(e) => setCustomerInfo((p) => ({ ...p, street: e.target.value }))} placeholder={t("cart.checkout.streetPlaceholder")} className={clsx("w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors", infoErrors.street ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-400 focus:bg-white")} />
                     {infoErrors.street && <p className="text-xs text-red-500 mt-1">{infoErrors.street}</p>}
                   </div>
                 </>
@@ -503,9 +506,9 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
               <button onClick={handleInfoSubmit} disabled={sending} className="w-full btn-primary py-4 rounded-2xl text-base">
                 {sending ? (
-                  <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Placing Order...</>
+                  <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t("cart.checkout.placingOrder")}</>
                 ) : (
-                  <>Confirm Order →</>
+                  <>{t("cart.checkout.confirmOrder")}</>
                 )}
               </button>
             </div>
@@ -519,9 +522,9 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
                     <AlertCircle size={40} className="text-red-500" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">This order was cancelled</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{t("cart.checkout.cancelledTitle")}</h3>
                   <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
-                    Our team could not validate the payment for this order.
+                    {t("cart.checkout.cancelledBody")}
                   </p>
                 </div>
               ) : (
@@ -529,17 +532,17 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
                     <CheckCircle2 size={40} className="text-green-500" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Order Received! 🎉</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{t("cart.checkout.successTitle")}</h3>
                   <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
-                    Thank you for your order and for sending your payment proof! Our team will review it and{" "}
-                    <strong>we will reach out to you by call or SMS</strong> to confirm your payment and order.
+                    {t("cart.checkout.successBodyBefore")}
+                    <strong>{t("cart.checkout.successBodyStrong")}</strong>{t("cart.checkout.successBodyAfter")}
                   </p>
                 </div>
               )}
 
               {order?.status === "CANCELLED" && order.rejectionReason && (
                 <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-left">
-                  <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">Reason</p>
+                  <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">{t("cart.checkout.reasonLabel")}</p>
                   <p className="text-sm text-red-800">{order.rejectionReason}</p>
                 </div>
               )}
@@ -549,7 +552,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   onClick={() => downloadReceipt(order)}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm transition-colors"
                 >
-                  <Printer size={18} />Download Receipt
+                  <Printer size={18} />{t("cart.checkout.downloadReceipt")}
                 </button>
               )}
 
@@ -559,33 +562,33 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   order.status === "CANCELLED" ? "bg-gray-50 border-gray-200" : "bg-green-50 border-green-100"
                 )}>
                   <div className="flex items-center justify-between">
-                    <p className={clsx("text-xs font-semibold uppercase tracking-wide", order.status === "CANCELLED" ? "text-gray-600" : "text-green-800")}>Order Summary</p>
+                    <p className={clsx("text-xs font-semibold uppercase tracking-wide", order.status === "CANCELLED" ? "text-gray-600" : "text-green-800")}>{t("cart.checkout.orderSummaryLabel")}</p>
                     <StatusBadge status={order.status} />
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Order ID</span>
+                    <span className="text-gray-500">{t("cart.checkout.orderIdLabel")}</span>
                     <span className="font-mono font-semibold text-gray-800">{order.id}</span>
                   </div>
                   {order.customerInfo && (
                     <>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Name</span>
+                        <span className="text-gray-500">{t("cart.checkout.nameLabel")}</span>
                         <span className="font-medium text-gray-800">{order.customerInfo.firstName} {order.customerInfo.lastName}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Phone</span>
+                        <span className="text-gray-500">{t("cart.checkout.phoneLabel")}</span>
                         <span className="font-medium text-gray-800">{order.customerInfo.phone}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Delivery</span>
+                        <span className="text-gray-500">{t("cart.checkout.deliveryLabel")}</span>
                         <span className="font-medium text-gray-800 flex items-center gap-1">
-                          {order.customerInfo.deliveryType === "DELIVERY" ? <><Truck size={13} className="text-brand-500" />Delivery</> : <><Store size={13} className="text-brand-500" />Pick Up</>}
+                          {order.customerInfo.deliveryType === "DELIVERY" ? <><Truck size={13} className="text-brand-500" />{t("cart.checkout.delivery")}</> : <><Store size={13} className="text-brand-500" />{t("cart.checkout.pickup")}</>}
                         </span>
                       </div>
                     </>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Amount</span>
+                    <span className="text-gray-500">{t("cart.checkout.amountLabel")}</span>
                     <span className={clsx("font-bold", order.status === "CANCELLED" ? "text-gray-700" : "text-green-700")}>{formatPrice(order.total)}</span>
                   </div>
                 </div>
@@ -596,27 +599,27 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   href={`/track/${order.id}`}
                   className="block text-center text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors py-1"
                 >
-                  Track your order →
+                  {t("cart.checkout.trackOrder")}
                 </Link>
               )}
 
               {order?.status !== "CANCELLED" && (
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-left">
-                  <p className="text-sm font-semibold text-amber-800 mb-1">What happens next?</p>
+                  <p className="text-sm font-semibold text-amber-800 mb-1">{t("cart.checkout.whatNext")}</p>
                   <ul className="text-xs text-amber-700 space-y-1">
-                    <li>• We review your payment screenshot</li>
-                    <li>• You’ll receive a call or SMS to confirm</li>
-                    <li>• Your order will be prepared &amp; shipped</li>
+                    <li>• {t("cart.checkout.nextReview")}</li>
+                    <li>• {t("cart.checkout.nextCall")}</li>
+                    <li>• {t("cart.checkout.nextShip")}</li>
                   </ul>
                 </div>
               )}
 
               <div className="flex flex-col gap-3">
                 <button onClick={() => setChatOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-brand-200 text-brand-600 hover:bg-brand-50 font-medium text-sm transition-colors">
-                  <MessageCircle size={18} />Chat with us about your order
+                  <MessageCircle size={18} />{t("cart.checkout.chatAboutOrder")}
                 </button>
                 <button onClick={() => { onClose(); router.push("/products"); }} className="w-full btn-primary py-4 rounded-2xl text-base">
-                  <ShoppingBag size={20} />Continue Shopping
+                  <ShoppingBag size={20} />{t("cart.checkout.continueShopping")}
                 </button>
               </div>
             </div>

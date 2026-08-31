@@ -25,6 +25,8 @@ import { useCategories } from "@/lib/useCategories";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import DownloadAppButton from "@/components/shared/DownloadAppButton";
 import { Customer } from "@/lib/types";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { localized } from "@/lib/i18n/localized";
 import clsx from "clsx";
 
 // Keeps the desktop nav row from growing unbounded as categories are added —
@@ -48,6 +50,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { getCartCount, language, setLanguage, items, customer, logoutCustomer } = useStore();
+  const { t } = useTranslation();
   const { categories: allCategories } = useCategories();
   // Categories with no storefront-visible products are excluded everywhere
   // navigation/browsing surfaces list categories — an admin still sees them
@@ -82,7 +85,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
       {/* Top bar */}
       <div className="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs text-center py-1.5 tracking-wide">
-        ✨ Free delivery on orders above 50,000 XAF &nbsp;|&nbsp; Pay with no extra charges via Orange Money or Mobile Money
+        {t("nav.topBanner")}
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -113,7 +116,7 @@ export default function Navbar() {
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
               )}
             >
-              Home
+              {t("nav.home")}
             </Link>
 
             {visibleCategories.map((cat) => (
@@ -133,7 +136,7 @@ export default function Navbar() {
                   )}
                 >
                   <span className="flex items-center"><FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={14} /></span>
-                  {cat.name}
+                  {localized(cat.name, cat.nameFr, language)}
                   <ChevronDown
                     size={14}
                     className={clsx(
@@ -152,7 +155,7 @@ export default function Navbar() {
                         href={`/category/${cat.slug}/${sub.slug}`}
                         className="block px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
-                        {sub.name}
+                        {localized(sub.name, sub.nameFr, language)}
                       </Link>
                     ))}
                   </div>
@@ -172,7 +175,7 @@ export default function Navbar() {
                     "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
                   )}
                 >
-                  More
+                  {t("nav.more")}
                   <ChevronDown
                     size={14}
                     className={clsx(
@@ -191,7 +194,7 @@ export default function Navbar() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
                         <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={13} />
-                        {cat.name}
+                        {localized(cat.name, cat.nameFr, language)}
                       </Link>
                     ))}
                   </div>
@@ -208,7 +211,7 @@ export default function Navbar() {
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
               )}
             >
-              All Products
+              {t("nav.allProducts")}
             </Link>
           </nav>
 
@@ -222,7 +225,7 @@ export default function Navbar() {
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Search products..."
+                    placeholder={t("nav.searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => {
@@ -251,7 +254,7 @@ export default function Navbar() {
             <button
               onClick={() => setLanguage(language === "en" ? "fr" : "en")}
               className="hidden sm:flex items-center gap-1 btn-ghost px-3 py-2 rounded-full text-sm font-medium"
-              title="Toggle language"
+              title={t("nav.toggleLanguage")}
             >
               <Globe size={16} />
               <span>{language.toUpperCase()}</span>
@@ -307,34 +310,34 @@ export default function Navbar() {
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
-                        <Package size={15} /> My Orders
+                        <Package size={15} /> {t("nav.myOrders")}
                       </Link>
                       <Link
                         href="/account"
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
-                        <Gift size={15} /> My Referrals
+                        <Gift size={15} /> {t("nav.myReferrals")}
                       </Link>
                       <Link
                         href="/help"
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
-                        <HelpCircle size={15} /> Help Center
+                        <HelpCircle size={15} /> {t("nav.helpCenter")}
                       </Link>
                       <Link
                         href="/contact"
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
-                        <MapPin size={15} /> Contact Us
+                        <MapPin size={15} /> {t("nav.contactUs")}
                       </Link>
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                       >
-                        <LogOut size={15} /> Log Out
+                        <LogOut size={15} /> {t("nav.logOut")}
                       </button>
                     </>
                   ) : (
@@ -344,28 +347,28 @@ export default function Navbar() {
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
-                        <LogIn size={15} /> Login
+                        <LogIn size={15} /> {t("nav.login")}
                       </Link>
                       <Link
                         href="/register"
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
-                        <UserPlus size={15} /> Register
+                        <UserPlus size={15} /> {t("nav.register")}
                       </Link>
                       <Link
                         href="/help"
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
-                        <HelpCircle size={15} /> Help Center
+                        <HelpCircle size={15} /> {t("nav.helpCenter")}
                       </Link>
                       <Link
                         href="/contact"
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
-                        <MapPin size={15} /> Contact Us
+                        <MapPin size={15} /> {t("nav.contactUs")}
                       </Link>
                     </>
                   )}
@@ -427,14 +430,14 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
               className="block py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
             >
-              🏠 Home
+              🏠 {t("nav.home")}
             </Link>
             <Link
               href="/"
               onClick={() => setMobileOpen(false)}
               className="block py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
             >
-              🛍️ All Products
+              🛍️ {t("nav.allProducts")}
             </Link>
 
             {categories.map((cat) => (
@@ -448,7 +451,7 @@ export default function Navbar() {
                   className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                 >
                   <span className="flex items-center gap-1.5">
-                    <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={14} /> {cat.name}
+                    <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={14} /> {localized(cat.name, cat.nameFr, language)}
                   </span>
                   <ChevronDown
                     size={16}
@@ -465,7 +468,7 @@ export default function Navbar() {
                       onClick={() => setMobileOpen(false)}
                       className="block py-1.5 px-2 text-sm text-gray-600 hover:text-brand-600 rounded"
                     >
-                      All {cat.name}
+                      {t("nav.allOfCategory", { category: localized(cat.name, cat.nameFr, language) })}
                     </Link>
                     {cat.subcategories.map((sub) => (
                       <Link
@@ -474,7 +477,7 @@ export default function Navbar() {
                         onClick={() => setMobileOpen(false)}
                         className="block py-1.5 px-2 text-sm text-gray-600 hover:text-brand-600 rounded"
                       >
-                        {sub.name}
+                        {localized(sub.name, sub.nameFr, language)}
                       </Link>
                     ))}
                   </div>
@@ -500,28 +503,28 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
-                    <Package size={16} /> My Orders
+                    <Package size={16} /> {t("nav.myOrders")}
                   </Link>
                   <Link
                     href="/account"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
-                    <Gift size={16} /> My Referrals
+                    <Gift size={16} /> {t("nav.myReferrals")}
                   </Link>
                   <Link
                     href="/help"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
-                    <HelpCircle size={16} /> Help Center
+                    <HelpCircle size={16} /> {t("nav.helpCenter")}
                   </Link>
                   <Link
                     href="/contact"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
-                    <MapPin size={16} /> Contact Us
+                    <MapPin size={16} /> {t("nav.contactUs")}
                   </Link>
                   <button
                     onClick={() => {
@@ -530,7 +533,7 @@ export default function Navbar() {
                     }}
                     className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-red-500 hover:bg-red-50 font-medium"
                   >
-                    <LogOut size={16} /> Log Out
+                    <LogOut size={16} /> {t("nav.logOut")}
                   </button>
                 </>
               ) : (
@@ -540,28 +543,28 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
-                    <LogIn size={16} /> Login
+                    <LogIn size={16} /> {t("nav.login")}
                   </Link>
                   <Link
                     href="/register"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
-                    <UserPlus size={16} /> Register
+                    <UserPlus size={16} /> {t("nav.register")}
                   </Link>
                   <Link
                     href="/help"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
-                    <HelpCircle size={16} /> Help Center
+                    <HelpCircle size={16} /> {t("nav.helpCenter")}
                   </Link>
                   <Link
                     href="/contact"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
-                    <MapPin size={16} /> Contact Us
+                    <MapPin size={16} /> {t("nav.contactUs")}
                   </Link>
                 </>
               )}
@@ -576,7 +579,7 @@ export default function Navbar() {
                 className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-brand-600"
               >
                 <Globe size={16} />
-                Switch to {language === "en" ? "Français" : "English"}
+                {language === "en" ? t("nav.switchToFrench") : t("nav.switchToEnglish")}
               </button>
             </div>
           </div>

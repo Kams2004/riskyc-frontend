@@ -14,6 +14,7 @@ import {
   CreditCard,
   Search,
 } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import clsx from "clsx";
 import Link from "next/link";
 
@@ -21,56 +22,32 @@ interface Props {
   onOpenOrder: (orderId: string) => void;
 }
 
-const statusConfig: Record<
+const statusIconAndColor: Record<
   OrderStatus,
-  { label: string; color: string; bg: string; icon: React.ReactNode }
+  { color: string; bg: string; icon: React.ReactNode }
 > = {
-  PENDING: {
-    label: "Pending",
-    color: "text-gray-600",
-    bg: "bg-gray-100",
-    icon: <Clock size={14} />,
-  },
-  AWAITING_PAYMENT: {
-    label: "Awaiting Payment",
-    color: "text-orange-600",
-    bg: "bg-orange-100",
-    icon: <CreditCard size={14} />,
-  },
-  REVIEWING: {
-    label: "Under Review",
-    color: "text-blue-600",
-    bg: "bg-blue-100",
-    icon: <Search size={14} />,
-  },
-  VALIDATED: {
-    label: "Validated ✓",
-    color: "text-green-700",
-    bg: "bg-green-100",
-    icon: <CheckCircle2 size={14} />,
-  },
-  PACKAGING: {
-    label: "Preparing your order",
-    color: "text-purple-700",
-    bg: "bg-purple-100",
-    icon: <Package size={14} />,
-  },
-  PACKAGED: {
-    label: "Packaged — on its way",
-    color: "text-teal-700",
-    bg: "bg-teal-100",
-    icon: <CheckCircle2 size={14} />,
-  },
-  CANCELLED: {
-    label: "Cancelled",
-    color: "text-red-600",
-    bg: "bg-red-100",
-    icon: <XCircle size={14} />,
-  },
+  PENDING: { color: "text-gray-600", bg: "bg-gray-100", icon: <Clock size={14} /> },
+  AWAITING_PAYMENT: { color: "text-orange-600", bg: "bg-orange-100", icon: <CreditCard size={14} /> },
+  REVIEWING: { color: "text-blue-600", bg: "bg-blue-100", icon: <Search size={14} /> },
+  VALIDATED: { color: "text-green-700", bg: "bg-green-100", icon: <CheckCircle2 size={14} /> },
+  PACKAGING: { color: "text-purple-700", bg: "bg-purple-100", icon: <Package size={14} /> },
+  PACKAGED: { color: "text-teal-700", bg: "bg-teal-100", icon: <CheckCircle2 size={14} /> },
+  CANCELLED: { color: "text-red-600", bg: "bg-red-100", icon: <XCircle size={14} /> },
+};
+
+const statusLabelKey: Record<OrderStatus, string> = {
+  PENDING: "cart.orders.status.pending",
+  AWAITING_PAYMENT: "cart.orders.status.awaitingPayment",
+  REVIEWING: "cart.orders.status.reviewing",
+  VALIDATED: "cart.orders.status.validated",
+  PACKAGING: "cart.orders.status.packaging",
+  PACKAGED: "cart.orders.status.packaged",
+  CANCELLED: "cart.orders.status.cancelled",
 };
 
 export function StatusBadge({ status }: { status: OrderStatus }) {
-  const cfg = statusConfig[status];
+  const { t } = useTranslation();
+  const cfg = statusIconAndColor[status];
   return (
     <span
       className={clsx(
@@ -80,17 +57,18 @@ export function StatusBadge({ status }: { status: OrderStatus }) {
       )}
     >
       {cfg.icon}
-      {cfg.label}
+      {t(statusLabelKey[status])}
     </span>
   );
 }
 
 function OrderTimeline({ status }: { status: OrderStatus }) {
+  const { t } = useTranslation();
   const steps: { key: OrderStatus; label: string }[] = [
-    { key: "PENDING", label: "Order placed" },
-    { key: "AWAITING_PAYMENT", label: "Payment" },
-    { key: "REVIEWING", label: "Reviewing" },
-    { key: "VALIDATED", label: "Validated" },
+    { key: "PENDING", label: t("cart.orders.timeline.orderPlaced") },
+    { key: "AWAITING_PAYMENT", label: t("cart.orders.timeline.payment") },
+    { key: "REVIEWING", label: t("cart.orders.timeline.reviewing") },
+    { key: "VALIDATED", label: t("cart.orders.timeline.validated") },
   ];
 
   const stepOrder = ["PENDING", "AWAITING_PAYMENT", "REVIEWING", "VALIDATED"];
@@ -148,6 +126,7 @@ function OrderTimeline({ status }: { status: OrderStatus }) {
 
 export default function OrdersList({ onOpenOrder }: Props) {
   const { customer } = useStore();
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -180,12 +159,12 @@ export default function OrdersList({ onOpenOrder }: Props) {
         <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
           <Package size={40} className="text-gray-300" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-600">No orders yet</h3>
+        <h3 className="text-xl font-semibold text-gray-600">{t("cart.orders.emptyTitle")}</h3>
         <p className="text-gray-400 text-sm">
-          Your order history will appear here
+          {t("cart.orders.emptySubtitle")}
         </p>
         <Link href="/products" className="btn-primary mt-2">
-          Start Shopping
+          {t("cart.common.startShopping")}
         </Link>
       </div>
     );

@@ -7,6 +7,8 @@ import { computeLineTotal } from "./pricing";
 interface CartStore {
   items: CartItem[];
   language: Language;
+  /** True once the language has been set at least once (an explicit choice, or the one-time browser auto-detect) — guards against re-detecting on every visit and clobbering a returning user's choice. */
+  languageInitialized: boolean;
   chatOpen: boolean;
 
   // Cart actions
@@ -52,6 +54,7 @@ export const useStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       language: "en",
+      languageInitialized: false,
       chatOpen: false,
       customer: null,
       conversationId: null,
@@ -106,7 +109,7 @@ export const useStore = create<CartStore>()(
       getCartCount: () =>
         get().items.reduce((sum, i) => sum + i.quantity, 0),
 
-      setLanguage: (lang) => set({ language: lang }),
+      setLanguage: (lang) => set({ language: lang, languageInitialized: true }),
 
       setChatOpen: (open) => set({ chatOpen: open }),
 
@@ -155,6 +158,7 @@ export const useStore = create<CartStore>()(
       partialize: (state) => ({
         items: state.items,
         language: state.language,
+        languageInitialized: state.languageInitialized,
         customer: state.customer,
         conversationId: state.conversationId,
       }),

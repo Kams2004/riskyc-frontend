@@ -9,6 +9,7 @@ import * as productsApi from "@/lib/api/products";
 import { API_BASE_URL as apiBaseUrl } from "@/lib/apiClient";
 import { Product, ProductColor, Badge, MediaItem, BulkPriceTier } from "@/lib/types";
 import ImageMarkupEditor from "@/components/admin/ImageMarkupEditor";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   Plus,
   Trash2,
@@ -93,6 +94,7 @@ export default function ProductForm({ initial, mode }: Props) {
   const { categories } = useCategories();
   const c = useAdminColors();
   const isDark = c.isDark;
+  const { t } = useTranslation();
 
   const [form, setForm] = useState<FormState>(
     initial
@@ -132,10 +134,10 @@ export default function ProductForm({ initial, mode }: Props) {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.name.trim()) e.name = "Name is required";
-    if (existingMedia.length === 0 && pendingFiles.length === 0) e.images = "At least one image is required";
-    if (form.colors.some((c) => !c.name.trim())) e.colors = "Every color needs a name";
-    if (form.bulkPrices.some((t) => t.quantity <= 0 || t.price <= 0)) e.bulkPrices = "Every tier needs a quantity and a price greater than 0";
+    if (!form.name.trim()) e.name = t("adminProducts.form.nameRequiredError");
+    if (existingMedia.length === 0 && pendingFiles.length === 0) e.images = t("adminProducts.form.imagesRequiredError");
+    if (form.colors.some((c) => !c.name.trim())) e.colors = t("adminProducts.form.colorsError");
+    if (form.bulkPrices.some((tier) => tier.quantity <= 0 || tier.price <= 0)) e.bulkPrices = t("adminProducts.form.bulkPricesError");
     return e;
   };
 
@@ -178,7 +180,7 @@ export default function ProductForm({ initial, mode }: Props) {
       setSaved(true);
       setTimeout(() => router.push("/admin/products"), 800);
     } catch (err) {
-      setErrors({ save: err instanceof Error ? err.message : "Failed to save product" });
+      setErrors({ save: err instanceof Error ? err.message : t("adminProducts.form.saveError") });
       setSaving(false);
     }
   };
@@ -327,10 +329,10 @@ export default function ProductForm({ initial, mode }: Props) {
           )}
         >
           <ArrowLeft size={16} />
-          Back
+          {t("adminProducts.common.back")}
         </button>
         <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>
-          {mode === "new" ? "Add New Product" : `Edit: ${initial?.name}`}
+          {mode === "new" ? t("adminProducts.form.addTitle") : t("adminProducts.form.editTitle", { name: initial?.name ?? "" })}
         </h1>
       </div>
 
@@ -345,18 +347,18 @@ export default function ProductForm({ initial, mode }: Props) {
         <div className="lg:col-span-2 space-y-5">
 
           {/* BASIC INFO */}
-          <Section title="Basic Information" icon={<Info size={15} />} isDark={isDark} c={c}>
+          <Section title={t("adminProducts.form.basicInfoTitle")} icon={<Info size={15} />} isDark={isDark} c={c}>
             <div className="space-y-4">
-              <Field label="Product Name" error={errors.name} isDark={isDark} c={c}>
+              <Field label={t("adminProducts.form.productNameLabel")} error={errors.name} isDark={isDark} c={c}>
                 <input
                   className={inp(errors.name)}
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Elegant Rose Evening Gown"
+                  placeholder={t("adminProducts.form.productNamePlaceholder")}
                 />
               </Field>
 
-              <Field label="Description (optional)" isDark={isDark} c={c}>
+              <Field label={t("adminProducts.form.descriptionLabel")} isDark={isDark} c={c}>
                 <textarea
                   className={clsx(inp(), "resize-none")}
                   rows={4}
@@ -364,17 +366,17 @@ export default function ProductForm({ initial, mode }: Props) {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, description: e.target.value }))
                   }
-                  placeholder="Describe the product in detail…"
+                  placeholder={t("adminProducts.form.descriptionPlaceholder")}
                 />
               </Field>
             </div>
           </Section>
 
           {/* CATEGORIES CONFIG */}
-          <Section title="Category Configuration" icon={<Layers size={15} />} isDark={isDark} c={c}>
+          <Section title={t("adminProducts.form.categoryConfigTitle")} icon={<Layers size={15} />} isDark={isDark} c={c}>
             <div className="space-y-3">
               <p className={clsx("text-xs", c.textSecondary)}>
-                Available categories and their subcategories in the store.
+                {t("adminProducts.form.categoryConfigHint")}
               </p>
               <div className="space-y-2">
                 {categories.map((cat) => (
@@ -390,7 +392,7 @@ export default function ProductForm({ initial, mode }: Props) {
                         {cat.name}
                       </span>
                       <span className={clsx("ml-auto text-xs px-2 py-0.5 rounded-full", isDark ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-500")}>
-                        {cat.subcategories.length} subcategories
+                        {t("adminProducts.form.subcategoriesCount", { count: cat.subcategories.length })}
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -421,8 +423,7 @@ export default function ProductForm({ initial, mode }: Props) {
                 ))}
               </div>
               <p className={clsx("text-xs italic", c.textMuted)}>
-                Click a subcategory above to quickly assign it to this product.
-                Currently assigned:{" "}
+                {t("adminProducts.form.assignHint")}{" "}
                 <span className="text-brand-500 font-medium not-italic">
                   {selectedCategory?.name} →{" "}
                   {selectedCategory?.subcategories.find((s) => s.slug === form.subcategorySlug)?.name}
@@ -432,9 +433,9 @@ export default function ProductForm({ initial, mode }: Props) {
           </Section>
 
           {/* PRICING */}
-          <Section title="Pricing" icon={<DollarSign size={15} />} isDark={isDark} c={c}>
+          <Section title={t("adminProducts.form.pricingTitle")} icon={<DollarSign size={15} />} isDark={isDark} c={c}>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Price (XAF) — optional" isDark={isDark} c={c}>
+              <Field label={t("adminProducts.form.priceLabel")} isDark={isDark} c={c}>
                 <input
                   type="number"
                   className={inp()}
@@ -442,10 +443,10 @@ export default function ProductForm({ initial, mode }: Props) {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, price: Number(e.target.value) }))
                   }
-                  placeholder="Leave empty for 'Price on request'"
+                  placeholder={t("adminProducts.form.pricePlaceholder")}
                 />
               </Field>
-              <Field label="Original Price — for discount" isDark={isDark} c={c}>
+              <Field label={t("adminProducts.form.originalPriceLabel")} isDark={isDark} c={c}>
                 <input
                   type="number"
                   className={inp()}
@@ -458,14 +459,16 @@ export default function ProductForm({ initial, mode }: Props) {
                         : undefined,
                     }))
                   }
-                  placeholder="Leave empty if no sale"
+                  placeholder={t("adminProducts.form.originalPricePlaceholder")}
                 />
               </Field>
             </div>
             {form.price > 0 && form.originalPrice && form.originalPrice > form.price && (
               <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-xs text-green-600 font-medium">
-                💸 Discount: {Math.round(((form.originalPrice - form.price) / form.originalPrice) * 100)}% off
-                ({new Intl.NumberFormat("fr-CM", { style: "currency", currency: "XAF", minimumFractionDigits: 0 }).format(form.originalPrice - form.price)} saved)
+                {t("adminProducts.form.discountPreview", {
+                  percent: Math.round(((form.originalPrice - form.price) / form.originalPrice) * 100),
+                  amount: new Intl.NumberFormat("fr-CM", { style: "currency", currency: "XAF", minimumFractionDigits: 0 }).format(form.originalPrice - form.price),
+                })}
               </div>
             )}
 
@@ -473,18 +476,18 @@ export default function ProductForm({ initial, mode }: Props) {
             <div className={clsx("mt-5 pt-5 border-t", isDark ? "border-gray-700" : "border-gray-200")}>
               <div className="flex items-center justify-between mb-1">
                 <label className={clsx("text-xs font-semibold uppercase tracking-wide", c.textMuted)}>
-                  Bulk / Grouped Pricing — optional
+                  {t("adminProducts.form.bulkPricingLabel")}
                 </label>
                 <button
                   type="button"
                   onClick={addBulkTier}
                   className="flex items-center gap-1 text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors"
                 >
-                  <Plus size={13} /> Add tier
+                  <Plus size={13} /> {t("adminProducts.form.addTierButton")}
                 </button>
               </div>
               <p className={clsx("text-[11px] mb-3", c.textMuted)}>
-                Offer a flat price for a bulk quantity, e.g. 10 units for 12,000 XAF. Not related to the unit price above.
+                {t("adminProducts.form.bulkPricingHint")}
               </p>
 
               {form.bulkPrices.length > 0 && (
@@ -498,9 +501,9 @@ export default function ProductForm({ initial, mode }: Props) {
                           className={clsx(inpSm, "w-16")}
                           value={tier.quantity || ""}
                           onChange={(e) => updateBulkTier(i, { quantity: Number(e.target.value) })}
-                          placeholder="Qty"
+                          placeholder={t("adminProducts.form.qtyPlaceholder")}
                         />
-                        <span className={clsx("text-sm flex-shrink-0", c.textMuted)}>units =</span>
+                        <span className={clsx("text-sm flex-shrink-0", c.textMuted)}>{t("adminProducts.form.unitsEquals")}</span>
                       </div>
                       <input
                         type="number"
@@ -508,14 +511,14 @@ export default function ProductForm({ initial, mode }: Props) {
                         className={clsx(inpSm, "flex-1 min-w-[100px]")}
                         value={tier.price || ""}
                         onChange={(e) => updateBulkTier(i, { price: Number(e.target.value) })}
-                        placeholder="Total price"
+                        placeholder={t("adminProducts.form.totalPricePlaceholder")}
                       />
-                      <span className={clsx("text-xs flex-shrink-0", c.textMuted)}>XAF</span>
+                      <span className={clsx("text-xs flex-shrink-0", c.textMuted)}>{t("adminProducts.form.xafLabel")}</span>
                       <button
                         type="button"
                         onClick={() => removeBulkTier(i)}
                         className="text-red-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
-                        title="Remove tier"
+                        title={t("adminProducts.form.removeTierTitle")}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -532,7 +535,7 @@ export default function ProductForm({ initial, mode }: Props) {
               {form.bulkPrices.some((t) => t.quantity > 0 && t.price > 0) && (
                 <div className={clsx("mt-3 p-3 rounded-xl border", isDark ? "bg-gray-900/50 border-gray-700" : "bg-gray-50 border-gray-200")}>
                   <p className={clsx("text-[10px] uppercase tracking-wide font-semibold mb-1.5", c.textMuted)}>
-                    Preview — shown under the price on the product page
+                    {t("adminProducts.form.bulkPreviewLabel")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {form.bulkPrices
@@ -556,7 +559,7 @@ export default function ProductForm({ initial, mode }: Props) {
           </Section>
 
           {/* IMAGES */}
-          <Section title="Images & Videos" icon={<ImageIcon size={15} />} error={errors.images} isDark={isDark} c={c}>
+          <Section title={t("adminProducts.form.imagesTitle")} icon={<ImageIcon size={15} />} error={errors.images} isDark={isDark} c={c}>
             <div className="space-y-3">
               {/* Hidden file input — accepts images and videos */}
               <input
@@ -589,10 +592,10 @@ export default function ProductForm({ initial, mode }: Props) {
                 <div className="text-center">
                   <p className={clsx("text-sm font-semibold", isDark ? "text-gray-400 group-hover:text-white" : "text-gray-500 group-hover:text-gray-800")}>
                     <Upload size={13} className="inline mr-1" />
-                    Click to pick images or videos
+                    {t("adminProducts.form.pickFilesLabel")}
                   </p>
                   <p className={clsx("text-xs mt-0.5", c.textMuted)}>
-                    JPG, PNG, WebP, MP4, WebM — multiple files supported
+                    {t("adminProducts.form.pickFilesHint")}
                   </p>
                 </div>
               </button>
@@ -619,7 +622,7 @@ export default function ProductForm({ initial, mode }: Props) {
                           <button
                             type="button"
                             onClick={() => setMarkupTarget(i)}
-                            title="Draw on this image"
+                            title={t("adminProducts.form.drawOnImageTitle")}
                             className="w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center text-gray-700"
                           >
                             <Pencil size={14} />
@@ -628,7 +631,7 @@ export default function ProductForm({ initial, mode }: Props) {
                         <button
                           type="button"
                           onClick={() => handleRemoveAt(i)}
-                          title="Remove"
+                          title={t("adminProducts.form.removeTitle")}
                           className="w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center text-red-500"
                         >
                           <Trash2 size={14} />
@@ -640,7 +643,7 @@ export default function ProductForm({ initial, mode }: Props) {
                       </span>
                       {m.isVideo && (
                         <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                          <Film size={9} /> video
+                          <Film size={9} /> {t("adminProducts.form.videoLabel")}
                         </span>
                       )}
                     </div>
@@ -651,7 +654,7 @@ export default function ProductForm({ initial, mode }: Props) {
           </Section>
 
           {/* COLORS & STOCK */}
-          <Section title="Colors & Stock" icon={<Palette size={15} />} error={errors.colors} isDark={isDark} c={c}>
+          <Section title={t("adminProducts.form.colorsStockTitle")} icon={<Palette size={15} />} error={errors.colors} isDark={isDark} c={c}>
             <div className="space-y-3">
               {form.colors.map((color, i) => (
                 <div
@@ -681,7 +684,7 @@ export default function ProductForm({ initial, mode }: Props) {
                         const resolved = resolveCssColor(name);
                         updateColor(i, resolved ? { name, hex: resolved } : { name });
                       }}
-                      placeholder="e.g. Black, Navy, Rose bonbon…"
+                      placeholder={t("adminProducts.form.colorNamePlaceholder")}
                     />
                   </div>
                   {/* Stock (optional) */}
@@ -696,15 +699,15 @@ export default function ProductForm({ initial, mode }: Props) {
                         })
                       }
                       min={0}
-                      placeholder="Qty"
-                      title="Stock quantity (optional — not used to limit ordering yet)"
+                      placeholder={t("adminProducts.form.stockQtyPlaceholder")}
+                      title={t("adminProducts.form.stockQtyTitle")}
                     />
-                    <span className={clsx("text-xs", c.textMuted)}>units</span>
+                    <span className={clsx("text-xs", c.textMuted)}>{t("adminProducts.form.unitsLabel")}</span>
                     {/* Remove */}
                     <button
                       onClick={() => removeColor(i)}
                       className="text-red-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
-                      title="Remove color"
+                      title={t("adminProducts.form.removeColorTitle")}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -715,12 +718,16 @@ export default function ProductForm({ initial, mode }: Props) {
               {/* Stock summary */}
               {form.colors.length > 0 && (
                 <div className={clsx("flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium", isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500")}>
-                  <span>Total stock:</span>
+                  <span>{t("adminProducts.form.totalStockLabel")}</span>
                   <span className={clsx("font-bold", c.textPrimary)}>
-                    {form.colors.reduce((s, col) => s + (col.stock ?? 0), 0)} units
+                    {form.colors.reduce((s, col) => s + (col.stock ?? 0), 0)} {t("adminProducts.form.unitsLabel")}
                   </span>
                   <span className="ml-2">·</span>
-                  <span>{form.colors.length} color{form.colors.length !== 1 ? "s" : ""}</span>
+                  <span>
+                    {form.colors.length === 1
+                      ? t("adminProducts.form.colorCountOne", { count: form.colors.length })
+                      : t("adminProducts.form.colorCountOther", { count: form.colors.length })}
+                  </span>
                 </div>
               )}
 
@@ -728,7 +735,7 @@ export default function ProductForm({ initial, mode }: Props) {
                 onClick={addColor}
                 className="flex items-center gap-2 text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors"
               >
-                <Plus size={13} /> Add color
+                <Plus size={13} /> {t("adminProducts.form.addColorButton")}
               </button>
             </div>
           </Section>
@@ -737,9 +744,9 @@ export default function ProductForm({ initial, mode }: Props) {
         {/* ── Right column ── */}
         <div className="space-y-5">
           {/* DISPLAY OPTIONS */}
-          <Section title="Display" icon={<Info size={15} />} isDark={isDark} c={c}>
+          <Section title={t("adminProducts.form.displayTitle")} icon={<Info size={15} />} isDark={isDark} c={c}>
             <div className="space-y-4">
-              <Field label="Visibility" isDark={isDark} c={c}>
+              <Field label={t("adminProducts.form.visibilityLabel")} isDark={isDark} c={c}>
                 <button
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, hidden: !f.hidden }))}
@@ -753,14 +760,14 @@ export default function ProductForm({ initial, mode }: Props) {
                   )}
                 >
                   {form.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
-                  {form.hidden ? "Hidden from storefront" : "Visible on storefront"}
+                  {form.hidden ? t("adminProducts.form.hiddenFromStorefront") : t("adminProducts.form.visibleOnStorefront")}
                   <span className={clsx("ml-auto text-xs font-medium px-2 py-0.5 rounded-full", form.hidden ? (isDark ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-500") : "bg-green-500 text-white")}>
-                    {form.hidden ? "Hidden" : "Visible"}
+                    {form.hidden ? t("adminProducts.form.hiddenChip") : t("adminProducts.form.visibleChip")}
                   </span>
                 </button>
               </Field>
 
-              <Field label="Badge" isDark={isDark} c={c}>
+              <Field label={t("adminProducts.form.badgeLabel")} isDark={isDark} c={c}>
                 <select
                   className={inp()}
                   value={form.badge || ""}
@@ -773,14 +780,14 @@ export default function ProductForm({ initial, mode }: Props) {
                     }))
                   }
                 >
-                  <option value="">No badge</option>
-                  <option value="NEW">🟢 New</option>
-                  <option value="SALE">🔴 Sale</option>
-                  <option value="HOT">🔥 Hot</option>
+                  <option value="">{t("adminProducts.form.noBadgeOption")}</option>
+                  <option value="NEW">{t("adminProducts.form.newBadgeOption")}</option>
+                  <option value="SALE">{t("adminProducts.form.saleBadgeOption")}</option>
+                  <option value="HOT">{t("adminProducts.form.hotBadgeOption")}</option>
                 </select>
               </Field>
 
-              <Field label="Sizes (comma-separated)" isDark={isDark} c={c}>
+              <Field label={t("adminProducts.form.sizesLabel")} isDark={isDark} c={c}>
                 <input
                   className={inp()}
                   value={(form.sizes || []).join(", ")}
@@ -798,21 +805,21 @@ export default function ProductForm({ initial, mode }: Props) {
                       sizes: normalizeSizes(f.sizes.join(", ")),
                     }))
                   }
-                  placeholder="XS, S, M, L, XL"
+                  placeholder={t("adminProducts.form.sizesPlaceholder")}
                 />
                 <p className={clsx("text-[11px] mt-1", c.textMuted)}>
-                  Any separator works (comma, period, space, slash) — cleaned up automatically, e.g. &quot;m.l.xl&quot; → M, L, XL
+                  {t("adminProducts.form.sizesHint")}
                 </p>
               </Field>
 
               {/* Size presets */}
               <div>
-                <p className={clsx("text-xs mb-2", c.textMuted)}>Quick presets:</p>
+                <p className={clsx("text-xs mb-2", c.textMuted)}>{t("adminProducts.form.quickPresetsLabel")}</p>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { label: "XS–XL", val: "XS, S, M, L, XL" },
-                    { label: "XS–2XL", val: "XS, S, M, L, XL, 2XL" },
-                    { label: "One Size", val: "One Size" },
+                    { label: t("adminProducts.form.presetXsXl"), val: "XS, S, M, L, XL" },
+                    { label: t("adminProducts.form.presetXs2Xl"), val: "XS, S, M, L, XL, 2XL" },
+                    { label: t("adminProducts.form.presetOneSize"), val: "One Size" },
                   ].map((p) => (
                     <button
                       key={p.label}
@@ -836,7 +843,7 @@ export default function ProductForm({ initial, mode }: Props) {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Rating (1–5)" isDark={isDark} c={c}>
+                <Field label={t("adminProducts.form.ratingLabel")} isDark={isDark} c={c}>
                   <input
                     type="number"
                     step="0.1"
@@ -852,7 +859,7 @@ export default function ProductForm({ initial, mode }: Props) {
                     }
                   />
                 </Field>
-                <Field label="Review count" isDark={isDark} c={c}>
+                <Field label={t("adminProducts.form.reviewCountLabel")} isDark={isDark} c={c}>
                   <input
                     type="number"
                     min="0"
@@ -872,7 +879,7 @@ export default function ProductForm({ initial, mode }: Props) {
 
           {/* IMAGE / VIDEO PREVIEW */}
           {displayMedia.length > 0 && (
-            <Section title="Preview" isDark={isDark} c={c}>
+            <Section title={t("adminProducts.form.previewTitle")} isDark={isDark} c={c}>
               <div
                 className={clsx(
                   "relative rounded-xl overflow-hidden aspect-[3/4] border",
@@ -922,7 +929,7 @@ export default function ProductForm({ initial, mode }: Props) {
               </div>
 
               <p className={clsx("text-xs text-center mt-2 font-medium", c.textSecondary)}>
-                {form.name || "Product name"}
+                {form.name || t("adminProducts.form.productNameFallback")}
               </p>
               {form.badge && (
                 <div className="flex justify-center mt-1">
@@ -942,7 +949,7 @@ export default function ProductForm({ initial, mode }: Props) {
                   onClick={() => setMarkupTarget(clampedPreviewIndex)}
                   className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-brand-500 hover:bg-brand-600 text-white transition-colors"
                 >
-                  <Pencil size={14} /> Draw on this image
+                  <Pencil size={14} /> {t("adminProducts.form.drawOnImageTitle")}
                 </button>
               )}
             </Section>
@@ -982,11 +989,11 @@ export default function ProductForm({ initial, mode }: Props) {
             {saving ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : saved ? (
-              "✓ Saved successfully!"
+              t("adminProducts.form.savedSuccess")
             ) : (
               <>
                 <Save size={18} />
-                {mode === "new" ? "Create Product" : "Save Changes"}
+                {mode === "new" ? t("adminProducts.form.createProductButton") : t("adminProducts.form.saveChangesButton")}
               </>
             )}
           </button>
@@ -1001,7 +1008,7 @@ export default function ProductForm({ initial, mode }: Props) {
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
             )}
           >
-            Discard changes
+            {t("adminProducts.form.discardChanges")}
           </button>
         </div>
       </div>
@@ -1160,6 +1167,7 @@ function ColorPicker({
   onChange: (hex: string) => void;
   isDark: boolean;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(value);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1190,7 +1198,7 @@ function ColorPicker({
         onClick={() => setOpen((o) => !o)}
         className="block w-10 h-10 rounded-full border-2 border-white shadow-md ring-2 ring-gray-200 hover:ring-brand-400 transition-all"
         style={{ backgroundColor: value }}
-        title={`Pick color (current: ${value})`}
+        title={t("adminProducts.form.pickColorTitle", { color: value })}
       />
 
       {open && (
@@ -1213,7 +1221,7 @@ function ColorPicker({
                 if (e.key === "Enter" && resolved) commit(resolved);
                 if (e.key === "Escape") setOpen(false);
               }}
-              placeholder="Color name or hex…"
+              placeholder={t("adminProducts.form.colorNameOrHexPlaceholder")}
               className={clsx(
                 "flex-1 min-w-0 border rounded-lg px-2.5 py-2 text-sm outline-none",
                 isDark ? "bg-gray-900 border-gray-600 text-white" : "bg-gray-50 border-gray-200 text-gray-900"
@@ -1223,7 +1231,7 @@ function ColorPicker({
 
           {text.trim() && !resolved ? (
             <p className="text-[11px] text-red-500 mb-2">
-              Not a recognized color — try a name like &quot;navy&quot; or a hex code like #3b82f6.
+              {t("adminProducts.form.notRecognizedColor")}
             </p>
           ) : resolved ? (
             <button
@@ -1231,14 +1239,14 @@ function ColorPicker({
               onClick={() => commit(resolved)}
               className="w-full mb-3 text-xs font-semibold py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white transition-colors"
             >
-              Use this color
+              {t("adminProducts.form.useThisColor")}
             </button>
           ) : (
             <div className="mb-2" />
           )}
 
           <p className={clsx("text-[10px] uppercase tracking-wide font-semibold mb-1.5", isDark ? "text-gray-500" : "text-gray-400")}>
-            Suggestions
+            {t("adminProducts.form.suggestionsLabel")}
           </p>
           <div className="grid grid-cols-6 gap-1.5 mb-1">
             {COLOR_SUGGESTIONS.map((p) => (
@@ -1266,7 +1274,7 @@ function ColorPicker({
                 : "text-gray-600 border-gray-300 hover:bg-gray-100"
             )}
           >
-            <Palette size={12} /> Customize
+            <Palette size={12} /> {t("adminProducts.form.customizeLabel")}
             <input
               type="color"
               value={value}

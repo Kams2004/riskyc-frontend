@@ -2,31 +2,34 @@
 
 import Link from "next/link";
 import { ArrowRight, ShoppingBag, Star } from "@/components/icons/fa";
-
-const heroImages = [
-  {
-    src: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&q=80",
-    alt: "Elegant dress",
-    label: "Dresses",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=600&q=80",
-    alt: "FC Barcelona Jersey",
-    label: "Jerseys",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=600&q=80",
-    alt: "Fashion skirt",
-    label: "Fashion",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=600&q=80",
-    alt: "Maxi dress",
-    label: "New In",
-  },
-];
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export default function Hero() {
+  const { t } = useTranslation();
+
+  const heroImages = [
+    {
+      src: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&q=80",
+      alt: t("home.hero.imageAlt.dress"),
+      label: t("home.hero.images.dresses"),
+    },
+    {
+      src: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=600&q=80",
+      alt: t("home.hero.imageAlt.jersey"),
+      label: t("home.hero.images.jerseys"),
+    },
+    {
+      src: "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=600&q=80",
+      alt: t("home.hero.imageAlt.skirt"),
+      label: t("home.hero.images.fashion"),
+    },
+    {
+      src: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=600&q=80",
+      alt: t("home.hero.imageAlt.maxiDress"),
+      label: t("home.hero.images.newIn"),
+    },
+  ];
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-purple-50 min-h-[90vh] flex items-center">
       {/* Decorative blobs */}
@@ -43,42 +46,40 @@ export default function Hero() {
           <div className="inline-flex items-center gap-2 bg-brand-50 border border-brand-100 rounded-full px-4 py-1.5 mb-6">
             <Star size={14} className="text-gold-500 fill-gold-500" />
             <span className="text-sm font-medium text-brand-700">
-              New Collection 2025
+              {t("home.hero.badge")}
             </span>
           </div>
 
           <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-            Style That
+            {t("home.hero.titleBefore")}
             <span className="relative inline-block mx-2">
-              <span className="relative z-10 text-brand-500">Speaks</span>
+              <span className="relative z-10 text-brand-500">{t("home.hero.titleHighlight")}</span>
               <span className="absolute bottom-1 left-0 right-0 h-3 bg-brand-100 -z-0 rounded" />
             </span>
-            for You
+            {t("home.hero.titleAfter")}
           </h1>
 
           <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-lg">
-            Discover premium dresses, fashionable tops, and trendy jerseys.
-            Express yourself with Riskyc Fashion — where every piece tells a
-            story.
+            {t("home.hero.subtitle")}
           </p>
 
           <div className="flex flex-wrap gap-4 mb-12">
             <Link href="/products" className="btn-primary text-base px-8 py-4">
               <ShoppingBag size={20} />
-              Shop Now
+              {t("home.hero.shopNow")}
               <ArrowRight size={18} />
             </Link>
             <Link href="/category/dresses" className="btn-secondary text-base px-8 py-4">
-              View Dresses
+              {t("home.hero.viewDresses")}
             </Link>
           </div>
 
           {/* Stats */}
           <div className="flex flex-wrap gap-8 pt-8 border-t border-gray-100">
             {[
-              { value: "500+", label: "Products" },
-              { value: "2K+", label: "Happy Clients" },
-              { value: "4.9★", label: "Rating" },
+              { value: "500+", label: t("home.hero.stats.products") },
+              { value: "2K+", label: t("home.hero.stats.happyClients") },
+              { value: "4.9★", label: t("home.hero.stats.rating") },
             ].map((stat) => (
               <div key={stat.label}>
                 <div className="text-2xl font-display font-bold text-brand-600">
@@ -164,8 +165,8 @@ export default function Hero() {
                   👗
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-800">New Arrivals</p>
-                  <p className="text-[10px] text-gray-400">12 items today</p>
+                  <p className="text-xs font-bold text-gray-800">{t("home.hero.newArrivals.title")}</p>
+                  <p className="text-[10px] text-gray-400">{t("home.hero.newArrivals.subtitle")}</p>
                 </div>
               </div>
             </div>
@@ -180,8 +181,8 @@ export default function Hero() {
                   <span className="text-green-600 font-bold text-xs">-30%</span>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-800">Sale Items</p>
-                  <p className="text-[10px] text-gray-400">Limited time</p>
+                  <p className="text-xs font-bold text-gray-800">{t("home.hero.sale.title")}</p>
+                  <p className="text-[10px] text-gray-400">{t("home.hero.sale.subtitle")}</p>
                 </div>
               </div>
             </div>

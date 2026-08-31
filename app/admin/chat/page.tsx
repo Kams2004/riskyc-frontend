@@ -6,6 +6,8 @@ import * as conversationsApi from "@/lib/api/conversations";
 import { useConversationSocket, useAdminNotificationSocket } from "@/lib/chatSocket";
 import { useAdminTheme } from "@/lib/adminTheme";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { dictionaries } from "@/lib/i18n/dictionary";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useVoiceRecorder } from "@/lib/useVoiceRecorder";
 import VoiceRecorderBar from "@/components/chat/VoiceRecorderBar";
@@ -25,24 +27,13 @@ import {
 import clsx from "clsx";
 import { Conversation, ChatMessage } from "@/lib/types";
 
-const quickReplies = [
-  "Your order has been validated! 🎉",
-  "Your payment is being reviewed, please wait.",
-  "We've received your payment proof, thank you!",
-  "Your order has been shipped and will arrive soon.",
-  "Sorry, your payment could not be verified. Please retry.",
-  "Thank you for shopping with Riskyc Fashion! 💖",
-  "Can you please re-upload a clearer screenshot?",
-  "Our store is open Monday–Saturday, 9am–6pm.",
-];
-
-function timeAgo(date: Date | string): string {
+function timeAgo(date: Date | string, t: (path: string, vars?: Record<string, string | number>) => string): string {
   const d = new Date(date);
   const now = new Date();
   const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
-  if (diff < 60) return "Just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 60) return t("adminOps.chat.justNow");
+  if (diff < 3600) return t("adminOps.chat.minutesAgo", { count: Math.floor(diff / 60) });
+  if (diff < 86400) return t("adminOps.chat.hoursAgo", { count: Math.floor(diff / 3600) });
   return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
@@ -50,6 +41,8 @@ export default function AdminChatPage() {
   const token = useAdminStore((s) => s.session?.token);
   const { theme } = useAdminTheme();
   const isDark = theme === "dark";
+  const { t, language } = useTranslation();
+  const quickReplies = dictionaries[language].adminOps.chat.quickReplies;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,20 +202,24 @@ export default function AdminChatPage() {
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
                 )}
               >
-                <ArrowLeft size={16} /> Back to conversations
+                <ArrowLeft size={16} /> {t("adminOps.chat.backToConversations")}
               </button>
             </div>
           ) : (
             <div>
               <h1 className={clsx("text-2xl font-bold", textPrimary)}>
-                Customer Chat
+                {t("adminOps.chat.pageTitle")}
               </h1>
               <p className={clsx("text-sm mt-0.5", textSecondary)}>
-                {conversations.length} conversation
-                {conversations.length !== 1 ? "s" : ""}
+                {t(
+                  conversations.length === 1
+                    ? "adminOps.chat.conversationCountSingular"
+                    : "adminOps.chat.conversationCountPlural",
+                  { count: conversations.length }
+                )}
                 {totalUnread > 0 && (
                   <span className="ml-2 bg-brand-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-                    {totalUnread} unread
+                    {t("adminOps.chat.unreadBadge", { count: totalUnread })}
                   </span>
                 )}
               </p>
@@ -234,7 +231,7 @@ export default function AdminChatPage() {
               onClick={() => setShowNewForm(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20"
             >
-              <Plus size={15} /> New Conversation
+              <Plus size={15} /> {t("adminOps.chat.newConversation")}
             </button>
           )}
         </div>
@@ -243,7 +240,7 @@ export default function AdminChatPage() {
         {showNewForm && !selectedConv && (
           <div className={clsx(panel, "p-4 flex-shrink-0")}>
             <p className={clsx("text-sm font-semibold mb-3", textPrimary)}>
-              Start new conversation
+              {t("adminOps.chat.startNewConversation")}
             </p>
             <div className="flex gap-2">
               <input
@@ -251,7 +248,7 @@ export default function AdminChatPage() {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleNewConversation()}
-                placeholder="Customer name (e.g. Amina K.)"
+                placeholder={t("adminOps.chat.customerNamePlaceholder")}
                 autoFocus
               />
               <button
@@ -259,7 +256,7 @@ export default function AdminChatPage() {
                 disabled={!newName.trim()}
                 className="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
               >
-                Create
+                {t("adminOps.chat.create")}
               </button>
               <button
                 onClick={() => setShowNewForm(false)}
@@ -270,7 +267,7 @@ export default function AdminChatPage() {
                     : "bg-gray-100 hover:bg-gray-200 text-gray-600"
                 )}
               >
-                Cancel
+                {t("adminOps.chat.cancel")}
               </button>
             </div>
           </div>
@@ -291,7 +288,7 @@ export default function AdminChatPage() {
               <Search size={15} className="text-gray-500 flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Search conversations…"
+                placeholder={t("adminOps.chat.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className={clsx(
@@ -314,7 +311,7 @@ export default function AdminChatPage() {
                     className="mx-auto mb-3 text-gray-600"
                   />
                   <p className={clsx("text-sm", textSecondary)}>
-                    No conversations yet
+                    {t("adminOps.chat.noConversations")}
                   </p>
                 </div>
               ) : (
@@ -368,7 +365,7 @@ export default function AdminChatPage() {
                             {conv.customerName}
                           </p>
                           <span className={clsx("text-xs flex-shrink-0", textSecondary)}>
-                            {timeAgo(conv.lastMessageAt ?? conv.createdAt)}
+                            {timeAgo(conv.lastMessageAt ?? conv.createdAt, t)}
                           </span>
                         </div>
                         {conv.orderId && (
@@ -383,7 +380,7 @@ export default function AdminChatPage() {
                               textSecondary
                             )}
                           >
-                            {lastMsg.sender === "ADMIN" ? "You: " : ""}
+                            {lastMsg.sender === "ADMIN" ? t("adminOps.chat.youPrefix") : ""}
                             {lastMsg.text}
                           </p>
                         )}
@@ -399,16 +396,20 @@ export default function AdminChatPage() {
                               : "bg-gray-100 text-gray-500"
                           )}
                         >
-                          {conv.messages.length} msg
-                          {conv.messages.length !== 1 ? "s" : ""}
+                          {t(
+                            conv.messages.length === 1
+                              ? "adminOps.chat.messageCountSingular"
+                              : "adminOps.chat.messageCountPlural",
+                            { count: conv.messages.length }
+                          )}
                         </span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setConfirm({
-                              title: "Delete conversation?",
-                              message: `This will permanently delete the conversation with ${conv.customerName}. This cannot be undone.`,
-                              confirmLabel: "Delete",
+                              title: t("adminOps.chat.deleteConversationTitle"),
+                              message: t("adminOps.chat.deleteConversationMessage", { name: conv.customerName }),
+                              confirmLabel: t("adminOps.users.delete"),
                               onConfirm: async () => {
                                 if (token) {
                                   await conversationsApi.deleteConversation(conv.id, token);
@@ -419,7 +420,7 @@ export default function AdminChatPage() {
                             });
                           }}
                           className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1"
-                          title="Delete conversation"
+                          title={t("adminOps.chat.deleteConversationTooltip")}
                         >
                           <Trash2 size={13} />
                         </button>
@@ -468,7 +469,7 @@ export default function AdminChatPage() {
                     {selectedConv.customerName}
                   </p>
                   <p className={clsx("text-xs", textSecondary)}>
-                    {selectedConv.messages.length} messages
+                    {t("adminOps.chat.messagesLine", { count: selectedConv.messages.length })}
                     {selectedConv.orderId && (
                       <span className="ml-2 text-brand-400 font-mono">
                         · {selectedConv.orderId}
@@ -479,7 +480,7 @@ export default function AdminChatPage() {
                 <div className="ml-auto flex items-center gap-1">
                   <Clock size={12} className="text-gray-500" />
                   <span className={clsx("text-xs", textSecondary)}>
-                    {timeAgo(selectedConv.lastMessageAt ?? selectedConv.createdAt)}
+                    {timeAgo(selectedConv.lastMessageAt ?? selectedConv.createdAt, t)}
                   </span>
                 </div>
               </div>
@@ -498,7 +499,7 @@ export default function AdminChatPage() {
                       className="mx-auto mb-3 text-gray-500"
                     />
                     <p className={clsx("text-sm", textSecondary)}>
-                      No messages yet. Say hello!
+                      {t("adminOps.chat.noMessagesYet")}
                     </p>
                   </div>
                 ) : (
@@ -550,7 +551,7 @@ export default function AdminChatPage() {
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={msg.imageUrl}
-                              alt="Shared photo"
+                              alt={t("adminOps.chat.sharedPhotoAlt")}
                               className={clsx("rounded-xl max-w-full max-h-56 object-cover", msg.text ? "mb-1.5" : "")}
                             />
                           )}
@@ -575,7 +576,7 @@ export default function AdminChatPage() {
                                 : "text-gray-400"
                             )}
                           >
-                            {isAdmin ? `${msg.adminSenderName ?? "Admin"} · ` : `${selectedConv.customerName} · `}
+                            {isAdmin ? `${msg.adminSenderName ?? t("adminOps.chat.adminFallbackName")} · ` : `${selectedConv.customerName} · `}
                             {new Date(msg.timestamp).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -594,7 +595,7 @@ export default function AdminChatPage() {
                     <div className={clsx("max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed", isDark ? "bg-brand-500/25 border border-brand-500/20 text-brand-100 rounded-br-sm" : "bg-brand-500 text-white rounded-br-sm shadow-sm")}>
                       <div className="flex items-center gap-2 min-w-[120px]">
                         <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin flex-shrink-0" />
-                        <span className="text-xs">Sending voice message…</span>
+                        <span className="text-xs">{t("adminOps.chat.sendingVoiceMessage")}</span>
                       </div>
                     </div>
                   </div>
@@ -629,7 +630,7 @@ export default function AdminChatPage() {
                           handleSend();
                         }
                       }}
-                      placeholder="Type a reply… (Enter to send)"
+                      placeholder={t("adminOps.chat.typeReplyPlaceholder")}
                       rows={2}
                       className={clsx(
                         "flex-1 border rounded-xl px-4 py-2.5 text-sm resize-none outline-none transition-colors",
@@ -648,7 +649,7 @@ export default function AdminChatPage() {
                     ) : (
                       <button
                         onClick={voiceRecorder.start}
-                        title="Record a voice reply"
+                        title={t("adminOps.chat.recordVoiceReply")}
                         className={clsx(
                           "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
                           isDark ? "bg-gray-700 text-gray-300 hover:bg-brand-500 hover:text-white" : "bg-gray-200 text-gray-500 hover:bg-brand-500 hover:text-white"
@@ -681,7 +682,7 @@ export default function AdminChatPage() {
                     textPrimary
                   )}
                 >
-                  Quick Replies
+                  {t("adminOps.chat.quickRepliesHeading")}
                 </h3>
                 <div className="space-y-2">
                   {quickReplies.map((reply) => (

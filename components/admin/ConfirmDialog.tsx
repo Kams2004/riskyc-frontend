@@ -4,6 +4,7 @@ import { useAdminColors } from "@/lib/useAdminColors";
 import { AlertTriangle, X } from "lucide-react";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export interface ConfirmState {
   title: string;
@@ -28,6 +29,7 @@ interface Props {
 
 export default function ConfirmDialog({ state, onCancel }: Props) {
   const c = useAdminColors();
+  const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
@@ -46,8 +48,8 @@ export default function ConfirmDialog({ state, onCancel }: Props) {
   const {
     title,
     message,
-    confirmLabel = "Confirm",
-    cancelLabel = "Cancel",
+    confirmLabel = t("adminOps.confirmDialog.confirm"),
+    cancelLabel = t("adminOps.confirmDialog.cancel"),
     destructive = true,
     input,
     onConfirm,
@@ -65,7 +67,7 @@ export default function ConfirmDialog({ state, onCancel }: Props) {
     try {
       await onConfirm(input ? inputValue.trim() : undefined);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setError(err instanceof Error ? err.message : t("adminOps.confirmDialog.somethingWrong"));
       setSubmitting(false);
     }
   };
@@ -131,7 +133,7 @@ export default function ConfirmDialog({ state, onCancel }: Props) {
               )}
             />
             {inputTouched && inputMissing && (
-              <p className="text-red-500 text-xs mt-1">{input.label} is required</p>
+              <p className="text-red-500 text-xs mt-1">{t("adminOps.confirmDialog.fieldRequired", { label: input.label })}</p>
             )}
           </div>
         )}

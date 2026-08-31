@@ -2,6 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { MapPin, Phone, Mail, MessageCircle, Whatsapp, Clock } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const WHATSAPP_NUMBER = "237693456789";
 const PHONE_DISPLAY = "+237 693 45 67 89";
@@ -10,13 +11,14 @@ const MAPS_QUERY = encodeURIComponent("Marché Central, Marché des Pommes, Doua
 
 export default function ContactPage() {
   const { setChatOpen } = useStore();
+  const { t } = useTranslation();
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 min-h-[70vh]">
       <div className="text-center mb-10">
-        <h1 className="font-display font-bold text-3xl text-gray-900">Contact Us</h1>
+        <h1 className="font-display font-bold text-3xl text-gray-900">{t("help.contact.title")}</h1>
         <p className="text-gray-500 mt-2">
-          We&apos;d love to hear from you — reach out any way that&apos;s easiest.
+          {t("help.contact.subtitle")}
         </p>
       </div>
 
@@ -29,7 +31,7 @@ export default function ContactPage() {
           className="flex flex-col items-center text-center gap-2 p-5 rounded-2xl border border-gray-100 bg-white shadow-sm hover:border-green-200 hover:shadow-md transition-all"
         >
           <Whatsapp size={24} className="text-green-500" />
-          <p className="text-sm font-semibold text-gray-800">WhatsApp</p>
+          <p className="text-sm font-semibold text-gray-800">{t("help.contact.whatsapp")}</p>
           <p className="text-xs text-gray-400">{PHONE_DISPLAY}</p>
         </a>
         <a
@@ -37,7 +39,7 @@ export default function ContactPage() {
           className="flex flex-col items-center text-center gap-2 p-5 rounded-2xl border border-gray-100 bg-white shadow-sm hover:border-brand-200 hover:shadow-md transition-all"
         >
           <Phone size={24} className="text-brand-500" />
-          <p className="text-sm font-semibold text-gray-800">Call Us</p>
+          <p className="text-sm font-semibold text-gray-800">{t("help.contact.callUs")}</p>
           <p className="text-xs text-gray-400">{PHONE_DISPLAY}</p>
         </a>
         <a
@@ -45,7 +47,7 @@ export default function ContactPage() {
           className="flex flex-col items-center text-center gap-2 p-5 rounded-2xl border border-gray-100 bg-white shadow-sm hover:border-brand-200 hover:shadow-md transition-all"
         >
           <Mail size={24} className="text-brand-500" />
-          <p className="text-sm font-semibold text-gray-800">Email</p>
+          <p className="text-sm font-semibold text-gray-800">{t("help.contact.email")}</p>
           <p className="text-xs text-gray-400">{EMAIL}</p>
         </a>
       </div>
@@ -57,11 +59,11 @@ export default function ContactPage() {
             <MapPin size={20} />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="font-semibold text-gray-900 mb-1">Visit Our Store</h2>
+            <h2 className="font-semibold text-gray-900 mb-1">{t("help.contact.visitStore")}</h2>
             <p className="text-sm text-gray-600 leading-relaxed">
-              Marché Central, Douala
+              {t("help.contact.addressLine1")}
               <br />
-              Précisément au Marché des Pommes
+              {t("help.contact.addressLine2")}
             </p>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${MAPS_QUERY}`}
@@ -69,7 +71,7 @@ export default function ContactPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors"
             >
-              <MapPin size={14} /> Get Directions
+              <MapPin size={14} /> {t("help.contact.getDirections")}
             </a>
           </div>
         </div>
@@ -79,11 +81,11 @@ export default function ContactPage() {
             <Clock size={20} />
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900 mb-1">Opening Hours</h2>
+            <h2 className="font-semibold text-gray-900 mb-1">{t("help.contact.openingHours")}</h2>
             <p className="text-sm text-gray-600 leading-relaxed">
-              Monday – Saturday: 8:00 AM – 6:30 PM
+              {t("help.contact.hoursLine1")}
               <br />
-              Sunday: Closed
+              {t("help.contact.hoursLine2")}
             </p>
           </div>
         </div>
@@ -95,7 +97,7 @@ export default function ContactPage() {
         className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-brand-200 text-brand-600 hover:bg-brand-50 font-medium text-sm transition-colors"
       >
         <MessageCircle size={18} />
-        Chat with us live
+        {t("help.contact.chatWithUsLive")}
       </button>
     </div>
   );

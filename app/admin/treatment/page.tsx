@@ -21,6 +21,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import clsx from "clsx";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 type Tab = "waiting" | "in_progress" | "done";
 
@@ -28,6 +29,7 @@ export default function AdminTreatmentPage() {
   const token = useAdminStore((s) => s.session?.token);
   const canManage = useAdminStore((s) => s.hasPermission("MANAGE_TREATMENT"));
   const c = useAdminColors();
+  const { t } = useTranslation();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ export default function AdminTreatmentPage() {
       const updated = await ordersApi.startPackaging(orderId, token);
       handleOrderUpdate(updated);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Failed to start packaging.");
+      setError(e instanceof ApiError ? e.message : t("adminOrders.treatment.errorStart"));
     } finally {
       setBusyId(null);
     }
@@ -76,7 +78,7 @@ export default function AdminTreatmentPage() {
       const updated = await ordersApi.completePackaging(orderId, token);
       handleOrderUpdate(updated);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Failed to mark packaging done.");
+      setError(e instanceof ApiError ? e.message : t("adminOrders.treatment.errorComplete"));
     } finally {
       setBusyId(null);
     }
@@ -90,18 +92,18 @@ export default function AdminTreatmentPage() {
       : "";
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number }[] = [
-    { key: "waiting", label: "Waiting for Packaging", icon: <Package size={13} />, count: waiting.length },
-    { key: "in_progress", label: "In Progress", icon: <PackageSearch size={13} />, count: inProgress.length },
-    { key: "done", label: "Packaged", icon: <PackageCheck size={13} />, count: done.length },
+    { key: "waiting", label: t("adminOrders.treatment.tabWaiting"), icon: <Package size={13} />, count: waiting.length },
+    { key: "in_progress", label: t("adminOrders.treatment.tabInProgress"), icon: <PackageSearch size={13} />, count: inProgress.length },
+    { key: "done", label: t("adminOrders.treatment.tabDone"), icon: <PackageCheck size={13} />, count: done.length },
   ];
 
   return (
     <AdminShell>
       <div className="p-6 lg:p-8 space-y-6">
         <div>
-          <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>Treatment</h1>
+          <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminOrders.treatment.title")}</h1>
           <p className={clsx("text-sm mt-0.5", c.textSecondary)}>
-            Validated orders move here to be packaged before shipping/pickup.
+            {t("adminOrders.treatment.subtitle")}
           </p>
         </div>
 
@@ -144,7 +146,7 @@ export default function AdminTreatmentPage() {
         ) : list.length === 0 ? (
           <div className={clsx("text-center py-20", c.textMuted)}>
             <Package className="mx-auto w-12 h-12 mb-3 opacity-30" />
-            <p className="text-sm">Nothing here right now</p>
+            <p className="text-sm">{t("adminOrders.treatment.empty")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -166,7 +168,7 @@ export default function AdminTreatmentPage() {
                       {order.status === "VALIDATED" && <Package size={12} />}
                       {order.status === "PACKAGING" && <PackageSearch size={12} />}
                       {order.status === "PACKAGED" && <PackageCheck size={12} />}
-                      {order.status === "VALIDATED" ? "Validated" : order.status === "PACKAGING" ? "Packaging" : "Packaged"}
+                      {order.status === "VALIDATED" ? t("adminOrders.status.validated") : order.status === "PACKAGING" ? t("adminOrders.status.packaging") : t("adminOrders.status.packaged")}
                     </span>
                   </div>
 
@@ -175,7 +177,11 @@ export default function AdminTreatmentPage() {
                       {itemSummary}
                     </p>
                     <p className={clsx("text-xs mt-1", c.textMuted)}>
-                      {order.items.length} product{order.items.length !== 1 ? "s" : ""} · {totalQty} unit{totalQty !== 1 ? "s" : ""} · {formatPrice(order.total)}
+                      {t(order.items.length === 1 ? "adminOrders.counts.productOne" : "adminOrders.counts.productOther", { count: order.items.length })}
+                      {" · "}
+                      {t(totalQty === 1 ? "adminOrders.counts.unitOne" : "adminOrders.counts.unitOther", { count: totalQty })}
+                      {" · "}
+                      {formatPrice(order.total)}
                     </p>
                   </div>
 
@@ -184,7 +190,7 @@ export default function AdminTreatmentPage() {
                     <div className={clsx("flex items-center gap-2 text-xs px-3 py-2 rounded-lg", c.isDark ? "bg-purple-900/20 text-purple-300" : "bg-purple-50 text-purple-700")}>
                       <User size={13} className="flex-shrink-0" />
                       <span>
-                        <strong>{order.packagingStartedByName}</strong> started {fmtTime(order.packagingStartedAt)}
+                        <strong>{order.packagingStartedByName}</strong> {t("adminOrders.treatment.startedLabel")} {fmtTime(order.packagingStartedAt)}
                       </span>
                     </div>
                   )}
@@ -192,7 +198,7 @@ export default function AdminTreatmentPage() {
                     <div className={clsx("flex items-center gap-2 text-xs px-3 py-2 rounded-lg", c.isDark ? "bg-teal-900/20 text-teal-300" : "bg-teal-50 text-teal-700")}>
                       <Check size={13} className="flex-shrink-0" />
                       <span>
-                        <strong>{order.packagingCompletedByName}</strong> finished {fmtTime(order.packagingCompletedAt)}
+                        <strong>{order.packagingCompletedByName}</strong> {t("adminOrders.treatment.finishedLabel")} {fmtTime(order.packagingCompletedAt)}
                       </span>
                     </div>
                   )}
@@ -202,20 +208,20 @@ export default function AdminTreatmentPage() {
                       <button
                         onClick={() => handleStart(order.id)}
                         disabled={!canManage || isBusy}
-                        title={!canManage ? "You don't have permission to manage orders" : undefined}
+                        title={!canManage ? t("adminOrders.treatment.noPermission") : undefined}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-purple-500/15 text-purple-600 hover:bg-purple-500/25 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
                       >
-                        <Play size={13} /> {isBusy ? "Starting…" : "Start Packaging"}
+                        <Play size={13} /> {isBusy ? t("adminOrders.treatment.starting") : t("adminOrders.treatment.startPackaging")}
                       </button>
                     )}
                     {order.status === "PACKAGING" && (
                       <button
                         onClick={() => handleComplete(order.id)}
                         disabled={!canManage || isBusy}
-                        title={!canManage ? "You don't have permission to manage orders" : undefined}
+                        title={!canManage ? t("adminOrders.treatment.noPermission") : undefined}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-teal-500/15 text-teal-600 hover:bg-teal-500/25 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
                       >
-                        <Check size={13} /> {isBusy ? "Saving…" : "Mark Done"}
+                        <Check size={13} /> {isBusy ? t("adminOrders.treatment.saving") : t("adminOrders.treatment.markDone")}
                       </button>
                     )}
                     <Link
@@ -226,7 +232,7 @@ export default function AdminTreatmentPage() {
                         c.btnGhost
                       )}
                     >
-                      <Eye size={13} /> View
+                      <Eye size={13} /> {t("adminOrders.list.view")}
                     </Link>
                   </div>
                 </div>

@@ -34,6 +34,9 @@ export interface Product {
   id: string;
   name: string;
   description?: string | null;
+  /** Machine-translated French versions — null until a translation has succeeded; use lib/i18n/localized.ts to fall back to name/description. */
+  nameFr?: string | null;
+  descriptionFr?: string | null;
   /** 0 means the admin hasn't set a price yet — display as "Price on request". */
   price: number;
   originalPrice?: number | null;
@@ -68,12 +71,14 @@ export interface Subcategory {
   id: string;
   slug: string;
   name: string;
+  nameFr?: string | null;
 }
 
 export interface Category {
   id: string;
   slug: string;
   name: string;
+  nameFr?: string | null;
   icon?: string | null;
   imageUrl?: string | null;
   createdByName?: string | null;

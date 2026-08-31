@@ -6,6 +6,7 @@ import * as customersApi from "@/lib/api/customers";
 import { Customer } from "@/lib/types";
 import { useAdminColors } from "@/lib/useAdminColors";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useState, useMemo, useEffect } from "react";
 import {
   UserRound,
@@ -22,6 +23,7 @@ import clsx from "clsx";
 export default function AdminCustomersPage() {
   const token = useAdminStore((s) => s.session?.token);
   const c = useAdminColors();
+  const { t } = useTranslation();
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,9 +58,9 @@ export default function AdminCustomersPage() {
 
   const askDelete = (id: string, name: string) => {
     setConfirm({
-      title: "Delete customer?",
-      message: `This will permanently delete "${name}"'s account. This cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("adminOps.customers.deleteTitle"),
+      message: t("adminOps.customers.deleteMessage", { name }),
+      confirmLabel: t("adminOps.customers.delete"),
       onConfirm: async () => {
         if (token) {
           await customersApi.deleteCustomer(id, token);
@@ -71,9 +73,9 @@ export default function AdminCustomersPage() {
 
   const askBlock = (id: string, name: string) => {
     setConfirm({
-      title: "Block customer?",
-      message: `"${name}" will no longer be able to log in or place orders until unblocked.`,
-      confirmLabel: "Block",
+      title: t("adminOps.customers.blockTitle"),
+      message: t("adminOps.customers.blockMessage", { name }),
+      confirmLabel: t("adminOps.customers.block"),
       onConfirm: () => {
         setStatus(id, "BLOCKED");
         setConfirm(null);
@@ -89,9 +91,9 @@ export default function AdminCustomersPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>Customers</h1>
+            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminOps.customers.pageTitle")}</h1>
             <p className={clsx("text-sm mt-0.5", c.textSecondary)}>
-              {customers.length} registered · {activeCount} active
+              {t("adminOps.customers.subtitle", { count: customers.length, active: activeCount })}
             </p>
           </div>
 
@@ -100,7 +102,7 @@ export default function AdminCustomersPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search customers..."
+              placeholder={t("adminOps.customers.searchPlaceholder")}
               className={clsx(
                 "pl-9 pr-3 py-2.5 rounded-xl border text-sm outline-none transition-colors w-full",
                 c.isDark
@@ -121,10 +123,10 @@ export default function AdminCustomersPage() {
                   c.isDark ? "bg-gray-800/60 border-gray-700 text-gray-400" : "bg-gray-50 border-gray-200 text-gray-500"
                 )}
               >
-                <th className="text-left px-5 py-3">Customer</th>
-                <th className="text-left px-5 py-3 hidden sm:table-cell">Contact</th>
-                <th className="text-left px-5 py-3 hidden md:table-cell">Joined</th>
-                <th className="text-left px-5 py-3">Status</th>
+                <th className="text-left px-5 py-3">{t("adminOps.customers.colCustomer")}</th>
+                <th className="text-left px-5 py-3 hidden sm:table-cell">{t("adminOps.customers.colContact")}</th>
+                <th className="text-left px-5 py-3 hidden md:table-cell">{t("adminOps.customers.colJoined")}</th>
+                <th className="text-left px-5 py-3">{t("adminOps.customers.colStatus")}</th>
                 <th className="px-5 py-3" />
               </tr>
             </thead>
@@ -138,7 +140,7 @@ export default function AdminCustomersPage() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className={clsx("text-center py-16 text-sm", c.textMuted)}>
-                    {customers.length === 0 ? "No registered customers yet" : "No customers match your search"}
+                    {customers.length === 0 ? t("adminOps.customers.emptyNoneYet") : t("adminOps.customers.emptyNoneMatch")}
                   </td>
                 </tr>
               ) : null}
@@ -176,11 +178,11 @@ export default function AdminCustomersPage() {
                   <td className="px-5 py-3.5">
                     {cu.status === "ACTIVE" ? (
                       <span className="flex items-center gap-1.5 text-xs font-semibold text-green-600">
-                        <ShieldCheck size={13} /> Active
+                        <ShieldCheck size={13} /> {t("adminOps.customers.statusActive")}
                       </span>
                     ) : (
                       <span className="flex items-center gap-1.5 text-xs font-semibold text-red-500">
-                        <ShieldOff size={13} /> Blocked
+                        <ShieldOff size={13} /> {t("adminOps.customers.statusBlocked")}
                       </span>
                     )}
                   </td>

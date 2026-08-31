@@ -6,6 +6,7 @@ import { useAdminColors } from "@/lib/useAdminColors";
 import { apiFetch, ApiError } from "@/lib/apiClient";
 import { AdminUser, Role, Permission, ALL_PERMISSIONS, UserStatus } from "@/lib/types";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useState, useMemo, useEffect, useCallback, Fragment } from "react";
 import {
   Users,
@@ -53,6 +54,7 @@ interface UserFormProps {
 }
 
 function UserForm({ roles, initial, onSave, onCancel, c, saving }: UserFormProps) {
+  const { t } = useTranslation();
   const isEdit = !!initial;
   const [firstName, setFirstName]   = useState(initial?.firstName ?? "");
   const [lastName,  setLastName]    = useState(initial?.lastName  ?? "");
@@ -65,12 +67,12 @@ function UserForm({ roles, initial, onSave, onCancel, c, saving }: UserFormProps
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!firstName.trim()) e.firstName = "Required";
-    if (!lastName.trim())  e.lastName  = "Required";
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) e.email = "Valid email required";
-    if (!isEdit && (!password.trim() || password.length < 6)) e.password = "Min 6 characters";
-    if (password.trim() && password.length < 6) e.password = "Min 6 characters";
-    if (!roleId) e.roleId = "Select a role";
+    if (!firstName.trim()) e.firstName = t("adminOps.users.required");
+    if (!lastName.trim())  e.lastName  = t("adminOps.users.required");
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) e.email = t("adminOps.users.validEmailRequired");
+    if (!isEdit && (!password.trim() || password.length < 6)) e.password = t("adminOps.users.min6Characters");
+    if (password.trim() && password.length < 6) e.password = t("adminOps.users.min6Characters");
+    if (!roleId) e.roleId = t("adminOps.users.selectARole");
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -93,37 +95,37 @@ function UserForm({ roles, initial, onSave, onCancel, c, saving }: UserFormProps
   return (
     <div className={clsx("rounded-2xl border p-5 space-y-4", c.card)}>
       <p className={clsx("font-semibold text-sm", c.textPrimary)}>
-        {isEdit ? "Edit User" : "New User"}
+        {isEdit ? t("adminOps.users.editUser") : t("adminOps.users.newUserForm")}
       </p>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={clsx("text-xs font-semibold mb-1.5 flex items-center gap-1", c.textSecondary)}>
-            <User size={11} /> First Name
+            <User size={11} /> {t("adminOps.users.firstName")}
           </label>
-          <input className={inputCls("firstName")} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Jean" />
+          <input className={inputCls("firstName")} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={t("adminOps.users.firstNamePlaceholder")} />
           {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}
         </div>
         <div>
           <label className={clsx("text-xs font-semibold mb-1.5 flex items-center gap-1", c.textSecondary)}>
-            <User size={11} /> Last Name
+            <User size={11} /> {t("adminOps.users.lastName")}
           </label>
-          <input className={inputCls("lastName")} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Dupont" />
+          <input className={inputCls("lastName")} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder={t("adminOps.users.lastNamePlaceholder")} />
           {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}
         </div>
       </div>
 
       <div>
         <label className={clsx("text-xs font-semibold mb-1.5 flex items-center gap-1", c.textSecondary)}>
-          <Mail size={11} /> Email
+          <Mail size={11} /> {t("adminOps.users.email")}
         </label>
-        <input className={inputCls("email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@riskyc.com" />
+        <input className={inputCls("email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("adminOps.users.emailPlaceholder")} />
         {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
       </div>
 
       <div>
         <label className={clsx("text-xs font-semibold mb-1.5 flex items-center gap-1", c.textSecondary)}>
-          <Lock size={11} /> Password {isEdit && <span className="font-normal normal-case text-gray-400">(leave blank to keep current)</span>}
+          <Lock size={11} /> {t("adminOps.users.password")} {isEdit && <span className="font-normal normal-case text-gray-400">{t("adminOps.users.passwordKeepCurrent")}</span>}
         </label>
         <div className="relative">
           <input
@@ -131,7 +133,7 @@ function UserForm({ roles, initial, onSave, onCancel, c, saving }: UserFormProps
             type={showPwd ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={isEdit ? "Unchanged" : "Min 6 characters"}
+            placeholder={isEdit ? t("adminOps.users.passwordPlaceholderEdit") : t("adminOps.users.passwordPlaceholderNew")}
           />
           <button
             type="button"
@@ -146,13 +148,13 @@ function UserForm({ roles, initial, onSave, onCancel, c, saving }: UserFormProps
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={clsx("text-xs font-semibold mb-1.5 block", c.textSecondary)}>Role</label>
+          <label className={clsx("text-xs font-semibold mb-1.5 block", c.textSecondary)}>{t("adminOps.users.role")}</label>
           <select
             className={clsx(inputCls("roleId"), "cursor-pointer")}
             value={roleId}
             onChange={(e) => setRoleId(e.target.value)}
           >
-            <option value="">Select role…</option>
+            <option value="">{t("adminOps.users.selectRolePlaceholder")}</option>
             {roles.map((r) => (
               <option key={r.id} value={r.id}>{r.name}</option>
             ))}
@@ -160,14 +162,14 @@ function UserForm({ roles, initial, onSave, onCancel, c, saving }: UserFormProps
           {errors.roleId && <p className="text-xs text-red-500 mt-1">{errors.roleId}</p>}
         </div>
         <div>
-          <label className={clsx("text-xs font-semibold mb-1.5 block", c.textSecondary)}>Status</label>
+          <label className={clsx("text-xs font-semibold mb-1.5 block", c.textSecondary)}>{t("adminOps.users.status")}</label>
           <select
             className={clsx(inputCls("status"), "cursor-pointer")}
             value={status}
             onChange={(e) => setStatus(e.target.value as UserStatus)}
           >
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
+            <option value="ACTIVE">{t("adminOps.users.statusActive")}</option>
+            <option value="INACTIVE">{t("adminOps.users.statusInactive")}</option>
           </select>
         </div>
       </div>
@@ -179,14 +181,14 @@ function UserForm({ roles, initial, onSave, onCancel, c, saving }: UserFormProps
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white text-sm font-semibold transition-colors"
         >
           {saving ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
-          {saving ? "Saving…" : "Save User"}
+          {saving ? t("adminOps.users.saving") : t("adminOps.users.save")}
         </button>
         <button
           onClick={onCancel}
           disabled={saving}
           className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60", c.btnGhost)}
         >
-          <X size={14} /> Cancel
+          <X size={14} /> {t("adminOps.users.cancel")}
         </button>
       </div>
     </div>
@@ -205,6 +207,7 @@ interface RoleFormProps {
 }
 
 function RoleForm({ initial, onSave, onCancel, c, saving }: RoleFormProps) {
+  const { t } = useTranslation();
   const [name,        setName]        = useState(initial?.name        ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [permissions, setPermissions] = useState<Permission[]>(initial?.permissions ?? []);
@@ -234,7 +237,7 @@ function RoleForm({ initial, onSave, onCancel, c, saving }: RoleFormProps) {
 
   const handleSave = () => {
     const e: Record<string, string> = {};
-    if (!name.trim()) e.name = "Required";
+    if (!name.trim()) e.name = t("adminOps.users.required");
     setErrors(e);
     if (Object.keys(e).length > 0) return;
     onSave({ name, description, permissions });
@@ -250,24 +253,24 @@ function RoleForm({ initial, onSave, onCancel, c, saving }: RoleFormProps) {
   return (
     <div className={clsx("rounded-2xl border p-5 space-y-4", c.card)}>
       <p className={clsx("font-semibold text-sm", c.textPrimary)}>
-        {initial?.name ? "Edit Role" : "New Role"}
+        {initial?.name ? t("adminOps.roles.editRole") : t("adminOps.roles.newRoleForm")}
       </p>
 
       <div>
-        <label className={clsx("text-xs font-semibold mb-1.5 block", c.textSecondary)}>Role Name</label>
-        <input className={clsx(inputCls, errors.name ? "border-red-400" : "")} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Store Manager" />
+        <label className={clsx("text-xs font-semibold mb-1.5 block", c.textSecondary)}>{t("adminOps.roles.roleName")}</label>
+        <input className={clsx(inputCls, errors.name ? "border-red-400" : "")} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("adminOps.roles.roleNamePlaceholder")} />
         {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
       </div>
 
       <div>
-        <label className={clsx("text-xs font-semibold mb-1.5 block", c.textSecondary)}>Description</label>
-        <input className={inputCls} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description of what this role can do" />
+        <label className={clsx("text-xs font-semibold mb-1.5 block", c.textSecondary)}>{t("adminOps.roles.description")}</label>
+        <input className={inputCls} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("adminOps.roles.descriptionPlaceholder")} />
       </div>
 
       {/* Permissions */}
       <div>
         <label className={clsx("text-xs font-semibold mb-3 block", c.textSecondary)}>
-          Permissions ({permissions.length} selected)
+          {t("adminOps.roles.permissionsSelected", { count: permissions.length })}
         </label>
         <div className="space-y-3">
           {Object.entries(groups).map(([group, perms]) => {
@@ -288,7 +291,7 @@ function RoleForm({ initial, onSave, onCancel, c, saving }: RoleFormProps) {
                     "text-xs px-2 py-0.5 rounded-full font-medium",
                     allOn ? "bg-brand-500 text-white" : someOn ? "bg-amber-100 text-amber-700" : c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-500"
                   )}>
-                    {allOn ? "All" : someOn ? "Some" : "None"}
+                    {allOn ? t("adminOps.roles.all") : someOn ? t("adminOps.roles.some") : t("adminOps.roles.none")}
                   </span>
                 </button>
                 {/* Permission toggles */}
@@ -327,14 +330,14 @@ function RoleForm({ initial, onSave, onCancel, c, saving }: RoleFormProps) {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white text-sm font-semibold transition-colors"
         >
           {saving ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
-          {saving ? "Saving…" : "Save Role"}
+          {saving ? t("adminOps.users.saving") : t("adminOps.roles.saveRole")}
         </button>
         <button
           onClick={onCancel}
           disabled={saving}
           className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60", c.btnGhost)}
         >
-          <X size={14} /> Cancel
+          <X size={14} /> {t("adminOps.users.cancel")}
         </button>
       </div>
     </div>
@@ -349,6 +352,7 @@ export default function AdminUsersPage() {
   const hasPermission = useAdminStore((s) => s.hasPermission);
   const canManage = hasPermission("MANAGE_USERS");
   const c = useAdminColors();
+  const { t } = useTranslation();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -378,7 +382,7 @@ export default function AdminUsersPage() {
       setUsers(usersData);
       setRoles(rolesData);
     } catch (e) {
-      setLoadError(e instanceof ApiError ? e.message : "Could not load users and roles.");
+      setLoadError(e instanceof ApiError ? e.message : t("adminOps.users.loadError"));
     } finally {
       setLoading(false);
     }
@@ -418,7 +422,7 @@ export default function AdminUsersPage() {
       }
       setUserForm(null);
     } catch (e) {
-      setFormError(e instanceof ApiError ? e.message : "Failed to save user");
+      setFormError(e instanceof ApiError ? e.message : t("adminOps.users.failedSaveUser"));
     } finally {
       setSavingUser(false);
     }
@@ -426,15 +430,15 @@ export default function AdminUsersPage() {
 
   const askDeleteUser = (u: AdminUser) => {
     setConfirm({
-      title: "Delete user?",
-      message: `This will permanently delete "${u.firstName} ${u.lastName}" (${u.email}). This cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("adminOps.users.deleteUserTitle"),
+      message: t("adminOps.users.deleteUserMessage", { name: `${u.firstName} ${u.lastName}`, email: u.email }),
+      confirmLabel: t("adminOps.users.delete"),
       onConfirm: async () => {
         try {
           await apiFetch(`/api/admin-users/${u.id}`, { method: "DELETE", token });
           setUsers((prev) => prev.filter((x) => x.id !== u.id));
         } catch (e) {
-          setLoadError(e instanceof ApiError ? e.message : "Failed to delete user");
+          setLoadError(e instanceof ApiError ? e.message : t("adminOps.users.failedDeleteUser"));
         }
         setConfirm(null);
       },
@@ -463,25 +467,27 @@ export default function AdminUsersPage() {
       }
       setRoleForm(null);
     } catch (e) {
-      setFormError(e instanceof ApiError ? e.message : "Failed to save role");
+      setFormError(e instanceof ApiError ? e.message : t("adminOps.roles.failedSaveRole"));
     } finally {
       setSavingRole(false);
     }
   };
 
   const askDeleteRole = (role: Role, assignedCount: number) => {
+    const assigned =
+      assignedCount > 0
+        ? t(assignedCount === 1 ? "adminOps.roles.assignedSingular" : "adminOps.roles.assignedPlural", { count: assignedCount })
+        : "";
     setConfirm({
-      title: "Delete role?",
-      message: `This will permanently delete "${role.name}"${
-        assignedCount > 0 ? `. ${assignedCount} user${assignedCount !== 1 ? "s are" : " is"} currently assigned this role` : ""
-      }. This cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("adminOps.roles.deleteRoleTitle"),
+      message: t("adminOps.roles.deleteMessage", { name: role.name, assigned }),
+      confirmLabel: t("adminOps.users.delete"),
       onConfirm: async () => {
         try {
           await apiFetch(`/api/roles/${role.id}`, { method: "DELETE", token });
           setRoles((prev) => prev.filter((r) => r.id !== role.id));
         } catch (e) {
-          setLoadError(e instanceof ApiError ? e.message : "Failed to delete role");
+          setLoadError(e instanceof ApiError ? e.message : t("adminOps.roles.failedDeleteRole"));
         }
         setConfirm(null);
       },
@@ -494,9 +500,9 @@ export default function AdminUsersPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>User Management</h1>
+            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminOps.users.pageTitle")}</h1>
             <p className={clsx("text-sm mt-0.5", c.textSecondary)}>
-              {users.length} users · {roles.length} roles
+              {t("adminOps.users.subtitle", { users: users.length, roles: roles.length })}
             </p>
           </div>
           {canManage && (
@@ -509,7 +515,7 @@ export default function AdminUsersPage() {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20"
             >
               <Plus size={16} />
-              {tab === "users" ? "New User" : "New Role"}
+              {tab === "users" ? t("adminOps.users.newUser") : t("adminOps.users.newRole")}
             </button>
           )}
         </div>
@@ -523,19 +529,21 @@ export default function AdminUsersPage() {
 
         {/* Tabs */}
         <div className={clsx("flex rounded-xl border p-1 w-fit gap-1", c.isDark ? "bg-gray-900 border-gray-700" : "bg-gray-100 border-gray-200")}>
-          {(["users", "roles"] as Tab[]).map((t) => (
+          {(["users", "roles"] as Tab[]).map((tabKey) => (
             <button
-              key={t}
-              onClick={() => { setTab(t); setFormError(""); }}
+              key={tabKey}
+              onClick={() => { setTab(tabKey); setFormError(""); }}
               className={clsx(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all capitalize",
-                tab === t
+                tab === tabKey
                   ? "bg-brand-500 text-white shadow"
                   : c.isDark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-800"
               )}
             >
-              {t === "users" ? <Users size={15} /> : <Shield size={15} />}
-              {t === "users" ? `Users (${users.length})` : `Roles (${roles.length})`}
+              {tabKey === "users" ? <Users size={15} /> : <Shield size={15} />}
+              {tabKey === "users"
+                ? t("adminOps.users.tabUsers", { count: users.length })
+                : t("adminOps.users.tabRoles", { count: roles.length })}
             </button>
           ))}
         </div>
@@ -566,10 +574,10 @@ export default function AdminUsersPage() {
               <table className="w-full min-w-[720px] text-sm">
                 <thead>
                   <tr className={clsx("border-b text-xs font-semibold uppercase tracking-wide", c.isDark ? "bg-gray-800/60 border-gray-700 text-gray-400" : "bg-gray-50 border-gray-200 text-gray-500")}>
-                    <th className="text-left px-5 py-3">Name</th>
-                    <th className="text-left px-5 py-3 hidden sm:table-cell">Email</th>
-                    <th className="text-left px-5 py-3 hidden md:table-cell">Role</th>
-                    <th className="text-left px-5 py-3">Status</th>
+                    <th className="text-left px-5 py-3">{t("adminOps.users.colName")}</th>
+                    <th className="text-left px-5 py-3 hidden sm:table-cell">{t("adminOps.users.colEmail")}</th>
+                    <th className="text-left px-5 py-3 hidden md:table-cell">{t("adminOps.users.colRole")}</th>
+                    <th className="text-left px-5 py-3">{t("adminOps.users.colStatus")}</th>
                     {canManage && <th className="px-5 py-3" />}
                   </tr>
                 </thead>
@@ -577,7 +585,7 @@ export default function AdminUsersPage() {
                   {users.length === 0 && (
                     <tr>
                       <td colSpan={5} className={clsx("text-center py-16 text-sm", c.textMuted)}>
-                        No users yet
+                        {t("adminOps.users.noUsersYet")}
                       </td>
                     </tr>
                   )}
@@ -601,11 +609,11 @@ export default function AdminUsersPage() {
                         <td className="px-5 py-3.5">
                           {u.status === "ACTIVE" ? (
                             <span className="flex items-center gap-1.5 text-xs font-semibold text-green-600">
-                              <CheckCircle2 size={13} /> Active
+                              <CheckCircle2 size={13} /> {t("adminOps.users.statusActive")}
                             </span>
                           ) : (
                             <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-400">
-                              <XCircle size={13} /> Inactive
+                              <XCircle size={13} /> {t("adminOps.users.statusInactive")}
                             </span>
                           )}
                         </td>
@@ -616,14 +624,14 @@ export default function AdminUsersPage() {
                                 onClick={() => { setFormError(""); setUserForm(userForm === u.id ? null : u.id); }}
                                 className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors", c.btnGhost)}
                               >
-                                <Pencil size={11} /> Edit
+                                <Pencil size={11} /> {t("adminOps.users.edit")}
                               </button>
                               <button
                                 onClick={() => askDeleteUser(u)}
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
                               >
                                 <Trash2 size={11} />
-                                Delete
+                                {t("adminOps.users.delete")}
                               </button>
                             </div>
                           </td>
@@ -670,7 +678,7 @@ export default function AdminUsersPage() {
             {roles.length === 0 && roleForm === null && (
               <div className={clsx("text-center py-20 rounded-2xl border", c.card)}>
                 <Shield size={40} className={clsx("mx-auto mb-3 opacity-30", c.textMuted)} />
-                <p className={clsx("text-sm", c.textMuted)}>No roles yet</p>
+                <p className={clsx("text-sm", c.textMuted)}>{t("adminOps.roles.noRolesYet")}</p>
               </div>
             )}
 
@@ -711,7 +719,7 @@ export default function AdminUsersPage() {
                         <div className="flex-1 min-w-0">
                           <p className={clsx("font-semibold text-sm", c.textPrimary)}>{role.name}</p>
                           <p className={clsx("text-xs", c.textSecondary)}>
-                            {role.description || "No description"} · {role.permissions.length} permissions · {assignedCount} user{assignedCount !== 1 ? "s" : ""}
+                            {role.description || t("adminOps.roles.noDescription")} · {t("adminOps.roles.permissionsCount", { count: role.permissions.length })} · {t(assignedCount === 1 ? "adminOps.roles.userCountSingular" : "adminOps.roles.userCountPlural", { count: assignedCount })}
                           </p>
                         </div>
 
@@ -721,14 +729,14 @@ export default function AdminUsersPage() {
                               onClick={() => { setFormError(""); setRoleForm(role.id); }}
                               className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors", c.btnGhost)}
                             >
-                              <Pencil size={11} /> Edit
+                              <Pencil size={11} /> {t("adminOps.users.edit")}
                             </button>
                             <button
                               onClick={() => askDeleteRole(role, assignedCount)}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
                             >
                               <Trash2 size={11} />
-                              Delete
+                              {t("adminOps.users.delete")}
                             </button>
                           </div>
                         )}
@@ -738,7 +746,7 @@ export default function AdminUsersPage() {
                       {isExpanded && (
                         <div className={clsx("px-5 py-4 space-y-3", c.isDark ? "bg-gray-900/20" : "bg-white")}>
                           <p className={clsx("text-xs font-semibold uppercase tracking-wide", c.textMuted)}>
-                            Permissions
+                            {t("adminOps.roles.permissionsHeading")}
                           </p>
                           {Object.entries(
                             ALL_PERMISSIONS.reduce((acc, p) => {

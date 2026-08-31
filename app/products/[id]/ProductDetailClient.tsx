@@ -28,6 +28,8 @@ import {
   MessageCircle,
   ImageIcon,
 } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { localized } from "@/lib/i18n/localized";
 import clsx from "clsx";
 import Link from "next/link";
 
@@ -35,44 +37,17 @@ import Link from "next/link";
 const WHATSAPP_NUMBER = "237693456789";
 
 const HOW_TO_ORDER_STEPS = [
-  {
-    n: 1,
-    title: "Choose your product",
-    desc: "Browse our catalogue, select the color and size that fits you, and adjust the quantity.",
-  },
-  {
-    n: 2,
-    title: 'Click "Order Now"',
-    desc: "Press the Order Now button on the product page to open the checkout flow.",
-  },
-  {
-    n: 3,
-    title: "Fill in your information",
-    desc: "Enter your name, phone number, and delivery address (or choose shop pick-up).",
-  },
-  {
-    n: 4,
-    title: "Choose a payment method",
-    desc: "Select Orange Money or MTN Mobile Money and transfer the total amount to the number shown.",
-  },
-  {
-    n: 5,
-    title: "Upload your payment screenshot",
-    desc: "Take a screenshot of the transfer confirmation and upload it in the app.",
-  },
-  {
-    n: 6,
-    title: "Wait for validation",
-    desc: "Our team reviews your payment within 15–30 minutes and confirms your order.",
-  },
-  {
-    n: 7,
-    title: "Receive your order",
-    desc: "Your items are prepared and shipped to you, or ready for pick-up at the shop. 🎉",
-  },
-];
+  { n: 1, titleKey: "step1Title", descKey: "step1Desc" },
+  { n: 2, titleKey: "step2Title", descKey: "step2Desc" },
+  { n: 3, titleKey: "step3Title", descKey: "step3Desc" },
+  { n: 4, titleKey: "step4Title", descKey: "step4Desc" },
+  { n: 5, titleKey: "step5Title", descKey: "step5Desc" },
+  { n: 6, titleKey: "step6Title", descKey: "step6Desc" },
+  { n: 7, titleKey: "step7Title", descKey: "step7Desc" },
+] as const;
 
 function HowToOrderModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[88vh] flex flex-col overflow-hidden">
@@ -80,7 +55,7 @@ function HowToOrderModal({ onClose }: { onClose: () => void }) {
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <HelpCircle size={20} className="text-brand-500" />
-            <h2 className="font-display font-bold text-lg text-gray-900">How to Order</h2>
+            <h2 className="font-display font-bold text-lg text-gray-900">{t("products.howToOrder.title")}</h2>
           </div>
           <button
             onClick={onClose}
@@ -99,8 +74,8 @@ function HowToOrderModal({ onClose }: { onClose: () => void }) {
                   {step.n}
                 </div>
                 <div className="pt-0.5">
-                  <p className="font-semibold text-gray-900 text-sm">{step.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{step.desc}</p>
+                  <p className="font-semibold text-gray-900 text-sm">{t(`products.howToOrder.${step.titleKey}`)}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{t(`products.howToOrder.${step.descKey}`)}</p>
                 </div>
               </li>
             ))}
@@ -113,7 +88,7 @@ function HowToOrderModal({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="w-full btn-primary py-3.5 rounded-2xl text-base"
           >
-            Got it — Let&apos;s Order!
+            {t("products.howToOrder.gotIt")}
           </button>
         </div>
       </div>
@@ -123,6 +98,7 @@ function HowToOrderModal({ onClose }: { onClose: () => void }) {
 
 export default function ProductDetailClient({ productId }: { productId: string }) {
   const router = useRouter();
+  const { t, language } = useTranslation();
   const { addToCart, setChatOpen, setChatDraft, items: cartItems } = useStore();
   const { categories } = useCategories();
 
@@ -196,8 +172,8 @@ export default function ProductDetailClient({ productId }: { productId: string }
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
         <div className="text-6xl">😕</div>
-        <h2 className="text-2xl font-semibold">Product not found</h2>
-        <Link href="/products" className="btn-primary">Browse Products</Link>
+        <h2 className="text-2xl font-semibold">{t("products.detail.productNotFound")}</h2>
+        <Link href="/products" className="btn-primary">{t("products.detail.browseProducts")}</Link>
       </div>
     );
   }
@@ -212,6 +188,12 @@ export default function ProductDetailClient({ productId }: { productId: string }
   // out rather than let two conflicting ways of ordering the same item coexist.
   const hasPhotoBasedSelection = cartItems.some((i) => i.product.id === product.id && i.selectedImageIndex != null);
   const categoryInfo = categories.find((c) => c.slug === product.categorySlug);
+  const subcategoryInfo = categoryInfo?.subcategories.find((s) => s.slug === product.subcategorySlug);
+  const name = localized(product.name, product.nameFr, language);
+  const categoryName = categoryInfo ? localized(categoryInfo.name, categoryInfo.nameFr, language) : product.categorySlug;
+  const subcategoryName = subcategoryInfo
+    ? localized(subcategoryInfo.name, subcategoryInfo.nameFr, language)
+    : (product.subcategorySlug ?? "").replace("-", " ");
 
   const handleAddToCart = () => {
     if (priceUnset) return;
@@ -262,7 +244,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
     const url = typeof window !== "undefined" ? window.location.href : "";
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: product.name, text: `Check out ${product.name} on Riskyc Fashion`, url });
+        await navigator.share({ title: name, text: t("products.detail.shareText", { name }), url });
       } catch {
         // user cancelled the native share sheet — nothing to do
       }
@@ -281,19 +263,19 @@ export default function ProductDetailClient({ productId }: { productId: string }
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6 flex-wrap">
-        <Link href="/" className="hover:text-brand-500">Home</Link>
+        <Link href="/" className="hover:text-brand-500">{t("products.detail.home")}</Link>
         <span>/</span>
-        <Link href="/products" className="hover:text-brand-500">Products</Link>
+        <Link href="/products" className="hover:text-brand-500">{t("products.detail.products")}</Link>
         <span>/</span>
         {categoryInfo && (
           <>
             <Link href={`/category/${product.categorySlug}`} className="hover:text-brand-500">
-              {categoryInfo.name}
+              {categoryName}
             </Link>
             <span>/</span>
           </>
         )}
-        <span className="text-gray-700 font-medium truncate max-w-[200px]">{product.name}</span>
+        <span className="text-gray-700 font-medium truncate max-w-[200px]">{name}</span>
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16">
@@ -303,14 +285,14 @@ export default function ProductDetailClient({ productId }: { productId: string }
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={product.media[imgIdx]?.presignedUrl}
-              alt={product.name}
+              alt={name}
               onClick={openLightbox}
               className="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in"
             />
             <div className="absolute top-4 left-4 flex flex-col gap-2">
-              {product.badge === "NEW" && <span className="badge-new text-sm px-3 py-1">NEW</span>}
-              {product.badge === "SALE" && <span className="badge-sale text-sm px-3 py-1">SALE</span>}
-              {product.badge === "HOT" && <span className="badge-hot text-sm px-3 py-1">HOT 🔥</span>}
+              {product.badge === "NEW" && <span className="badge-new text-sm px-3 py-1">{t("products.card.badgeNew")}</span>}
+              {product.badge === "SALE" && <span className="badge-sale text-sm px-3 py-1">{t("products.card.badgeSale")}</span>}
+              {product.badge === "HOT" && <span className="badge-hot text-sm px-3 py-1">{t("products.card.badgeHot")}</span>}
               {discount && (
                 <span className="bg-brand-500 text-white text-sm font-bold px-3 py-1 rounded-full">
                   -{discount}%
@@ -341,7 +323,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
             )}
             <button
               onClick={handleShare}
-              title="Share this product"
+              title={t("products.detail.shareProduct")}
               className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors"
             >
               {shareCopied ? <Check size={16} className="text-green-500" /> : <Share2 size={16} className="text-gray-600" />}
@@ -359,7 +341,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   )}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={m.presignedUrl} alt={`View ${i + 1}`} className="w-full h-full object-cover" />
+                  <img src={m.presignedUrl} alt={t("products.detail.viewImage", { n: i + 1 })} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -400,7 +382,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={product.media[imgIdx]?.presignedUrl}
-              alt={product.name}
+              alt={name}
               onClick={(e) => e.stopPropagation()}
               className="max-w-[92vw] max-h-[85vh] object-contain"
             />
@@ -411,12 +393,12 @@ export default function ProductDetailClient({ productId }: { productId: string }
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs font-medium text-brand-600 bg-brand-50 px-3 py-1 rounded-full capitalize flex items-center gap-1.5">
-              <FaIconPreview value={categoryInfo?.icon ?? "fa:solid:tag"} size={12} /> {(product.subcategorySlug ?? "").replace("-", " ")}
+              <FaIconPreview value={categoryInfo?.icon ?? "fa:solid:tag"} size={12} /> {subcategoryName}
             </span>
           </div>
 
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
-            {product.name}
+            {name}
           </h1>
 
           <div className="flex items-center gap-3 mb-4">
@@ -434,13 +416,17 @@ export default function ProductDetailClient({ productId }: { productId: string }
               ))}
             </div>
             <span className="text-sm font-semibold text-gray-700">{product.rating}</span>
-            <span className="text-sm text-gray-400">({product.reviews} reviews)</span>
+            <span className="text-sm text-gray-400">
+              {product.reviews === 1
+                ? t("products.detail.reviewsCountOne", { count: product.reviews })
+                : t("products.detail.reviewsCountOther", { count: product.reviews })}
+            </span>
           </div>
 
           <div className="mb-6 p-4 bg-gray-50 rounded-2xl">
             <div className="flex items-baseline gap-3">
               {priceUnset ? (
-                <span className="text-2xl font-bold text-gray-500">Price on request</span>
+                <span className="text-2xl font-bold text-gray-500">{t("products.card.priceOnRequest")}</span>
               ) : (
                 <>
                   <span className="text-3xl font-bold text-brand-600">{formatPrice(product.price)}</span>
@@ -448,7 +434,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
                     <>
                       <span className="text-lg text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
                       <span className="bg-green-100 text-green-700 text-sm font-semibold px-2 py-0.5 rounded-full">
-                        Save {formatPrice(product.originalPrice - product.price)}
+                        {t("products.detail.save", { amount: formatPrice(product.originalPrice - product.price) })}
                       </span>
                     </>
                   )}
@@ -480,7 +466,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
               <div className="mb-5">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-semibold text-gray-700">
-                    Color: <span className="text-brand-600">{selectedColor}</span>
+                    {t("products.detail.colorLabel")} <span className="text-brand-600">{selectedColor}</span>
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -510,9 +496,9 @@ export default function ProductDetailClient({ productId }: { productId: string }
               <div className="mb-5">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-semibold text-gray-700">
-                    Size: <span className="text-brand-600">{selectedSize}</span>
+                    {t("products.detail.sizeLabel")} <span className="text-brand-600">{selectedSize}</span>
                   </span>
-                  <button className="text-xs text-brand-500 underline">Size Guide</button>
+                  <button className="text-xs text-brand-500 underline">{t("products.detail.sizeGuide")}</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map((size) => (
@@ -536,7 +522,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
 
           {hasPhotoBasedSelection && (
             <p className="-mt-3 mb-5 text-xs text-gray-400 italic">
-              You&apos;ve added photo-specific items to your cart — color/size selection above is disabled to avoid mixing the two.
+              {t("products.detail.photoSpecificNotice")}
             </p>
           )}
 
@@ -551,8 +537,8 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   <ImageIcon size={18} />
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-semibold text-gray-800">Choose quantity by photo</span>
-                  <span className="block text-xs text-gray-400">Pick different quantities (and sizes) for different photos</span>
+                  <span className="block text-sm font-semibold text-gray-800">{t("products.detail.chooseQuantityByPhoto")}</span>
+                  <span className="block text-xs text-gray-400">{t("products.detail.chooseQuantityByPhotoHint")}</span>
                 </span>
                 <ChevronRight size={16} className="text-gray-300 group-hover:text-brand-400 flex-shrink-0" />
               </button>
@@ -561,7 +547,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
 
           {/* Quantity */}
           <div className="mb-6">
-            <span className="text-sm font-semibold text-gray-700 block mb-2">Quantity</span>
+            <span className="text-sm font-semibold text-gray-700 block mb-2">{t("products.detail.quantity")}</span>
             <div className="flex items-center gap-3">
               <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
                 <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">−</button>
@@ -569,7 +555,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 <button onClick={() => setQty(qty + 1)} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">+</button>
               </div>
               <span className="text-sm text-gray-400">
-                Total:{" "}
+                {t("products.detail.total")}{" "}
                 <span className="text-brand-600 font-bold">
                   {priceUnset ? "—" : formatPrice(computeLineTotal(product.price, product.bulkPrices, qty))}
                 </span>
@@ -583,7 +569,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
             <button
               onClick={handleAddToCart}
               disabled={priceUnset}
-              title={priceUnset ? "Contact us to get a price for this product" : undefined}
+              title={priceUnset ? t("products.detail.contactForPricingTitle") : undefined}
               className={clsx(
                 "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-base transition-all",
                 priceUnset
@@ -591,20 +577,20 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   : addedToCart ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-gray-800 text-white"
               )}
             >
-              {addedToCart ? <><Check size={20} /> Added!</> : <><ShoppingCart size={20} /> Add to Cart</>}
+              {addedToCart ? <><Check size={20} /> {t("products.card.added")}</> : <><ShoppingCart size={20} /> {t("products.card.addToCart")}</>}
             </button>
 
             {/* Order Now — opens checkout modal */}
             <button
               onClick={handleOrderNow}
               disabled={priceUnset}
-              title={priceUnset ? "Contact us to get a price for this product" : undefined}
+              title={priceUnset ? t("products.detail.contactForPricingTitle") : undefined}
               className={clsx(
                 "flex-1 btn-primary py-3.5 rounded-2xl text-base",
                 priceUnset && "opacity-50 cursor-not-allowed"
               )}
             >
-              <Zap size={20} /> Order Now
+              <Zap size={20} /> {t("products.detail.orderNow")}
             </button>
 
             {/* WhatsApp — icon on mobile, expands on hover on desktop */}
@@ -639,16 +625,16 @@ export default function ProductDetailClient({ productId }: { productId: string }
             className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-brand-600 border border-gray-200 hover:border-brand-300 rounded-xl px-4 py-2.5 transition-colors mb-6"
           >
             <HelpCircle size={15} />
-            How to order
+            {t("products.detail.howToOrder")}
             <ChevronRight size={14} className="ml-auto" />
           </button>
 
           {/* Trust badges */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { icon: <Truck size={18} className="text-brand-500" />, text: "Fast Delivery" },
-              { icon: <Shield size={18} className="text-brand-500" />, text: "Secure Pay" },
-              { icon: <RotateCcw size={18} className="text-brand-500" />, text: "Easy Return" },
+              { icon: <Truck size={18} className="text-brand-500" />, text: t("products.detail.fastDelivery") },
+              { icon: <Shield size={18} className="text-brand-500" />, text: t("products.detail.securePay") },
+              { icon: <RotateCcw size={18} className="text-brand-500" />, text: t("products.detail.easyReturn") },
             ].map((b) => (
               <div key={b.text} className="flex flex-col items-center gap-1 p-3 bg-gray-50 rounded-xl text-center">
                 {b.icon}
@@ -662,7 +648,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
             onClick={() => {
               const firstImage = product.media[0]?.presignedUrl;
               setChatDraft({
-                text: `Hi, I have a question about "${product.name}" (${formatPrice(product.price)}).`,
+                text: t("products.detail.askQuestionDraft", { name, price: formatPrice(product.price) }),
                 imageUrl: firstImage,
               });
               setChatOpen(true);
@@ -670,7 +656,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
             className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-500 transition-colors text-sm font-medium"
           >
             <MessageCircle size={18} />
-            Ask about this product
+            {t("products.detail.askQuestion")}
           </button>
         </div>
       </div>
@@ -678,16 +664,16 @@ export default function ProductDetailClient({ productId }: { productId: string }
       {/* Tabs */}
       <div className="mt-12 border-t border-gray-100 pt-8">
         <div className="flex gap-1 border-b border-gray-100 mb-6">
-          {(["description", "details", "reviews"] as const).map((t) => (
+          {(["description", "details", "reviews"] as const).map((tabKey) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabKey}
+              onClick={() => setTab(tabKey)}
               className={clsx(
                 "px-5 py-3 text-sm font-semibold capitalize transition-colors border-b-2 -mb-px",
-                tab === t ? "border-brand-500 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"
+                tab === tabKey ? "border-brand-500 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"
               )}
             >
-              {t}
+              {t(`products.detail.tab${tabKey.charAt(0).toUpperCase()}${tabKey.slice(1)}`)}
             </button>
           ))}
         </div>
@@ -695,7 +681,9 @@ export default function ProductDetailClient({ productId }: { productId: string }
         {tab === "description" && (
           <div className="prose prose-gray max-w-none animate-fade-in">
             <p className="text-gray-600 leading-relaxed text-base">
-              {product.description || "No description provided."}
+              {product.description
+                ? localized(product.description, product.descriptionFr, language)
+                : t("products.detail.noDescription")}
             </p>
           </div>
         )}
@@ -704,12 +692,15 @@ export default function ProductDetailClient({ productId }: { productId: string }
           <div className="animate-fade-in">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
               {[
-                { label: "Category", value: categoryInfo?.name || product.categorySlug },
-                { label: "Subcategory", value: product.subcategorySlug || "—" },
-                { label: "Available Colors", value: product.colors.map((c) => c.name).join(", ") },
-                { label: "Available Sizes", value: product.sizes?.join(", ") || "One size" },
-                { label: "Total Stock", value: `${product.colors.reduce((s, c) => s + (c.stock ?? 0), 0)} units` },
-                { label: "SKU", value: `RC-${product.id.toUpperCase()}` },
+                { label: t("products.detail.category"), value: categoryName },
+                { label: t("products.detail.subcategory"), value: subcategoryName || "—" },
+                { label: t("products.detail.availableColors"), value: product.colors.map((c) => c.name).join(", ") },
+                { label: t("products.detail.availableSizes"), value: product.sizes?.join(", ") || t("products.detail.oneSize") },
+                {
+                  label: t("products.detail.totalStock"),
+                  value: t("products.detail.unitsCount", { count: product.colors.reduce((s, c) => s + (c.stock ?? 0), 0) }),
+                },
+                { label: t("products.detail.sku"), value: `RC-${product.id.toUpperCase()}` },
               ].map((row) => (
                 <div key={row.label} className="flex flex-col gap-0.5 p-3 bg-gray-50 rounded-xl">
                   <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">{row.label}</span>
@@ -730,7 +721,11 @@ export default function ProductDetailClient({ productId }: { productId: string }
                     <Star key={i} size={16} className={clsx(i < Math.floor(product.rating) ? "text-gold-500 fill-gold-500" : "text-gray-300 fill-gray-300")} />
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">{product.reviews} reviews</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {product.reviews === 1
+                    ? t("products.detail.reviewsPlainOne", { count: product.reviews })
+                    : t("products.detail.reviewsPlainOther", { count: product.reviews })}
+                </p>
               </div>
               <div className="flex-1 space-y-1.5">
                 {[5, 4, 3, 2, 1].map((star) => {
@@ -748,7 +743,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 })}
               </div>
             </div>
-            <p className="text-sm text-gray-500 text-center">Reviews section coming soon. Be the first to review this product!</p>
+            <p className="text-sm text-gray-500 text-center">{t("products.detail.reviewsComingSoon")}</p>
           </div>
         )}
       </div>
@@ -756,7 +751,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
       {/* Similar products */}
       {similar.length > 0 && (
         <div className="mt-16">
-          <h2 className="section-title mb-6">You Might Also Like</h2>
+          <h2 className="section-title mb-6">{t("products.detail.youMightAlsoLike")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {similar.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>

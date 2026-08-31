@@ -2,6 +2,7 @@
 
 import { useVoiceRecorder } from "@/lib/useVoiceRecorder";
 import { Trash2, Pause, Play, Send } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import clsx from "clsx";
 
 export function formatVoiceDuration(sec: number): string {
@@ -21,6 +22,7 @@ interface Props {
 /** WhatsApp-style active-recording bar — live oscillation, pause/resume, delete, send. Replaces the text input while recording. */
 export default function VoiceRecorderBar({ recorder, onCancel, onSend, uploading }: Props) {
   const { state, duration, levels, pause, resume, stop } = recorder;
+  const { t } = useTranslation();
 
   const handleSend = async () => {
     const result = await stop();
@@ -36,7 +38,7 @@ export default function VoiceRecorderBar({ recorder, onCancel, onSend, uploading
       <button
         onClick={onCancel}
         disabled={uploading}
-        title="Delete recording"
+        title={t("chat.voice.deleteRecording")}
         className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 disabled:opacity-40"
       >
         <Trash2 size={16} />
@@ -49,7 +51,7 @@ export default function VoiceRecorderBar({ recorder, onCancel, onSend, uploading
         )}
         <div className="flex-1 flex items-center gap-[2px] h-6 overflow-hidden">
           {levels.length === 0 ? (
-            <span className="text-xs text-gray-400">Listening…</span>
+            <span className="text-xs text-gray-400">{t("chat.voice.listening")}</span>
           ) : (
             levels.map((lvl, i) => (
               <span
@@ -68,7 +70,7 @@ export default function VoiceRecorderBar({ recorder, onCancel, onSend, uploading
       <button
         onClick={state === "paused" ? resume : pause}
         disabled={uploading}
-        title={state === "paused" ? "Resume" : "Pause"}
+        title={state === "paused" ? t("chat.voice.resume") : t("chat.voice.pause")}
         className="w-7 h-7 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition-colors flex-shrink-0 disabled:opacity-40"
       >
         {state === "paused" ? <Play size={12} /> : <Pause size={12} />}
@@ -77,7 +79,7 @@ export default function VoiceRecorderBar({ recorder, onCancel, onSend, uploading
       <button
         onClick={handleSend}
         disabled={uploading}
-        title="Send voice message"
+        title={t("chat.voice.send")}
         className="w-8 h-8 rounded-xl bg-brand-500 hover:bg-brand-600 text-white flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-60"
       >
         {uploading ? (

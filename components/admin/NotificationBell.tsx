@@ -7,6 +7,7 @@ import { useAdminNotificationSocket } from "@/lib/chatSocket";
 import { listAdminNotifications, markNotificationRead } from "@/lib/api/notifications";
 import { AppNotification, NotificationType } from "@/lib/types";
 import { Bell, ShoppingBag, MessageSquare, CreditCard, RefreshCcw } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import clsx from "clsx";
 
 const ICONS: Record<NotificationType, React.ReactNode> = {
@@ -30,16 +31,17 @@ function targetFor(n: AppNotification): string | null {
   }
 }
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: (path: string, vars?: Record<string, string | number>) => string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 60) return t("adminCommon.notifications.justNow");
+  if (diff < 3600) return t("adminCommon.notifications.minutesAgo", { count: Math.floor(diff / 60) });
+  if (diff < 86400) return t("adminCommon.notifications.hoursAgo", { count: Math.floor(diff / 3600) });
+  return t("adminCommon.notifications.daysAgo", { count: Math.floor(diff / 86400) });
 }
 
 export default function NotificationBell() {
   const router = useRouter();
+  const { t } = useTranslation();
   const token = useAdminStore((s) => s.session?.token);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [open, setOpen] = useState(false);
@@ -84,7 +86,7 @@ export default function NotificationBell() {
       <button
         onClick={() => setOpen((o) => !o)}
         className="relative w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors flex-shrink-0"
-        title="Notifications"
+        title={t("adminCommon.notifications.tooltip")}
       >
         <Bell size={16} />
         {unreadCount > 0 && (
@@ -97,12 +99,16 @@ export default function NotificationBell() {
       {open && (
         <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:left-auto sm:mt-2 w-auto sm:w-80 max-w-full sm:max-w-[90vw] bg-gray-900 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-fade-in">
           <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
-            <p className="text-sm font-semibold text-white">Notifications</p>
-            {unreadCount > 0 && <span className="text-[11px] text-brand-300">{unreadCount} unread</span>}
+            <p className="text-sm font-semibold text-white">{t("adminCommon.notifications.title")}</p>
+            {unreadCount > 0 && (
+              <span className="text-[11px] text-brand-300">
+                {t("adminCommon.notifications.unread", { count: unreadCount })}
+              </span>
+            )}
           </div>
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="text-center text-xs text-gray-500 py-8">You&apos;re all caught up.</p>
+              <p className="text-center text-xs text-gray-500 py-8">{t("adminCommon.notifications.empty")}</p>
             ) : (
               notifications.slice(0, 30).map((n) => (
                 <button
@@ -125,7 +131,7 @@ export default function NotificationBell() {
                     <span className={clsx("block text-xs leading-relaxed", !n.read ? "text-white font-medium" : "text-gray-400")}>
                       {n.message}
                     </span>
-                    <span className="block text-[10px] text-gray-500 mt-0.5">{timeAgo(n.createdAt)}</span>
+                    <span className="block text-[10px] text-gray-500 mt-0.5">{timeAgo(n.createdAt, t)}</span>
                   </span>
                   {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0 mt-1.5" />}
                 </button>

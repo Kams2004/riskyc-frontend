@@ -5,6 +5,8 @@ import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
 import { computeLineTotal, computeLineBreakdown } from "@/lib/pricing";
 import { X, Plus, Minus, CreditCard, Trash2, ImageIcon, ChevronDown } from "@/components/icons/fa";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { localized } from "@/lib/i18n/localized";
 import clsx from "clsx";
 
 export interface ImageQuantitySelection {
@@ -52,6 +54,8 @@ function BreakdownLine({ unitPrice, bulkPrices, quantity }: { unitPrice: number;
  * a photo can represent a fit/print that only some sizes carry.
  */
 export default function ImageQuantityPicker({ product, onClose, onConfirm }: Props) {
+  const { t, language } = useTranslation();
+  const name = localized(product.name, product.nameFr, language);
   const imageEntries = product.media
     .map((m, i) => ({ media: m, index: i }))
     .filter((e) => e.media.type === "IMAGE");
@@ -93,9 +97,9 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
           <div className="min-w-0">
             <h2 className="font-display font-bold text-base sm:text-lg text-gray-900 truncate">
-              Choose quantity by photo
+              {t("products.picker.title")}
             </h2>
-            <p className="text-xs text-gray-400 truncate">{product.name}</p>
+            <p className="text-xs text-gray-400 truncate">{name}</p>
           </div>
           <button
             onClick={onClose}
@@ -120,7 +124,7 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
               )}
               {activeQty > 0 && (
                 <span className="absolute top-3 right-3 bg-brand-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
-                  {activeQty} selected
+                  {t("products.picker.selected", { count: activeQty })}
                 </span>
               )}
             </div>
@@ -133,7 +137,7 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
                     onClick={() => setSizeMenuOpen((o) => !o)}
                     className="flex items-center gap-1.5 px-3.5 h-11 rounded-xl border-2 border-gray-200 hover:border-brand-300 text-sm font-semibold text-gray-700 transition-colors"
                   >
-                    Size: <span className="text-brand-600">{activeSize}</span>
+                    {t("products.detail.sizeLabel")} <span className="text-brand-600">{activeSize}</span>
                     <ChevronDown size={14} className={clsx("transition-transform", sizeMenuOpen && "rotate-180")} />
                   </button>
                   {sizeMenuOpen && (
@@ -183,7 +187,7 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
               <BreakdownLine unitPrice={product.price} bulkPrices={product.bulkPrices} quantity={activeQty} />
             )}
             <p className="text-center text-xs text-gray-400 mt-2">
-              {hasSizes ? "Photo + size shown above" : "Quantity for the photo shown above"} — tap another photo below to switch
+              {hasSizes ? t("products.picker.hintWithSize") : t("products.picker.hintNoSize")}
             </p>
           </div>
 
@@ -227,7 +231,9 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
             <div className="px-5 pb-5">
               <div className="border-t border-gray-100 pt-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
-                  Your selection ({selections.length} pick{selections.length !== 1 ? "s" : ""})
+                  {selections.length === 1
+                    ? t("products.picker.yourSelectionOne", { count: selections.length })
+                    : t("products.picker.yourSelectionOther", { count: selections.length })}
                 </p>
                 <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                   {selections.map((sel) => {
@@ -247,7 +253,7 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
                           <img src={media?.presignedUrl} alt="" className="w-full h-full object-cover" />
                         </button>
                         <span className="flex-1 min-w-0 text-sm text-gray-600 truncate">
-                          Photo {sel.imageIndex + 1}
+                          {t("products.picker.photo", { n: sel.imageIndex + 1 })}
                           {sel.size && <span className="text-gray-400"> · {sel.size}</span>}
                           {!priceUnset && <span className="block text-xs font-semibold text-brand-600">{formatPrice(lineTotal)}</span>}
                         </span>
@@ -268,7 +274,7 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
                         </div>
                         <button
                           onClick={() => setQty(sel.imageIndex, sel.size, 0)}
-                          title="Remove"
+                          title={t("products.picker.remove")}
                           className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
                         >
                           <Trash2 size={14} />
@@ -286,7 +292,9 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
         <div className="border-t border-gray-100 px-5 py-4 flex items-center justify-between gap-4 flex-shrink-0 bg-white">
           <div className="min-w-0">
             <p className="text-xs text-gray-400">
-              {totalItems} item{totalItems !== 1 ? "s" : ""} selected
+              {totalItems === 1
+                ? t("products.picker.itemsSelectedOne", { count: totalItems })
+                : t("products.picker.itemsSelectedOther", { count: totalItems })}
             </p>
             {!priceUnset && totalItems > 0 && (
               <p className="font-bold text-brand-600 text-lg leading-tight">{formatPrice(totalPrice)}</p>
@@ -302,7 +310,7 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
                 : "bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20"
             )}
           >
-            <CreditCard size={16} /> Checkout
+            <CreditCard size={16} /> {t("products.picker.checkout")}
           </button>
         </div>
       </div>

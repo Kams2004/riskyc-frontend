@@ -7,6 +7,8 @@ import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { useState } from "react";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { localized } from "@/lib/i18n/localized";
 import clsx from "clsx";
 
 interface Props {
@@ -15,6 +17,7 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const router = useRouter();
+  const { t, language } = useTranslation();
   const { addToCart } = useStore();
   const [wishlisted, setWishlisted] = useState(false);
   const [added, setAdded] = useState(false);
@@ -27,6 +30,7 @@ export default function ProductCard({ product }: Props) {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
   const priceUnset = product.price <= 0;
+  const name = localized(product.name, product.nameFr, language);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -55,15 +59,15 @@ export default function ProductCard({ product }: Props) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={product.media[imgIdx]?.presignedUrl || product.media[0]?.presignedUrl}
-          alt={product.name}
+          alt={name}
           className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
         />
 
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {product.badge === "NEW"  && <span className="badge-new">NEW</span>}
-          {product.badge === "SALE" && <span className="badge-sale">SALE</span>}
-          {product.badge === "HOT"  && <span className="badge-hot">HOT 🔥</span>}
+          {product.badge === "NEW"  && <span className="badge-new">{t("products.card.badgeNew")}</span>}
+          {product.badge === "SALE" && <span className="badge-sale">{t("products.card.badgeSale")}</span>}
+          {product.badge === "HOT"  && <span className="badge-hot">{t("products.card.badgeHot")}</span>}
           {discount && (
             <span className="bg-brand-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
               -{discount}%
@@ -78,7 +82,7 @@ export default function ProductCard({ product }: Props) {
         <button
           onClick={(e) => { e.preventDefault(); setWishlisted(!wishlisted); }}
           className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center shadow-sm hover:bg-white transition-colors"
-          title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          title={wishlisted ? t("products.card.removeFromWishlist") : t("products.card.addToWishlist")}
         >
           <Heart
             size={14}
@@ -102,7 +106,7 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 mb-1.5">
-          {product.name}
+          {name}
         </h3>
 
         <div className="flex items-center gap-1 mb-2">
@@ -114,7 +118,7 @@ export default function ProductCard({ product }: Props) {
         {/* Price */}
         <div className="flex items-center gap-2 flex-wrap mb-3">
           {priceUnset ? (
-            <span className="font-bold text-gray-500 text-sm">Price on request</span>
+            <span className="font-bold text-gray-500 text-sm">{t("products.card.priceOnRequest")}</span>
           ) : (
             <>
               <span className="font-bold text-brand-600 text-base">{formatPrice(product.price)}</span>
@@ -137,10 +141,10 @@ export default function ProductCard({ product }: Props) {
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                 : added ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-brand-500 text-white"
             )}
-            title={priceUnset ? "Contact us for pricing" : "Add to cart"}
+            title={priceUnset ? t("products.card.contactForPricing") : t("products.card.addToCart")}
           >
             {added ? <Check size={13} /> : <ShoppingCart size={13} />}
-            <span className="hidden sm:inline">{added ? "Added!" : "Add to Cart"}</span>
+            <span className="hidden sm:inline">{added ? t("products.card.added") : t("products.card.addToCart")}</span>
           </button>
 
           {/* Order Now — full label always */}
@@ -149,7 +153,7 @@ export default function ProductCard({ product }: Props) {
             className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-all bg-brand-500 hover:bg-brand-600 text-white"
           >
             <Zap size={13} />
-            {priceUnset ? "Ask price" : "Order"}
+            {priceUnset ? t("products.card.askPrice") : t("products.card.order")}
           </button>
         </div>
       </div>
