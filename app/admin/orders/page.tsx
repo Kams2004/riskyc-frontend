@@ -8,11 +8,12 @@ import { formatPrice } from "@/lib/data";
 import { Order, OrderStatus } from "@/lib/types";
 import Link from "next/link";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import OrderQrScanner from "@/components/admin/OrderQrScanner";
 import { useState, useEffect } from "react";
 import {
   Eye, CheckCircle2, XCircle, Clock, CreditCard,
   Search, Filter, ShoppingBag, ChevronLeft, ChevronRight,
-  LayoutGrid, List, PackageSearch, PackageCheck,
+  LayoutGrid, List, PackageSearch, PackageCheck, ScanLine,
 } from "lucide-react";
 import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -40,6 +41,7 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -102,6 +104,12 @@ export default function AdminOrdersPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setScannerOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-sm"
+            >
+              <ScanLine size={15} /> {t("adminOrders.list.scanButton")}
+            </button>
             <div className={clsx("flex items-center gap-2 border rounded-xl px-3 py-2", c.isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300")}>
               <Search size={15} className="text-gray-400 flex-shrink-0" />
               <input
@@ -452,6 +460,7 @@ export default function AdminOrdersPage() {
       </div>
 
       <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
+      {scannerOpen && <OrderQrScanner onClose={() => setScannerOpen(false)} />}
     </AdminShell>
   );
 }

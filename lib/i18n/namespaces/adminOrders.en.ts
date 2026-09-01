@@ -33,6 +33,7 @@ export const adminOrders = {
     totalOrdersOne: "{{count}} total order",
     totalOrdersOther: "{{count}} total orders",
     searchPlaceholder: "Search order ID…",
+    scanButton: "Scan",
     tableView: "Table",
     gridView: "Grid",
     filterAll: "All",
@@ -122,5 +123,12 @@ export const adminOrders = {
     noPermission: "You don't have permission to manage orders",
     errorStart: "Failed to start packaging.",
     errorComplete: "Failed to mark packaging done.",
+  },
+  scan: {
+    title: "Scan Order Code",
+    startingCamera: "Starting camera…",
+    instructions: "Point the camera at the QR code on the customer's receipt.",
+    notAnOrderCode: "This isn't a Riskyc Fashion order code.",
+    cameraError: "Couldn't access the camera — check permissions and try again.",
   },
 };

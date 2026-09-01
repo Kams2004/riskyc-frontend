@@ -35,6 +35,7 @@ export const adminOrders: typeof adminOrdersEn = {
     totalOrdersOne: "{{count}} commande au total",
     totalOrdersOther: "{{count}} commandes au total",
     searchPlaceholder: "Rechercher un n° de commande…",
+    scanButton: "Scanner",
     tableView: "Tableau",
     gridView: "Grille",
     filterAll: "Toutes",
@@ -124,5 +125,12 @@ export const adminOrders: typeof adminOrdersEn = {
     noPermission: "Vous n'avez pas la permission de gérer les commandes",
     errorStart: "Échec du démarrage de l'emballage.",
     errorComplete: "Échec de la finalisation de l'emballage.",
+  },
+  scan: {
+    title: "Scanner le code de commande",
+    startingCamera: "Démarrage de la caméra…",
+    instructions: "Pointez la caméra vers le code QR sur le reçu du client.",
+    notAnOrderCode: "Ce n'est pas un code de commande Riskyc Fashion.",
+    cameraError: "Impossible d'accéder à la caméra — vérifiez les autorisations et réessayez.",
   },
 };
