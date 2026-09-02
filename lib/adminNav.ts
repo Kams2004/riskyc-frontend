@@ -42,3 +42,16 @@ export function permissionForPath(pathname: string): Permission | null {
   // Prefer the most specific (longest) href match.
   return matches.sort((a, b) => b.href.length - a.href.length)[0].permission;
 }
+
+/**
+ * Where to land an admin right after login. Landing everyone on "/admin"
+ * (the dashboard) assumes VIEW_DASHBOARD — a role scoped to just one area
+ * (e.g. only "Manage Orders") would otherwise hit the "Access Restricted"
+ * screen with an empty sidebar and no way to reach the page they can
+ * actually use. Falls back to "/admin" itself if no nav item is reachable
+ * (nothing to send them to instead).
+ */
+export function firstAccessibleHref(permissions: Permission[]): string {
+  const first = adminNavItems.find((item) => permissions.includes(item.permission));
+  return first?.href ?? "/admin";
+}

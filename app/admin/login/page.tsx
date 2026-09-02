@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminStore } from "@/lib/adminStore";
+import { firstAccessibleHref } from "@/lib/adminNav";
 import { Eye, EyeOff, Lock, Mail, LogIn, AlertCircle, Clock } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
@@ -33,7 +34,11 @@ function AdminLoginPageInner() {
     const result = await login(email, password);
     setLoading(false);
     if (result.ok) {
-      router.replace("/admin");
+      // Land on the first page this role can actually see, rather than
+      // always the dashboard — a role scoped to one area (e.g. only
+      // "Manage Orders") would otherwise hit an empty, permission-blocked page.
+      const permissions = useAdminStore.getState().session?.permissions ?? [];
+      router.replace(firstAccessibleHref(permissions));
     } else {
       setError(result.error);
       setPassword("");
