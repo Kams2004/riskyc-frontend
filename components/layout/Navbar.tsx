@@ -105,12 +105,14 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-1">
+          {/* Desktop Nav — overflow-x-auto + whitespace-nowrap rather than
+              letting long category names (esp. in French, or multi-word
+              names) wrap mid-item and stack into a cramped, uneven row. */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
             <Link
               href="/home"
               className={clsx(
-                "px-4 py-2 rounded-lg font-medium text-sm transition-colors",
+                "px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0",
                 pathname === "/home"
                   ? "text-brand-600 bg-brand-50"
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
@@ -122,14 +124,14 @@ export default function Navbar() {
             {visibleCategories.map((cat) => (
               <div
                 key={cat.id}
-                className="relative"
+                className="relative flex-shrink-0"
                 onMouseEnter={() => setActiveDropdown(cat.slug)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
                 <Link
                   href={`/category/${cat.slug}`}
                   className={clsx(
-                    "flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors",
+                    "flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
                     pathname.startsWith(`/category/${cat.slug}`)
                       ? "text-brand-600 bg-brand-50"
                       : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
@@ -165,13 +167,13 @@ export default function Navbar() {
 
             {overflowCategories.length > 0 && (
               <div
-                className="relative"
+                className="relative flex-shrink-0"
                 onMouseEnter={() => setActiveDropdown("__more")}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
                 <button
                   className={clsx(
-                    "flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors",
+                    "flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
                     "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
                   )}
                 >
@@ -205,7 +207,7 @@ export default function Navbar() {
             <Link
               href="/"
               className={clsx(
-                "px-4 py-2 rounded-lg font-medium text-sm transition-colors",
+                "px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0",
                 pathname === "/"
                   ? "text-brand-600 bg-brand-50"
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"

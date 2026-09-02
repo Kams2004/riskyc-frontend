@@ -55,6 +55,7 @@ export default function AdminOrderDetailPage() {
   const [statusBusy, setStatusBusy] = useState(false);
   const [chatImage, setChatImage] = useState<File | null>(null);
   const [chatImagePreview, setChatImagePreview] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -138,6 +139,7 @@ export default function AdminOrderDetailPage() {
     const text = chatMsg.trim();
     const image = chatImage ?? undefined;
     setChatSending(true);
+    setChatError(null);
     try {
       if (order.status === "PACKAGED") {
         // Packaging confirmation — the backend appends the delivery team's
@@ -167,8 +169,9 @@ export default function AdminOrderDetailPage() {
       clearChatImage();
       setChatSent(true);
       setTimeout(() => setChatSent(false), 2000);
-    } catch {
+    } catch (e) {
       // Keep the draft in place so nothing typed gets lost on a failed send.
+      setChatError(e instanceof Error ? e.message : t("adminOrders.detail.messageSendError"));
     } finally {
       setChatSending(false);
     }
@@ -554,7 +557,7 @@ export default function AdminOrderDetailPage() {
               )}
               <textarea
                 value={chatMsg}
-                onChange={(e) => setChatMsg(e.target.value)}
+                onChange={(e) => { setChatMsg(e.target.value); setChatError(null); }}
                 placeholder={
                   order.status === "PACKAGED"
                     ? t("adminOrders.detail.messagePackagingPlaceholder")
@@ -593,6 +596,9 @@ export default function AdminOrderDetailPage() {
                     : t("adminOrders.detail.sendMessage")}
                 </button>
               </div>
+              {chatError && (
+                <p className="text-xs text-red-500 mt-2">{chatError}</p>
+              )}
             </div>
           </div>
         </div>

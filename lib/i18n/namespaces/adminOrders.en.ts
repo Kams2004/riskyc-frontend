@@ -108,6 +108,7 @@ export const adminOrders = {
     messagePlaceholder: "Type a message to the customer…",
     messagePackagingPlaceholder: "Optional note to include with the packaging confirmation…",
     messageSent: "✓ Message Sent!",
+    messageSendError: "Couldn't send — please try again.",
     sendMessage: "Send Message",
     sendPackagingConfirmation: "Send Packaging Confirmation",
     packagingConfirmationSent: "Packaging confirmation sent",

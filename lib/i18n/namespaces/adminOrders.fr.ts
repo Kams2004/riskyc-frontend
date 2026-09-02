@@ -110,6 +110,7 @@ export const adminOrders: typeof adminOrdersEn = {
     messagePlaceholder: "Écrire un message au client…",
     messagePackagingPlaceholder: "Note facultative à joindre à la confirmation d'emballage…",
     messageSent: "✓ Message envoyé !",
+    messageSendError: "Échec de l'envoi — veuillez réessayer.",
     sendMessage: "Envoyer le message",
     sendPackagingConfirmation: "Envoyer la confirmation d'emballage",
     packagingConfirmationSent: "Confirmation d'emballage envoyée",

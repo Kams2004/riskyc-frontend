@@ -60,7 +60,7 @@ export const products: typeof productsEn = {
     sizeGuide: "Guide des tailles",
     photoSpecificNotice:
       "Vous avez ajouté des articles liés à une photo dans votre panier — la sélection couleur/taille ci-dessus est désactivée pour éviter de mélanger les deux.",
-    chooseQuantityByPhoto: "Configurer taille et quantité",
+    chooseQuantityByPhoto: "Choisir taille et quantité",
     chooseQuantityByPhotoHint: "Définissez la quantité et la taille pour chaque photo/variante",
     quantity: "Quantité",
     total: "Total :",

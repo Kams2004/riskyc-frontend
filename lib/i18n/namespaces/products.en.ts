@@ -58,7 +58,7 @@ export const products = {
     sizeGuide: "Size Guide",
     photoSpecificNotice:
       "You've added photo-specific items to your cart — color/size selection above is disabled to avoid mixing the two.",
-    chooseQuantityByPhoto: "Configure size & quantity",
+    chooseQuantityByPhoto: "Choose size & quantity",
     chooseQuantityByPhotoHint: "Set the quantity and size for each photo/variant",
     quantity: "Quantity",
     total: "Total:",
