@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getOrder } from "@/lib/api/orders";
+import { getConversationForOrder } from "@/lib/api/conversations";
+import { useStore } from "@/lib/store";
 import { Order, OrderStatus } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
 import { usePushSubscription } from "@/lib/usePushSubscription";
@@ -40,6 +42,7 @@ export default function TrackOrderPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
   const { status: pushStatus, subscribe } = usePushSubscription(orderId);
+  const { conversationId, setConversationId } = useStore();
 
   const fetchOrder = () => {
     if (!orderId) return Promise.resolve();
@@ -55,6 +58,19 @@ export default function TrackOrderPage() {
     fetchOrder().finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
+
+  // A guest (no account) may be on the same device as the chat widget — this
+  // lets that widget find and adopt an admin-initiated thread for this order
+  // (e.g. the packaging-confirmation message), even without a customerId.
+  useEffect(() => {
+    if (!orderId || conversationId) return;
+    getConversationForOrder(orderId)
+      .then((c) => {
+        if (c) setConversationId(c.id);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId, conversationId]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -185,6 +201,24 @@ export default function TrackOrderPage() {
           <span className="text-brand-600">{formatPrice(order.total)}</span>
         </div>
       </div>
+
+      {/* Packaging confirmation — sent by the admin once the order is sealed, with delivery team contacts attached */}
+      {order.packagingConfirmation && (
+        <div className="bg-teal-50 border border-teal-100 rounded-2xl p-5 mb-5">
+          <div className="flex items-center gap-2 text-teal-700 font-semibold text-sm mb-2">
+            <CheckCircle2 size={16} /> {t("account.track.packagingConfirmedHeading")}
+          </div>
+          {order.packagingConfirmation.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={order.packagingConfirmation.imageUrl}
+              alt={t("account.track.packagingConfirmedPhotoAlt")}
+              className="rounded-xl max-h-56 w-full object-cover mb-3 border border-teal-100"
+            />
+          )}
+          <p className="text-sm text-teal-900 leading-relaxed whitespace-pre-line">{order.packagingConfirmation.text}</p>
+        </div>
+      )}
 
       {/* Push notification opt-in */}
       {pushStatus !== "unsupported" && !cancelled && (

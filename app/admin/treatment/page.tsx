@@ -19,15 +19,19 @@ import {
   User,
   Eye,
   AlertCircle,
+  Truck,
 } from "lucide-react";
 import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import DeliveryContactsPanel from "@/components/admin/DeliveryContactsPanel";
 
 type Tab = "waiting" | "in_progress" | "done";
 
 export default function AdminTreatmentPage() {
   const token = useAdminStore((s) => s.session?.token);
   const canManage = useAdminStore((s) => s.hasPermission("MANAGE_TREATMENT"));
+  const adminId = useAdminStore((s) => s.session?.id);
+  const isSuperAdmin = useAdminStore((s) => s.isSuperAdmin());
   const c = useAdminColors();
   const { t } = useTranslation();
 
@@ -36,6 +40,7 @@ export default function AdminTreatmentPage() {
   const [tab, setTab] = useState<Tab>("waiting");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [contactsOpen, setContactsOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -50,9 +55,17 @@ export default function AdminTreatmentPage() {
   }, []);
   useOrdersSocket(handleOrderUpdate);
 
+  // In Progress/Packaged are personalized per admin — a UX declutter, not a
+  // security boundary, since this same order data is visible elsewhere
+  // (Orders list/detail) to anyone with VIEW_ORDERS regardless of role. The
+  // super admin (has every permission) still sees and can act on everyone's.
   const waiting = orders.filter((o) => o.status === "VALIDATED");
-  const inProgress = orders.filter((o) => o.status === "PACKAGING");
-  const done = orders.filter((o) => o.status === "PACKAGED");
+  const inProgress = orders.filter(
+    (o) => o.status === "PACKAGING" && (isSuperAdmin || o.packagingStartedById === adminId)
+  );
+  const done = orders.filter(
+    (o) => o.status === "PACKAGED" && (isSuperAdmin || o.packagingCompletedById === adminId)
+  );
 
   const list = tab === "waiting" ? waiting : tab === "in_progress" ? inProgress : done;
 
@@ -100,11 +113,19 @@ export default function AdminTreatmentPage() {
   return (
     <AdminShell>
       <div className="p-6 lg:p-8 space-y-6">
-        <div>
-          <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminOrders.treatment.title")}</h1>
-          <p className={clsx("text-sm mt-0.5", c.textSecondary)}>
-            {t("adminOrders.treatment.subtitle")}
-          </p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminOrders.treatment.title")}</h1>
+            <p className={clsx("text-sm mt-0.5", c.textSecondary)}>
+              {t("adminOrders.treatment.subtitle")}
+            </p>
+          </div>
+          <button
+            onClick={() => setContactsOpen(true)}
+            className={clsx("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors", c.btnGhost)}
+          >
+            <Truck size={14} /> {t("adminOrders.treatment.deliveryTeamButton")}
+          </button>
         </div>
 
         {error && (
@@ -241,6 +262,8 @@ export default function AdminTreatmentPage() {
           </div>
         )}
       </div>
+
+      {contactsOpen && <DeliveryContactsPanel onClose={() => setContactsOpen(false)} />}
     </AdminShell>
   );
 }

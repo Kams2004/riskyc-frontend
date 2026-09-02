@@ -89,6 +89,8 @@ export const account = {
     orderRejected: "Order Rejected",
     rejectionFallback: "This order was rejected. Contact us for details.",
     contactUsForHelp: "Contact us for help",
+    packagingConfirmedHeading: "Your order has been packaged!",
+    packagingConfirmedPhotoAlt: "Photo of your sealed parcel",
     orderSummary: "Order Summary",
     photo: "Photo {{index}}",
     total: "Total",

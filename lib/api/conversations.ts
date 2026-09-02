@@ -14,6 +14,34 @@ export function getConversationForCustomer(customerId: string) {
   return apiFetch<Conversation | undefined>(`/api/conversations/customer/${customerId}`);
 }
 
+/** Lets a guest's tracking page (no account, so no customerId to look up by) find and adopt its order's thread. */
+export function getConversationForOrder(orderId: string) {
+  return apiFetch<Conversation | undefined>(`/api/conversations/order/${orderId}`);
+}
+
+/** Admin-only: sends the "your order has been packaged" confirmation — text and/or a photo, with the delivery team's contact info appended automatically. */
+export async function sendPackagingConfirmation(
+  orderId: string,
+  token: string,
+  text?: string,
+  file?: File
+): Promise<ChatMessage> {
+  const { API_BASE_URL } = await import("@/lib/apiClient");
+  const form = new FormData();
+  if (text) form.append("text", text);
+  if (file) form.append("file", file);
+  const res = await fetch(`${API_BASE_URL}/api/conversations/order/${orderId}/packaging-confirmation`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || "Failed to send packaging confirmation");
+  }
+  return res.json();
+}
+
 export function createConversation(data: { customerName: string; customerId?: string; orderId?: string }) {
   return apiFetch<Conversation>("/api/conversations", { method: "POST", body: JSON.stringify(data) });
 }

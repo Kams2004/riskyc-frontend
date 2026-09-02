@@ -139,9 +139,13 @@ export interface Order {
   statusChangedAt?: string | null;
   rejectionReason?: string | null;
   packagingStartedByName?: string | null;
+  packagingStartedById?: string | null;
   packagingStartedAt?: string | null;
   packagingCompletedByName?: string | null;
+  packagingCompletedById?: string | null;
   packagingCompletedAt?: string | null;
+  /** The latest "your order has been packaged" confirmation sent for this order, if any. */
+  packagingConfirmation?: ChatMessage | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -160,7 +164,20 @@ export interface ChatMessage {
   voiceDurationSeconds?: number | null;
   /** Which staff member sent this (ADMIN messages only) — never show this to a customer. */
   adminSenderName?: string | null;
+  /** True for the special "your order has been packaged" message — rendered as its own card on the tracking page and in the chat widget. */
+  packagingConfirmation: boolean;
   timestamp: string;
+}
+
+// ── Delivery team contacts ──────────────────────────────────────────────────
+// Auto-attached to packaging-confirmation messages — see the admin order
+// detail page's "Message Customer" panel and app/track/[orderId]/page.tsx.
+
+export interface DeliveryContact {
+  id: string;
+  name: string;
+  phone: string;
+  position: number;
 }
 
 export interface Conversation {

@@ -113,6 +113,19 @@ export default function ImageQuantityPicker({ product, onClose, onConfirm }: Pro
         <div className="flex-1 overflow-y-auto">
           {/* Main preview */}
           <div className="p-5 pb-3">
+            {/* Bulk price tiers — scrolls horizontally when there are many */}
+            {product.bulkPrices.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 mb-3 -mx-0.5 px-0.5">
+                {product.bulkPrices.map((tier, i) => (
+                  <span
+                    key={i}
+                    className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-brand-50 text-brand-700 border border-brand-100 whitespace-nowrap"
+                  >
+                    {tier.quantity} = {formatPrice(tier.price)}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="relative aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-gray-50 border border-gray-100">
               {activeMedia ? (
                 // eslint-disable-next-line @next/next/no-img-element

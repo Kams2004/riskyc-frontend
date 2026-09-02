@@ -330,13 +330,13 @@ export default function ProductDetailClient({ productId }: { productId: string }
             </button>
           </div>
           {product.media.length > 1 && (
-            <div className="flex gap-3">
+            <div className="flex gap-3 overflow-x-auto pb-1">
               {product.media.map((m, i) => (
                 <button
                   key={m.id}
                   onClick={() => setImgIdx(i)}
                   className={clsx(
-                    "w-20 h-20 rounded-xl overflow-hidden border-2 transition-all",
+                    "w-20 h-20 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all",
                     imgIdx === i ? "border-brand-500 shadow-md" : "border-gray-200 hover:border-gray-300"
                   )}
                 >
@@ -526,21 +526,21 @@ export default function ProductDetailClient({ productId }: { productId: string }
             </p>
           )}
 
-          {/* Quantity by photo — lets the customer pick a quantity (and size) per photo */}
+          {/* Configure quantity/size per photo — the primary way to configure this product, so it's styled as a solid primary action rather than a secondary option */}
           {imageCount > 0 && (
             <div className="mb-5">
               <button
                 onClick={() => setImageQuantityOpen(true)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-300 hover:bg-brand-50/50 transition-all text-left group"
+                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-600 shadow-lg shadow-brand-500/20 transition-all text-left group"
               >
-                <span className="w-10 h-10 rounded-xl bg-gray-100 group-hover:bg-brand-100 flex items-center justify-center text-gray-500 group-hover:text-brand-600 flex-shrink-0 transition-colors">
+                <span className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white flex-shrink-0">
                   <ImageIcon size={18} />
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-semibold text-gray-800">{t("products.detail.chooseQuantityByPhoto")}</span>
-                  <span className="block text-xs text-gray-400">{t("products.detail.chooseQuantityByPhotoHint")}</span>
+                  <span className="block text-sm font-semibold text-white">{t("products.detail.chooseQuantityByPhoto")}</span>
+                  <span className="block text-xs text-white/75">{t("products.detail.chooseQuantityByPhotoHint")}</span>
                 </span>
-                <ChevronRight size={16} className="text-gray-300 group-hover:text-brand-400 flex-shrink-0" />
+                <ChevronRight size={16} className="text-white/70 flex-shrink-0" />
               </button>
             </div>
           )}

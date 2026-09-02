@@ -91,6 +91,8 @@ export const account: typeof accountEn = {
     orderRejected: "Commande refusée",
     rejectionFallback: "Cette commande a été refusée. Contactez-nous pour plus de détails.",
     contactUsForHelp: "Contactez-nous pour de l'aide",
+    packagingConfirmedHeading: "Votre commande a été emballée !",
+    packagingConfirmedPhotoAlt: "Photo de votre colis scellé",
     orderSummary: "Récapitulatif de la commande",
     photo: "Photo {{index}}",
     total: "Total",

@@ -10,10 +10,11 @@ import { Order, OrderStatus } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock,
   CreditCard, Package, ZoomIn, MessageSquare,
+  Truck, Paperclip, X as XIcon, PackageCheck, Loader2,
 } from "lucide-react";
 import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -49,7 +50,12 @@ export default function AdminOrderDetailPage() {
   const [zoomImg, setZoomImg] = useState(false);
   const [chatMsg, setChatMsg] = useState("");
   const [chatSent, setChatSent] = useState(false);
+  const [chatSending, setChatSending] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [chatImage, setChatImage] = useState<File | null>(null);
+  const [chatImagePreview, setChatImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -87,8 +93,13 @@ export default function AdminOrderDetailPage() {
 
   const setStatus = async (status: OrderStatus, reason?: string) => {
     if (!token) return;
-    const updated = await ordersApi.updateOrderStatus(order.id, status, token, reason);
-    setOrder(updated);
+    setStatusBusy(true);
+    try {
+      const updated = await ordersApi.updateOrderStatus(order.id, status, token, reason);
+      setOrder(updated);
+    } finally {
+      setStatusBusy(false);
+    }
   };
 
   const askReject = () => {
@@ -108,27 +119,58 @@ export default function AdminOrderDetailPage() {
     });
   };
 
+  const handlePickChatImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setChatImage(file);
+    setChatImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearChatImage = () => {
+    if (chatImagePreview) URL.revokeObjectURL(chatImagePreview);
+    setChatImage(null);
+    setChatImagePreview(null);
+  };
+
   const handleSendMessage = async () => {
-    if (!chatMsg.trim() || !token) return;
+    if ((!chatMsg.trim() && !chatImage) || !token || chatSending) return;
     const text = chatMsg.trim();
-    setChatMsg("");
+    const image = chatImage ?? undefined;
+    setChatSending(true);
     try {
-      // Match by customerId first — that's the thread the customer's own chat
-      // widget will find and reuse. Fall back to orderId for guest orders,
-      // then create a fresh thread only if neither turns one up.
-      const existing = await conversationsApi.listConversations(token);
-      let conv = order.customerId
-        ? existing.find((cv) => cv.customerId === order.customerId)
-        : existing.find((cv) => cv.orderId === order.id);
-      if (!conv) {
-        const name = order.customerInfo ? `${order.customerInfo.firstName} ${order.customerInfo.lastName}` : "Customer";
-        conv = await conversationsApi.createConversation({ customerName: name, customerId: order.customerId ?? undefined, orderId: order.id });
+      if (order.status === "PACKAGED") {
+        // Packaging confirmation — the backend appends the delivery team's
+        // contact info automatically and this becomes findable by a guest's
+        // tracking page (GET /api/conversations/order/{orderId}).
+        await conversationsApi.sendPackagingConfirmation(order.id, token, text || undefined, image);
+        setOrder(await ordersApi.getOrder(order.id));
+      } else {
+        // Match by customerId first — that's the thread the customer's own
+        // chat widget will find and reuse. Fall back to orderId for guest
+        // orders, then create a fresh thread only if neither turns one up.
+        const existing = await conversationsApi.listConversations(token);
+        let conv = order.customerId
+          ? existing.find((cv) => cv.customerId === order.customerId)
+          : existing.find((cv) => cv.orderId === order.id);
+        if (!conv) {
+          const name = order.customerInfo ? `${order.customerInfo.firstName} ${order.customerInfo.lastName}` : "Customer";
+          conv = await conversationsApi.createConversation({ customerName: name, customerId: order.customerId ?? undefined, orderId: order.id });
+        }
+        if (image) {
+          await conversationsApi.sendImageMessage(conv.id, "ADMIN", image, text || undefined, token);
+        } else {
+          await conversationsApi.sendMessage({ conversationId: conv.id, sender: "ADMIN", text }, token);
+        }
       }
-      await conversationsApi.sendMessage({ conversationId: conv.id, sender: "ADMIN", text });
+      setChatMsg("");
+      clearChatImage();
       setChatSent(true);
       setTimeout(() => setChatSent(false), 2000);
     } catch {
-      setChatMsg(text);
+      // Keep the draft in place so nothing typed gets lost on a failed send.
+    } finally {
+      setChatSending(false);
     }
   };
 
@@ -162,20 +204,20 @@ export default function AdminOrderDetailPage() {
 
           {order.status === "REVIEWING" && (
             <div className="flex gap-3">
-              <button onClick={() => setStatus("VALIDATED")}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition-colors">
-                <CheckCircle2 size={16} /> {t("adminOrders.detail.validateOrder")}
+              <button onClick={() => setStatus("VALIDATED")} disabled={statusBusy}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors">
+                {statusBusy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {t("adminOrders.detail.validateOrder")}
               </button>
-              <button onClick={askReject}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-500 text-sm font-semibold border border-red-500/20 transition-colors">
+              <button onClick={askReject} disabled={statusBusy}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 disabled:opacity-60 disabled:cursor-not-allowed text-red-500 text-sm font-semibold border border-red-500/20 transition-colors">
                 <XCircle size={16} /> {t("adminOrders.detail.cancel")}
               </button>
             </div>
           )}
           {order.status === "AWAITING_PAYMENT" && (
-            <button onClick={askReject}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-500 text-sm font-semibold border border-red-500/20 transition-colors">
-              <XCircle size={16} /> {t("adminOrders.detail.cancelOrder")}
+            <button onClick={askReject} disabled={statusBusy}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 disabled:opacity-60 disabled:cursor-not-allowed text-red-500 text-sm font-semibold border border-red-500/20 transition-colors">
+              {statusBusy ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />} {t("adminOrders.detail.cancelOrder")}
             </button>
           )}
         </div>
@@ -316,6 +358,47 @@ export default function AdminOrderDetailPage() {
               )}
             </div>
 
+            {/* Shipping info — what the customer entered at checkout */}
+            {order.customerInfo && (
+              <div className={clsx("rounded-2xl border p-5", c.card)}>
+                <h2 className={clsx("font-semibold mb-4 flex items-center gap-2", c.textPrimary)}>
+                  <Truck size={16} className="text-brand-500" /> {t("adminOrders.detail.shippingInfoHeading")}
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className={c.textSecondary}>{t("adminOrders.detail.recipient")}</span>
+                    <span className={clsx("font-medium", c.textPrimary)}>
+                      {order.customerInfo.firstName} {order.customerInfo.lastName}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className={c.textSecondary}>{t("adminOrders.detail.phone")}</span>
+                    <span className={clsx("font-medium", c.textPrimary)}>{order.customerInfo.phone}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className={c.textSecondary}>{t("adminOrders.detail.deliveryType")}</span>
+                    <span className={clsx("font-medium", c.textPrimary)}>
+                      {order.customerInfo.deliveryType === "DELIVERY"
+                        ? t("adminOrders.detail.deliveryTypeDelivery")
+                        : t("adminOrders.detail.deliveryTypePickup")}
+                    </span>
+                  </div>
+                  {order.customerInfo.town && (
+                    <div className="flex justify-between text-sm gap-3">
+                      <span className={c.textSecondary}>{t("adminOrders.detail.town")}</span>
+                      <span className={clsx("font-medium text-right", c.textPrimary)}>{order.customerInfo.town}</span>
+                    </div>
+                  )}
+                  {order.customerInfo.street && (
+                    <div className="flex justify-between text-sm gap-3">
+                      <span className={c.textSecondary}>{t("adminOrders.detail.street")}</span>
+                      <span className={clsx("font-medium text-right", c.textPrimary)}>{order.customerInfo.street}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Payment screenshot */}
             {order.paymentScreenshotUrl && (
               <div className={clsx("rounded-2xl border p-5", c.card)}>
@@ -339,12 +422,12 @@ export default function AdminOrderDetailPage() {
                 </div>
                 {order.status === "REVIEWING" && (
                   <div className="flex gap-3 mt-4">
-                    <button onClick={() => setStatus("VALIDATED")}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold text-sm transition-colors">
-                      <CheckCircle2 size={16} /> {t("adminOrders.detail.approveValidate")}
+                    <button onClick={() => setStatus("VALIDATED")} disabled={statusBusy}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors">
+                      {statusBusy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {t("adminOrders.detail.approveValidate")}
                     </button>
-                    <button onClick={askReject}
-                      className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-500 font-semibold text-sm border border-red-500/20 transition-colors">
+                    <button onClick={askReject} disabled={statusBusy}
+                      className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 disabled:opacity-60 disabled:cursor-not-allowed text-red-500 font-semibold text-sm border border-red-500/20 transition-colors">
                       <XCircle size={16} /> {t("adminOrders.detail.reject")}
                     </button>
                   </div>
@@ -439,30 +522,77 @@ export default function AdminOrderDetailPage() {
                 <MessageSquare size={16} className="text-brand-500" /> {t("adminOrders.detail.messageCustomerHeading")}
               </h2>
               <p className={clsx("text-xs mb-3", c.textMuted)}>
-                {order.customerId
+                {order.status === "PACKAGED"
+                  ? t("adminOrders.detail.messageHintPackaging")
+                  : order.customerId
                   ? t("adminOrders.detail.messageHintWithChat")
                   : t("adminOrders.detail.messageHintGuest")}
               </p>
+
+              {order.packagingConfirmation && (
+                <div className={clsx("mb-3 rounded-xl p-3 border", c.isDark ? "bg-teal-900/15 border-teal-500/20" : "bg-teal-50 border-teal-200")}>
+                  <p className={clsx("text-xs font-semibold flex items-center gap-1.5 mb-1", c.isDark ? "text-teal-300" : "text-teal-700")}>
+                    <PackageCheck size={13} /> {t("adminOrders.detail.packagingConfirmationSent")}
+                  </p>
+                  {order.packagingConfirmation.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={order.packagingConfirmation.imageUrl} alt="" className="rounded-lg max-h-28 object-cover mb-1.5" />
+                  )}
+                  <p className={clsx("text-xs whitespace-pre-line", c.textSecondary)}>{order.packagingConfirmation.text}</p>
+                </div>
+              )}
+
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePickChatImage} className="hidden" />
+              {chatImagePreview && (
+                <div className="relative inline-block mb-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={chatImagePreview} alt="" className="h-16 w-16 rounded-xl object-cover border border-gray-200" />
+                  <button onClick={clearChatImage} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800 text-white flex items-center justify-center shadow">
+                    <XIcon size={11} />
+                  </button>
+                </div>
+              )}
               <textarea
                 value={chatMsg}
                 onChange={(e) => setChatMsg(e.target.value)}
-                placeholder={t("adminOrders.detail.messagePlaceholder")}
+                placeholder={
+                  order.status === "PACKAGED"
+                    ? t("adminOrders.detail.messagePackagingPlaceholder")
+                    : t("adminOrders.detail.messagePlaceholder")
+                }
                 rows={3}
-                disabled={!order.customerId}
                 className={clsx(
-                  "w-full border rounded-xl p-3 text-sm resize-none outline-none transition-colors disabled:opacity-50",
+                  "w-full border rounded-xl p-3 text-sm resize-none outline-none transition-colors",
                   c.isDark
                     ? "bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:border-brand-500"
                     : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-brand-400"
                 )}
               />
-              <button
-                onClick={handleSendMessage}
-                disabled={!chatMsg.trim() || !order.customerId}
-                className="mt-2 w-full py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
-              >
-                {chatSent ? t("adminOrders.detail.messageSent") : t("adminOrders.detail.sendMessage")}
-              </button>
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  title={t("adminOrders.detail.attachPhoto")}
+                  className={clsx("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors", c.btnGhost)}
+                >
+                  <Paperclip size={16} />
+                </button>
+                <button
+                  onClick={handleSendMessage}
+                  disabled={(!chatMsg.trim() && !chatImage) || chatSending}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+                >
+                  {chatSending ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : chatSent ? null : order.status === "PACKAGED" ? (
+                    <PackageCheck size={15} />
+                  ) : null}
+                  {chatSent
+                    ? t("adminOrders.detail.messageSent")
+                    : order.status === "PACKAGED"
+                    ? t("adminOrders.detail.sendPackagingConfirmation")
+                    : t("adminOrders.detail.sendMessage")}
+                </button>
+              </div>
             </div>
           </div>
         </div>

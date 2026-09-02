@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Permission } from "./types";
+import { ALL_PERMISSIONS, Permission } from "./types";
 import { apiFetch, ApiError } from "./apiClient";
 
 // ── Admin session (backed by the real API — see lib/apiClient.ts) ──────────
@@ -35,6 +35,8 @@ interface AdminStore {
   login: (email: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   logout: () => void;
   hasPermission: (permission: Permission) => boolean;
+  /** Holds every permission that exists (rather than a hardcoded "Super Admin" role name, which is user-editable) — sees and manages everyone's work, not just their own. */
+  isSuperAdmin: () => boolean;
 }
 
 export const useAdminStore = create<AdminStore>()(
@@ -70,6 +72,12 @@ export const useAdminStore = create<AdminStore>()(
       logout: () => set({ session: null }),
 
       hasPermission: (permission) => get().session?.permissions.includes(permission) ?? false,
+
+      isSuperAdmin: () => {
+        const perms = get().session?.permissions;
+        if (!perms) return false;
+        return ALL_PERMISSIONS.every((p) => perms.includes(p.key));
+      },
     }),
     {
       // bumped from "riskyc-admin-v2" — products/categories are no longer

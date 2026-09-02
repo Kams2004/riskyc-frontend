@@ -107,7 +107,6 @@ export async function downloadReceipt(order: Order) {
       item.productName,
       item.selectedColor,
       item.selectedSize,
-      item.selectedImageIndex != null ? `Photo ${item.selectedImageIndex + 1}` : null,
     ].filter(Boolean).join(" — ");
     const lines = doc.splitTextToSize(label, pageWidth - margin * 2 - 180);
     doc.text(lines, margin, y);
@@ -169,6 +168,28 @@ export async function downloadReceipt(order: Order) {
   doc.setFontSize(8);
   doc.setTextColor(160, 160, 160);
   doc.text("Riskyc Fashion · Marché Central, Douala — Précisément au Marché des Pommes", margin, y);
+  y += 26;
+
+  // Help / support center — a page-break guard here would need real content
+  // measurement, but this receipt's fixed layout never runs an order with
+  // enough items to reach the bottom margin in practice.
+  const helpBoxHeight = 58;
+  doc.setFillColor(250, 245, 247);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, helpBoxHeight, 8, 8, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(20, 20, 20);
+  doc.text("Need help with your order?", margin + 16, y + 20);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(90, 90, 90);
+  doc.text("Our support team is here for any question or worry — call or WhatsApp us:", margin + 16, y + 34);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 26, 94);
+  doc.text("MTN & Orange: +237 693 45 67 89", margin + 16, y + 47);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(90, 90, 90);
+  doc.text("Email: contact@riskyc.cm", margin + 260, y + 47);
 
   doc.save(`riskyc-receipt-${order.id.slice(0, 8)}.pdf`);
 }
