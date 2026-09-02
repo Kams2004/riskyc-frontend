@@ -10,6 +10,7 @@ import { Order, OrderStatus } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import DeliveryTeamCard from "@/components/shared/DeliveryTeamCard";
 import { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock,
@@ -541,7 +542,10 @@ export default function AdminOrderDetailPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={order.packagingConfirmation.imageUrl} alt="" className="rounded-lg max-h-28 object-cover mb-1.5" />
                   )}
-                  <p className={clsx("text-xs whitespace-pre-line", c.textSecondary)}>{order.packagingConfirmation.text}</p>
+                  {order.packagingConfirmation.text && (
+                    <p className={clsx("text-xs whitespace-pre-line mb-1.5", c.textSecondary)}>{order.packagingConfirmation.text}</p>
+                  )}
+                  <DeliveryTeamCard contacts={order.packagingConfirmation.deliveryContacts} compact />
                 </div>
               )}
 

@@ -28,4 +28,11 @@ export const common = {
   upload: "Upload",
   today: "Today",
   yesterday: "Yesterday",
+  deliveryCard: {
+    heading: "Our Delivery Team",
+    instructionChoose: "Choose any of them to come collect your paid parcel",
+    instructionPhoto: "Send them a picture of the sealed parcel",
+    instructionGuide: "You can also call any of them to bring you to the store if you don't know the location",
+    thanks: "Thanks for trusting Riskyc Fashion",
+  },
 };

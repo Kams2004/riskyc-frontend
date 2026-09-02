@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/apiClient";
 import { MessageCircle, X, Send, Minimize2, Paperclip, Mic, Check, CheckDouble } from "@/components/icons/fa";
 import VoiceRecorderBar from "@/components/chat/VoiceRecorderBar";
 import VoiceMessageBubble from "@/components/chat/VoiceMessageBubble";
+import DeliveryTeamCard from "@/components/shared/DeliveryTeamCard";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import clsx from "clsx";
 
@@ -263,6 +264,29 @@ export default function ChatBlob() {
                     <span className="text-white text-xs font-bold">RF</span>
                   </div>
                 )}
+                {msg.packagingConfirmation ? (
+                  // Its own styled card rather than a text bubble — a plain
+                  // bubble background would clash with the card's own.
+                  <div className="max-w-[85%] space-y-1.5">
+                    {msg.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={msg.imageUrl}
+                        alt={t("chat.widget.sharedPhotoAlt")}
+                        className="rounded-xl max-w-full max-h-48 object-cover"
+                      />
+                    )}
+                    {msg.text && (
+                      <div className="px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed bg-white text-gray-800 shadow-sm rounded-bl-md border border-gray-100">
+                        {msg.text}
+                      </div>
+                    )}
+                    <DeliveryTeamCard contacts={msg.deliveryContacts} compact />
+                    <p className="text-[10px] text-gray-400">
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                ) : (
                 <div
                   className={clsx(
                     "max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed",
@@ -308,6 +332,7 @@ export default function ChatBlob() {
                       ))}
                   </div>
                 </div>
+                )}
               </div>
             ))}
             {pendingVoiceDuration != null && (

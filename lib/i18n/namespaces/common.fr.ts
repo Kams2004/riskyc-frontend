@@ -30,4 +30,11 @@ export const common: typeof commonEn = {
   upload: "Téléverser",
   today: "Aujourd'hui",
   yesterday: "Hier",
+  deliveryCard: {
+    heading: "Notre équipe de livraison",
+    instructionChoose: "Choisissez l'un d'entre eux pour venir récupérer votre colis payé",
+    instructionPhoto: "Envoyez-lui une photo du colis scellé",
+    instructionGuide: "Vous pouvez aussi appeler n'importe lequel d'entre eux pour vous guider jusqu'au magasin si vous ne connaissez pas l'emplacement",
+    thanks: "Merci de faire confiance à Riskyc Fashion",
+  },
 };

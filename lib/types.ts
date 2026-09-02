@@ -166,6 +166,8 @@ export interface ChatMessage {
   adminSenderName?: string | null;
   /** True for the special "your order has been packaged" message — rendered as its own card on the tracking page and in the chat widget. */
   packagingConfirmation: boolean;
+  /** Non-empty only on a packagingConfirmation message — the delivery team roster frozen at send time. */
+  deliveryContacts: { name: string; phone: string }[];
   timestamp: string;
 }
 

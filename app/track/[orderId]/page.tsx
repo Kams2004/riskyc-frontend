@@ -10,6 +10,7 @@ import { Order, OrderStatus } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
 import { usePushSubscription } from "@/lib/usePushSubscription";
 import { StatusBadge } from "@/components/cart/OrdersList";
+import DeliveryTeamCard from "@/components/shared/DeliveryTeamCard";
 import {
   CheckCircle2,
   XCircle,
@@ -216,7 +217,10 @@ export default function TrackOrderPage() {
               className="rounded-xl max-h-56 w-full object-cover mb-3 border border-teal-100"
             />
           )}
-          <p className="text-sm text-teal-900 leading-relaxed whitespace-pre-line">{order.packagingConfirmation.text}</p>
+          {order.packagingConfirmation.text && (
+            <p className="text-sm text-teal-900 leading-relaxed whitespace-pre-line mb-3">{order.packagingConfirmation.text}</p>
+          )}
+          <DeliveryTeamCard contacts={order.packagingConfirmation.deliveryContacts} />
         </div>
       )}
 
