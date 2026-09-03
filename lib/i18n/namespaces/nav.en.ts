@@ -3,7 +3,7 @@ export const nav = {
   home: "Home",
   allProducts: "All Products",
   allOfCategory: "All {{category}}",
-  more: "More",
+  categories: "Categories",
   searchPlaceholder: "Search products...",
   toggleLanguage: "Toggle language",
   switchToFrench: "Switch to Français",

@@ -29,10 +29,6 @@ import { useTranslation } from "@/lib/i18n/useTranslation";
 import { localized } from "@/lib/i18n/localized";
 import clsx from "clsx";
 
-// Keeps the desktop nav row from growing unbounded as categories are added —
-// anything past this count moves into the "More" dropdown instead.
-const MAX_NAV_CATEGORIES = 5;
-
 /** Initials avatar for a logged-in customer — same visual language as the admin sidebar's "RF" badge. */
 function CustomerAvatar({ customer, size = 32 }: { customer: Customer; size?: number }) {
   const initials = `${customer.firstName[0] ?? ""}${customer.lastName[0] ?? ""}`.toUpperCase();
@@ -56,8 +52,6 @@ export default function Navbar() {
   // navigation/browsing surfaces list categories — an admin still sees them
   // in the admin panel (that list comes from useCategories() unfiltered).
   const categories = allCategories.filter((cat) => cat.productCount > 0);
-  const visibleCategories = categories.slice(0, MAX_NAV_CATEGORIES);
-  const overflowCategories = categories.slice(MAX_NAV_CATEGORIES);
   const [cartCount, setCartCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -105,14 +99,22 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Nav — overflow-x-auto + whitespace-nowrap rather than
-              letting long category names (esp. in French, or multi-word
-              names) wrap mid-item and stack into a cramped, uneven row. */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
+          {/* Desktop Nav — a fixed, small set of top-level items (Home,
+              Categories, All Products) so it always fits at any lg:+ width
+              regardless of how many categories exist or how long their
+              translated names run (French names especially). Categories
+              used to each get their own top-level slot with the overflow
+              pushed into a "More" menu, but that relied on overflow-x-auto
+              to avoid breaking layout — which, as a side effect, also
+              clipped every dropdown's panel (an overflow:auto ancestor
+              clips absolutely-positioned descendants too), so the dropdown
+              was rendered but invisible. Folding every category into one
+              dropdown removes both the scrollbar and that clipping. */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1">
             <Link
               href="/home"
               className={clsx(
-                "px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0",
+                "px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
                 pathname === "/home"
                   ? "text-brand-600 bg-brand-50"
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
@@ -121,81 +123,45 @@ export default function Navbar() {
               {t("nav.home")}
             </Link>
 
-            {visibleCategories.map((cat) => (
+            {categories.length > 0 && (
               <div
-                key={cat.id}
-                className="relative flex-shrink-0"
-                onMouseEnter={() => setActiveDropdown(cat.slug)}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <Link
-                  href={`/category/${cat.slug}`}
-                  className={clsx(
-                    "flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
-                    pathname.startsWith(`/category/${cat.slug}`)
-                      ? "text-brand-600 bg-brand-50"
-                      : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
-                  )}
-                >
-                  <span className="flex items-center"><FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={14} /></span>
-                  {localized(cat.name, cat.nameFr, language)}
-                  <ChevronDown
-                    size={14}
-                    className={clsx(
-                      "transition-transform duration-200",
-                      activeDropdown === cat.slug ? "rotate-180" : ""
-                    )}
-                  />
-                </Link>
-
-                {/* Dropdown */}
-                {activeDropdown === cat.slug && (
-                  <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
-                    {cat.subcategories.map((sub) => (
-                      <Link
-                        key={sub.id}
-                        href={`/category/${cat.slug}/${sub.slug}`}
-                        className="block px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
-                      >
-                        {localized(sub.name, sub.nameFr, language)}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {overflowCategories.length > 0 && (
-              <div
-                className="relative flex-shrink-0"
-                onMouseEnter={() => setActiveDropdown("__more")}
+                className="relative"
+                onMouseEnter={() => setActiveDropdown("__categories")}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
                 <button
                   className={clsx(
                     "flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
-                    "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
+                    pathname.startsWith("/category/")
+                      ? "text-brand-600 bg-brand-50"
+                      : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
                   )}
                 >
-                  {t("nav.more")}
+                  {t("nav.categories")}
                   <ChevronDown
                     size={14}
                     className={clsx(
                       "transition-transform duration-200",
-                      activeDropdown === "__more" ? "rotate-180" : ""
+                      activeDropdown === "__categories" ? "rotate-180" : ""
                     )}
                   />
                 </button>
 
-                {activeDropdown === "__more" && (
-                  <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
-                    {overflowCategories.map((cat) => (
+                {activeDropdown === "__categories" && (
+                  <div className="absolute top-full left-0 mt-1 w-56 max-h-[70vh] overflow-y-auto bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
+                    {categories.map((cat) => (
                       <Link
                         key={cat.id}
                         href={`/category/${cat.slug}`}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                        onClick={() => setActiveDropdown(null)}
+                        className={clsx(
+                          "flex items-center gap-2 px-4 py-2 text-sm transition-colors",
+                          pathname.startsWith(`/category/${cat.slug}`)
+                            ? "text-brand-600 bg-brand-50"
+                            : "text-gray-600 hover:text-brand-600 hover:bg-brand-50"
+                        )}
                       >
-                        <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={13} />
+                        <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={14} />
                         {localized(cat.name, cat.nameFr, language)}
                       </Link>
                     ))}
@@ -207,7 +173,7 @@ export default function Navbar() {
             <Link
               href="/"
               className={clsx(
-                "px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0",
+                "px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
                 pathname === "/"
                   ? "text-brand-600 bg-brand-50"
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
