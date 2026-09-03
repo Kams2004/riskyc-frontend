@@ -133,7 +133,7 @@ function ProductsPageInner() {
 
   // Flat list of all subcategories for the active categories (used in mobile pill row)
   const activeSubs = selectedCat.length
-    ? categories.filter((c) => selectedCat.includes(c.slug)).flatMap((c) => c.subcategories)
+    ? categories.filter((c) => selectedCat.includes(c.slug)).flatMap((c) => c.subcategories).filter((s) => s.productCount > 0)
     : [];
 
   return (
@@ -359,7 +359,7 @@ function ProductsPageInner() {
                     </label>
                     {selectedCat.includes(cat.slug) && (
                       <div className="ml-6 mt-1 space-y-1">
-                        {cat.subcategories.map((sub) => (
+                        {cat.subcategories.filter((sub) => sub.productCount > 0).map((sub) => (
                           <label
                             key={sub.slug}
                             className="flex items-center gap-2 cursor-pointer"

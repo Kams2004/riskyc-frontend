@@ -72,6 +72,8 @@ export interface Subcategory {
   slug: string;
   name: string;
   nameFr?: string | null;
+  /** Storefront-visible product count — subcategories with none should be hidden from customer-facing surfaces. */
+  productCount: number;
 }
 
 export interface Category {

@@ -73,7 +73,7 @@ export default function CategoryPageClient({ categorySlug }: { categorySlug: str
         >
           {t("products.category.allOf", { category: categoryName })}
         </Link>
-        {category.subcategories.map((sub) => (
+        {category.subcategories.filter((sub) => sub.productCount > 0).map((sub) => (
           <Link
             key={sub.id}
             href={`/category/${categorySlug}/${sub.slug}`}

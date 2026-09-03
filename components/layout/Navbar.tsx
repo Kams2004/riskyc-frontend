@@ -29,6 +29,16 @@ import { useTranslation } from "@/lib/i18n/useTranslation";
 import { localized } from "@/lib/i18n/localized";
 import clsx from "clsx";
 
+// First N categories get their own top-level nav slot (with their
+// subcategories in a hover dropdown); anything past this count moves into
+// the "More" dropdown instead, grouped in columns of the same size so that
+// list grows sideways (scrollable) instead of into one ever-taller list.
+// Kept low (rather than shrinking each item to fit) because category names
+// are admin-authored and can run long, especially once translated to
+// French — a handful of guaranteed-visible slots beats an unpredictable
+// number that depends on exactly how long today's names happen to be.
+const MAX_NAV_CATEGORIES = 3;
+
 /** Initials avatar for a logged-in customer — same visual language as the admin sidebar's "RF" badge. */
 function CustomerAvatar({ customer, size = 32 }: { customer: Customer; size?: number }) {
   const initials = `${customer.firstName[0] ?? ""}${customer.lastName[0] ?? ""}`.toUpperCase();
@@ -52,6 +62,8 @@ export default function Navbar() {
   // navigation/browsing surfaces list categories — an admin still sees them
   // in the admin panel (that list comes from useCategories() unfiltered).
   const categories = allCategories.filter((cat) => cat.productCount > 0);
+  const visibleCategories = categories.slice(0, MAX_NAV_CATEGORIES);
+  const overflowCategories = categories.slice(MAX_NAV_CATEGORIES);
   const [cartCount, setCartCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -99,22 +111,21 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Nav — a fixed, small set of top-level items (Home,
-              Categories, All Products) so it always fits at any lg:+ width
-              regardless of how many categories exist or how long their
-              translated names run (French names especially). Categories
-              used to each get their own top-level slot with the overflow
-              pushed into a "More" menu, but that relied on overflow-x-auto
-              to avoid breaking layout — which, as a side effect, also
-              clipped every dropdown's panel (an overflow:auto ancestor
-              clips absolutely-positioned descendants too), so the dropdown
-              was rendered but invisible. Folding every category into one
-              dropdown removes both the scrollbar and that clipping. */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1">
+          {/* Desktop Nav — a fixed cap of top-level items (Home + up to
+              MAX_NAV_CATEGORIES categories + More + All Products) so it
+              always fits at any lg:+ width without scrolling, regardless of
+              how many categories exist or how long their translated names
+              run (French names especially). No overflow-x-auto here — that
+              was the earlier bug: an overflow:auto ancestor clips every
+              absolutely-positioned dropdown inside it too, so a scrolling
+              nav row meant every category dropdown rendered but was never
+              visible. The "More" dropdown below has its own bounded
+              overflow instead, which only clips its own content. */}
+          <nav className="hidden lg:flex items-center gap-0.5 flex-1">
             <Link
               href="/home"
               className={clsx(
-                "px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
+                "px-3 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0",
                 pathname === "/home"
                   ? "text-brand-600 bg-brand-50"
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
@@ -123,45 +134,104 @@ export default function Navbar() {
               {t("nav.home")}
             </Link>
 
-            {categories.length > 0 && (
+            {visibleCategories.map((cat) => {
+              const subs = cat.subcategories.filter((sub) => sub.productCount > 0);
+              return (
               <div
-                className="relative"
-                onMouseEnter={() => setActiveDropdown("__categories")}
+                key={cat.id}
+                className="relative flex-shrink-0"
+                onMouseEnter={() => setActiveDropdown(cat.slug)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
-                <button
+                <Link
+                  href={`/category/${cat.slug}`}
+                  title={localized(cat.name, cat.nameFr, language)}
                   className={clsx(
-                    "flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
-                    pathname.startsWith("/category/")
+                    "flex items-center gap-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors",
+                    pathname.startsWith(`/category/${cat.slug}`)
                       ? "text-brand-600 bg-brand-50"
                       : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
                   )}
                 >
-                  {t("nav.categories")}
+                  {/* Capped rather than whitespace-nowrap alone — an admin-authored
+                      name (esp. translated to French) can otherwise be the one
+                      item that pushes the whole row past the viewport width. No
+                      icon here (kept in the dropdowns, where space is ample) —
+                      at the narrow end of the lg: range every few px counts. */}
+                  <span className="truncate max-w-[90px]">{localized(cat.name, cat.nameFr, language)}</span>
+                  {subs.length > 0 && (
+                    <ChevronDown
+                      size={14}
+                      className={clsx(
+                        "transition-transform duration-200",
+                        activeDropdown === cat.slug ? "rotate-180" : ""
+                      )}
+                    />
+                  )}
+                </Link>
+
+                {activeDropdown === cat.slug && subs.length > 0 && (
+                  <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
+                    {subs.map((sub) => (
+                      <Link
+                        key={sub.id}
+                        href={`/category/${cat.slug}/${sub.slug}`}
+                        className="block px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                      >
+                        {localized(sub.name, sub.nameFr, language)}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+              );
+            })}
+
+            {overflowCategories.length > 0 && (
+              <div
+                className="relative flex-shrink-0"
+                onMouseEnter={() => setActiveDropdown("__more")}
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
+                <button
+                  className={clsx(
+                    "flex items-center gap-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
+                    overflowCategories.some((cat) => pathname.startsWith(`/category/${cat.slug}`))
+                      ? "text-brand-600 bg-brand-50"
+                      : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
+                  )}
+                >
+                  {t("nav.more")}
                   <ChevronDown
                     size={14}
                     className={clsx(
                       "transition-transform duration-200",
-                      activeDropdown === "__categories" ? "rotate-180" : ""
+                      activeDropdown === "__more" ? "rotate-180" : ""
                     )}
                   />
                 </button>
 
-                {activeDropdown === "__categories" && (
-                  <div className="absolute top-full left-0 mt-1 w-56 max-h-[70vh] overflow-y-auto bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
-                    {categories.map((cat) => (
+                {/* Grouped in columns of MAX_NAV_CATEGORIES rows rather than
+                    one endlessly-tall list — extra categories add columns,
+                    revealed by scrolling the panel sideways. */}
+                {activeDropdown === "__more" && (
+                  <div
+                    className="absolute top-full right-0 mt-1 grid grid-flow-col gap-x-1 auto-cols-[13rem] max-w-[80vw] overflow-x-auto bg-white rounded-xl shadow-xl border border-gray-100 p-2 animate-fade-in"
+                    style={{ gridTemplateRows: `repeat(${MAX_NAV_CATEGORIES}, auto)` }}
+                  >
+                    {overflowCategories.map((cat) => (
                       <Link
                         key={cat.id}
                         href={`/category/${cat.slug}`}
                         onClick={() => setActiveDropdown(null)}
                         className={clsx(
-                          "flex items-center gap-2 px-4 py-2 text-sm transition-colors",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap",
                           pathname.startsWith(`/category/${cat.slug}`)
                             ? "text-brand-600 bg-brand-50"
                             : "text-gray-600 hover:text-brand-600 hover:bg-brand-50"
                         )}
                       >
-                        <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={14} />
+                        <FaIconPreview value={cat.icon ?? "fa:solid:tag"} size={13} />
                         {localized(cat.name, cat.nameFr, language)}
                       </Link>
                     ))}
@@ -173,7 +243,7 @@ export default function Navbar() {
             <Link
               href="/"
               className={clsx(
-                "px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap",
+                "px-3 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0",
                 pathname === "/"
                   ? "text-brand-600 bg-brand-50"
                   : "text-gray-600 hover:text-brand-600 hover:bg-gray-50"
@@ -184,7 +254,7 @@ export default function Navbar() {
           </nav>
 
           {/* Right actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 xl:gap-2">
             {/* Search */}
             <div className="relative hidden sm:block">
               {searchOpen ? (
@@ -218,14 +288,14 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Language toggle */}
+            {/* Language toggle — icon-only until xl:, where there's room for the label too */}
             <button
               onClick={() => setLanguage(language === "en" ? "fr" : "en")}
-              className="hidden sm:flex items-center gap-1 btn-ghost px-3 py-2 rounded-full text-sm font-medium"
+              className="hidden sm:flex items-center gap-1 btn-ghost px-2 xl:px-3 py-2 rounded-full text-sm font-medium"
               title={t("nav.toggleLanguage")}
             >
               <Globe size={16} />
-              <span>{language.toUpperCase()}</span>
+              <span className="hidden xl:inline">{language.toUpperCase()}</span>
             </button>
 
             {/* Download App */}
@@ -438,7 +508,7 @@ export default function Navbar() {
                     >
                       {t("nav.allOfCategory", { category: localized(cat.name, cat.nameFr, language) })}
                     </Link>
-                    {cat.subcategories.map((sub) => (
+                    {cat.subcategories.filter((sub) => sub.productCount > 0).map((sub) => (
                       <Link
                         key={sub.id}
                         href={`/category/${cat.slug}/${sub.slug}`}

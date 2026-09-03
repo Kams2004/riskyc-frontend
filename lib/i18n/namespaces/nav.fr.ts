@@ -5,7 +5,7 @@ export const nav: typeof navEn = {
   home: "Accueil",
   allProducts: "Tous les produits",
   allOfCategory: "Tout : {{category}}",
-  categories: "Catégories",
+  more: "Plus",
   searchPlaceholder: "Rechercher des produits...",
   toggleLanguage: "Changer de langue",
   switchToFrench: "Passer en Français",
