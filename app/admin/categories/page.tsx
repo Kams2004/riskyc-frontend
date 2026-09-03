@@ -27,8 +27,15 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 
+// Strips anything beyond lowercase letters/digits, not just whitespace —
+// a name with punctuation like "Pantalon/Trouser" used to turn into the
+// slug "pantalon/trouser", and since category URLs are /category/{slug},
+// that extra "/" split one path segment into two and broke the page
+// (Next.js matched the category+subcategory route instead, 404ing as
+// "Subcategory not found").
 function slugify(name: string) {
-  return name.trim().toLowerCase().replace(/\s+/g, "-");
+  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return slug || "category";
 }
 
 export default function AdminCategoriesPage() {

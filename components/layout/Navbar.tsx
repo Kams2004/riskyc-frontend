@@ -97,7 +97,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group mr-3 lg:mr-5 xl:mr-8 flex-shrink-0">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md group-hover:shadow-brand-200 transition-shadow">
               <span className="text-white font-display font-bold text-sm">RF</span>
             </div>
