@@ -105,6 +105,8 @@ export const adminOrders = {
       "This was a guest checkout with no account — it still sends to the order's tracking page and chat widget on the same device.",
     messageHintPackaging:
       "Confirm the package is ready — the delivery team's contact info is attached automatically.",
+    messageHintPackagingNoPermission:
+      "You don't have permission to send the packaging confirmation — ask whoever validated or packaged this order, or a Super Admin.",
     messagePlaceholder: "Type a message to the customer…",
     messagePackagingPlaceholder: "Optional note to include with the packaging confirmation…",
     messageSent: "✓ Message Sent!",

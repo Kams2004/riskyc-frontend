@@ -107,6 +107,8 @@ export const adminOrders: typeof adminOrdersEn = {
       "Commande passée en tant qu'invité, sans compte — le message arrive quand même sur la page de suivi et le widget de discussion sur le même appareil.",
     messageHintPackaging:
       "Confirmez que le colis est prêt — les coordonnées de l'équipe de livraison sont jointes automatiquement.",
+    messageHintPackagingNoPermission:
+      "Vous n'avez pas la permission d'envoyer la confirmation d'emballage — demandez à la personne qui a validé ou emballé cette commande, ou à un Super Admin.",
     messagePlaceholder: "Écrire un message au client…",
     messagePackagingPlaceholder: "Note facultative à joindre à la confirmation d'emballage…",
     messageSent: "✓ Message envoyé !",
