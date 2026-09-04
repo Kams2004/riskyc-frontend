@@ -94,6 +94,14 @@ export default function AdminOrderDetailPage() {
   const currentIdx = order.status === "CANCELLED" ? -1 : stepOrder.indexOf(order.status);
   const statusLocked = order.status === "VALIDATED" || order.status === "PACKAGING" || order.status === "PACKAGED";
   const packagingLocked = order.status === "PACKAGED" && !canSendPackagingMessage;
+  // While packaging is in progress, there's nothing useful to tell the
+  // customer yet — the composer re-opens once it's marked done (as the
+  // packaging-confirmation send, gated by packagingLocked above).
+  const packagingInProgress = order.status === "PACKAGING";
+  const messagingLocked = packagingInProgress || packagingLocked;
+  const lockReasonHint = packagingInProgress
+    ? t("adminOrders.detail.messageHintPackagingInProgress")
+    : t("adminOrders.detail.messageHintPackagingNoPermission");
 
   const setStatus = async (status: OrderStatus, reason?: string) => {
     if (!token) return;
@@ -139,7 +147,7 @@ export default function AdminOrderDetailPage() {
 
   const handleSendMessage = async () => {
     if ((!chatMsg.trim() && !chatImage) || !token || chatSending) return;
-    if (order.status === "PACKAGED" && !canSendPackagingMessage) return;
+    if (messagingLocked) return;
     const text = chatMsg.trim();
     const image = chatImage ?? undefined;
     setChatSending(true);
@@ -528,8 +536,10 @@ export default function AdminOrderDetailPage() {
               <h2 className={clsx("font-semibold mb-1 flex items-center gap-2", c.textPrimary)}>
                 <MessageSquare size={16} className="text-brand-500" /> {t("adminOrders.detail.messageCustomerHeading")}
               </h2>
-              <p className={clsx("text-xs mb-3", packagingLocked ? "text-amber-500 font-medium" : c.textMuted)}>
-                {order.status === "PACKAGED"
+              <p className={clsx("text-xs mb-3", messagingLocked ? "text-amber-500 font-medium" : c.textMuted)}>
+                {packagingInProgress
+                  ? t("adminOrders.detail.messageHintPackagingInProgress")
+                  : order.status === "PACKAGED"
                   ? t(packagingLocked ? "adminOrders.detail.messageHintPackagingNoPermission" : "adminOrders.detail.messageHintPackaging")
                   : order.customerId
                   ? t("adminOrders.detail.messageHintWithChat")
@@ -571,7 +581,7 @@ export default function AdminOrderDetailPage() {
                     : t("adminOrders.detail.messagePlaceholder")
                 }
                 rows={3}
-                disabled={packagingLocked}
+                disabled={messagingLocked}
                 className={clsx(
                   "w-full border rounded-xl p-3 text-sm resize-none outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
                   c.isDark
@@ -582,16 +592,16 @@ export default function AdminOrderDetailPage() {
               <div className="flex items-center gap-2 mt-2">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={packagingLocked}
-                  title={packagingLocked ? t("adminOrders.detail.messageHintPackagingNoPermission") : t("adminOrders.detail.attachPhoto")}
+                  disabled={messagingLocked}
+                  title={messagingLocked ? lockReasonHint : t("adminOrders.detail.attachPhoto")}
                   className={clsx("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-40 disabled:cursor-not-allowed", c.btnGhost)}
                 >
                   <Paperclip size={16} />
                 </button>
                 <button
                   onClick={handleSendMessage}
-                  disabled={(!chatMsg.trim() && !chatImage) || chatSending || packagingLocked}
-                  title={packagingLocked ? t("adminOrders.detail.messageHintPackagingNoPermission") : undefined}
+                  disabled={(!chatMsg.trim() && !chatImage) || chatSending || messagingLocked}
+                  title={messagingLocked ? lockReasonHint : undefined}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
                 >
                   {chatSending ? (

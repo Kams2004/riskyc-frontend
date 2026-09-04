@@ -20,6 +20,7 @@ import {
   AlertCircle,
   RotateCcw,
   MessageCircle,
+  Clock,
 } from "@/components/icons/fa";
 import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -202,6 +203,20 @@ export default function TrackOrderPage() {
           <span className="text-brand-600">{formatPrice(order.total)}</span>
         </div>
       </div>
+
+      {/* Packaged, but the admin hasn't sent the photo confirmation yet — a
+          distinct waiting state so the customer isn't left staring at a
+          "Packaged" step with nothing else on the page. */}
+      {order.status === "PACKAGED" && !order.packagingConfirmation && (
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 mb-5">
+          <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm mb-1">
+            <Clock size={16} /> {t("account.track.awaitingPackagingConfirmationHeading")}
+          </div>
+          <p className="text-sm text-amber-800/80 leading-relaxed">
+            {t("account.track.awaitingPackagingConfirmationBody")}
+          </p>
+        </div>
+      )}
 
       {/* Packaging confirmation — sent by the admin once the order is sealed, with delivery team contacts attached */}
       {order.packagingConfirmation && (

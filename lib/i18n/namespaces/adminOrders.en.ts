@@ -107,6 +107,8 @@ export const adminOrders = {
       "Confirm the package is ready — the delivery team's contact info is attached automatically.",
     messageHintPackagingNoPermission:
       "You don't have permission to send the packaging confirmation — ask whoever validated or packaged this order, or a Super Admin.",
+    messageHintPackagingInProgress:
+      "You can message the customer once packaging is marked done.",
     messagePlaceholder: "Type a message to the customer…",
     messagePackagingPlaceholder: "Optional note to include with the packaging confirmation…",
     messageSent: "✓ Message Sent!",

@@ -109,6 +109,8 @@ export const adminOrders: typeof adminOrdersEn = {
       "Confirmez que le colis est prêt — les coordonnées de l'équipe de livraison sont jointes automatiquement.",
     messageHintPackagingNoPermission:
       "Vous n'avez pas la permission d'envoyer la confirmation d'emballage — demandez à la personne qui a validé ou emballé cette commande, ou à un Super Admin.",
+    messageHintPackagingInProgress:
+      "Vous pourrez écrire au client une fois l'emballage marqué comme terminé.",
     messagePlaceholder: "Écrire un message au client…",
     messagePackagingPlaceholder: "Note facultative à joindre à la confirmation d'emballage…",
     messageSent: "✓ Message envoyé !",

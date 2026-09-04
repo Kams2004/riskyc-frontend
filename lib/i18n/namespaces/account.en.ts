@@ -91,6 +91,8 @@ export const account = {
     contactUsForHelp: "Contact us for help",
     packagingConfirmedHeading: "Your order has been packaged!",
     packagingConfirmedPhotoAlt: "Photo of your sealed parcel",
+    awaitingPackagingConfirmationHeading: "Awaiting package photo confirmation",
+    awaitingPackagingConfirmationBody: "Your order is packaged and sealed — we'll share a photo confirmation and delivery details here shortly.",
     orderSummary: "Order Summary",
     photo: "Photo {{index}}",
     total: "Total",
