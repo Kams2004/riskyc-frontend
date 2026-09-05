@@ -1,6 +1,9 @@
 # Backend lives in its own repository
 /Riskyc/
 
+# Mobile app lives in its own repository
+/riskyc-mobile/
+
 # Dependencies
 /node_modules/
 
