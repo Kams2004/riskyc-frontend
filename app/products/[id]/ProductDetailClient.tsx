@@ -3,13 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { formatPrice } from "@/lib/data";
-import { computeLineTotal } from "@/lib/pricing";
+import { computeLineTotal, computeLineBreakdown } from "@/lib/pricing";
 import { getProduct, listProducts } from "@/lib/api/products";
 import { useCategories } from "@/lib/useCategories";
 import { Product } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import ProductCard from "@/components/products/ProductCard";
-import ImageQuantityPicker, { ImageQuantitySelection } from "@/components/products/ImageQuantityPicker";
 import CheckoutFlow from "@/components/cart/CheckoutFlow";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import {
@@ -26,7 +25,9 @@ import {
   HelpCircle,
   X,
   MessageCircle,
-  ImageIcon,
+  Trash2,
+  Minus,
+  Plus,
 } from "@/components/icons/fa";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { localized } from "@/lib/i18n/localized";
@@ -99,7 +100,7 @@ function HowToOrderModal({ onClose }: { onClose: () => void }) {
 export default function ProductDetailClient({ productId }: { productId: string }) {
   const router = useRouter();
   const { t, language } = useTranslation();
-  const { addToCart, setChatOpen, setChatDraft, items: cartItems } = useStore();
+  const { addToCart, setChatOpen, setChatDraft } = useStore();
   const { categories } = useCategories();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -116,7 +117,12 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const [howToOrderOpen, setHowToOrderOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [imageQuantityOpen, setImageQuantityOpen] = useState(false);
+  // Per-photo quantity, keyed by "imageIndex::size" — this map (not the plain
+  // `qty` above) is what actually gets ordered whenever the product has
+  // photos: there is deliberately only one way to configure quantity once
+  // photos exist, so nothing here can drift out of sync with a separate
+  // color/size/qty picker.
+  const [photoQuantities, setPhotoQuantities] = useState<Record<string, { imageIndex: number; size: string; quantity: number }>>({});
 
   // Pressing the device/browser back button while the lightbox is open
   // should close it instead of navigating away from the product page.
@@ -183,10 +189,6 @@ export default function ProductDetailClient({ productId }: { productId: string }
     : null;
   const priceUnset = product.price <= 0;
   const imageCount = product.media.filter((m) => m.type === "IMAGE").length;
-  // Once the customer has added photo-specific lines for this product, the plain
-  // color/size pickers below no longer describe what's in the cart — blur them
-  // out rather than let two conflicting ways of ordering the same item coexist.
-  const hasPhotoBasedSelection = cartItems.some((i) => i.product.id === product.id && i.selectedImageIndex != null);
   const categoryInfo = categories.find((c) => c.slug === product.categorySlug);
   const subcategoryInfo = categoryInfo?.subcategories.find((s) => s.slug === product.subcategorySlug);
   const name = localized(product.name, product.nameFr, language);
@@ -195,31 +197,54 @@ export default function ProductDetailClient({ productId }: { productId: string }
     ? localized(subcategoryInfo.name, subcategoryInfo.nameFr, language)
     : (product.subcategorySlug ?? "").replace("-", " ");
 
+  // ── Per-photo quantity — the only way to configure quantity once the
+  // product has photos (see photoQuantities above). Keyed by image index +
+  // size so the same photo can carry different quantities per size.
+  const photoSelectionKey = (imageIndex: number, size: string) => `${imageIndex}::${size}`;
+  const setPhotoQty = (imageIndex: number, size: string, quantity: number) => {
+    setPhotoQuantities((prev) => {
+      const key = photoSelectionKey(imageIndex, size);
+      const next = { ...prev };
+      if (quantity <= 0) delete next[key];
+      else next[key] = { imageIndex, size, quantity };
+      return next;
+    });
+  };
+  const photoSelections = Object.values(photoQuantities).sort(
+    (a, b) => a.imageIndex - b.imageIndex || a.size.localeCompare(b.size)
+  );
+  const photoTotalItems = photoSelections.reduce((s, x) => s + x.quantity, 0);
+  const photoTotalPrice = photoSelections.reduce((s, x) => s + computeLineTotal(product.price, product.bulkPrices, x.quantity), 0);
+  const activePhotoKey = photoSelectionKey(imgIdx, selectedSize);
+  const activePhotoQty = photoQuantities[activePhotoKey]?.quantity ?? 0;
+  // Nothing configured yet — the order buttons stay disabled until at least
+  // one photo has a quantity set, even for someone who lands straight on
+  // this page (e.g. from a shared link) without touching anything first.
+  const nothingConfigured = imageCount > 0 && photoSelections.length === 0;
+
   const handleAddToCart = () => {
-    if (priceUnset) return;
-    addToCart({ product, quantity: qty, selectedColor, selectedSize });
+    if (priceUnset || nothingConfigured) return;
+    if (imageCount > 0) {
+      for (const sel of photoSelections) {
+        addToCart({ product, quantity: sel.quantity, selectedColor, selectedSize: sel.size || undefined, selectedImageIndex: sel.imageIndex });
+      }
+    } else {
+      addToCart({ product, quantity: qty, selectedColor, selectedSize });
+    }
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const handleOrderNow = () => {
-    if (priceUnset) return;
-    addToCart({ product, quantity: qty, selectedColor, selectedSize });
-    setCheckoutOpen(true);
-  };
-
-  const handleImageQuantityConfirm = (selections: ImageQuantitySelection[]) => {
-    for (const sel of selections) {
-      addToCart({
-        product,
-        quantity: sel.quantity,
-        selectedColor: "",
-        selectedSize: sel.size ?? "",
-        selectedImageIndex: sel.imageIndex,
-      });
+    if (priceUnset || nothingConfigured) return;
+    if (imageCount > 0) {
+      for (const sel of photoSelections) {
+        addToCart({ product, quantity: sel.quantity, selectedColor, selectedSize: sel.size || undefined, selectedImageIndex: sel.imageIndex });
+      }
+    } else {
+      addToCart({ product, quantity: qty, selectedColor, selectedSize });
     }
-    setImageQuantityOpen(false);
-    router.push("/cart");
+    setCheckoutOpen(true);
   };
 
   const handleWhatsApp = () => {
@@ -457,122 +482,249 @@ export default function ProductDetailClient({ productId }: { productId: string }
             )}
           </div>
 
-          {/* Once photo-specific lines exist in the cart for this product, the plain color/size
-              pickers below no longer reflect what's actually in the cart — blur + disable them
-              rather than let the customer set up a second, conflicting selection by mistake. */}
-          <div className={clsx(hasPhotoBasedSelection && "blur-[2px] opacity-60 pointer-events-none select-none")}>
-            {/* Color */}
-            {product.colors.length > 0 && (
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-700">
-                    {t("products.detail.colorLabel")} <span className="text-brand-600">{selectedColor}</span>
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {product.colors.map((color) => (
-                    <button
-                      key={color.name}
-                      title={color.name}
-                      onClick={() => setSelectedColor(color.name)}
-                      className={clsx(
-                        "flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
-                        selectedColor === color.name
-                          ? "border-brand-500 bg-brand-50 text-brand-700"
-                          : "border-gray-200 hover:border-brand-300 text-gray-700"
-                      )}
-                    >
-                      <span className="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
-                      {color.name}
-                      {selectedColor === color.name && <Check size={14} className="text-brand-500" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Sizes */}
-            {product.sizes && (
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-700">
-                    {t("products.detail.sizeLabel")} <span className="text-brand-600">{selectedSize}</span>
-                  </span>
-                  <button className="text-xs text-brand-500 underline">{t("products.detail.sizeGuide")}</button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {product.sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={clsx(
-                        "min-w-[44px] px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
-                        selectedSize === size
-                          ? "border-brand-500 bg-brand-500 text-white"
-                          : "border-gray-200 hover:border-brand-300 text-gray-700"
-                      )}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {hasPhotoBasedSelection && (
-            <p className="-mt-3 mb-5 text-xs text-gray-400 italic">
-              {t("products.detail.photoSpecificNotice")}
-            </p>
-          )}
-
-          {/* Configure quantity/size per photo — the primary way to configure this product, so it's styled as a solid primary action rather than a secondary option */}
-          {imageCount > 0 && (
+          {/* Color — independent of the per-photo configuration below, applied to every line it adds */}
+          {product.colors.length > 0 && (
             <div className="mb-5">
-              <button
-                onClick={() => setImageQuantityOpen(true)}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-600 shadow-lg shadow-brand-500/20 transition-all text-left group"
-              >
-                <span className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white flex-shrink-0">
-                  <ImageIcon size={18} />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-gray-700">
+                  {t("products.detail.colorLabel")} <span className="text-brand-600">{selectedColor}</span>
                 </span>
-                <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-semibold text-white">{t("products.detail.chooseQuantityByPhoto")}</span>
-                  <span className="block text-xs text-white/75">{t("products.detail.chooseQuantityByPhotoHint")}</span>
-                </span>
-                <ChevronRight size={16} className="text-white/70 flex-shrink-0" />
-              </button>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {product.colors.map((color) => (
+                  <button
+                    key={color.name}
+                    title={color.name}
+                    onClick={() => setSelectedColor(color.name)}
+                    className={clsx(
+                      "flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
+                      selectedColor === color.name
+                        ? "border-brand-500 bg-brand-50 text-brand-700"
+                        : "border-gray-200 hover:border-brand-300 text-gray-700"
+                    )}
+                  >
+                    <span className="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
+                    {color.name}
+                    {selectedColor === color.name && <Check size={14} className="text-brand-500" />}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Quantity */}
-          <div className="mb-6">
-            <span className="text-sm font-semibold text-gray-700 block mb-2">{t("products.detail.quantity")}</span>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
-                <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">−</button>
-                <span className="w-12 text-center font-semibold text-gray-900">{qty}</span>
-                <button onClick={() => setQty(qty + 1)} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">+</button>
+          {imageCount > 0 ? (
+            <>
+              {/* Size — sets the size for whichever photo is currently shown large above */}
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">
+                      {t("products.detail.sizeLabel")} <span className="text-brand-600">{selectedSize}</span>
+                    </span>
+                    <button className="text-xs text-brand-500 underline">{t("products.detail.sizeGuide")}</button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={clsx(
+                          "min-w-[44px] px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
+                          selectedSize === size
+                            ? "border-brand-500 bg-brand-500 text-white"
+                            : "border-gray-200 hover:border-brand-300 text-gray-700"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Quantity for the active photo (+ size, if any) — this, not a
+                  separate modal, is now the only way to set how many of this
+                  product to order: switch photos using the gallery above,
+                  the count below always tracks whichever one is showing. */}
+              <div className="mb-5 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold text-gray-700">
+                    {t("products.picker.photo", { n: imgIdx + 1 })}
+                    {selectedSize && <span className="text-gray-400"> · {selectedSize}</span>}
+                  </span>
+                  {activePhotoQty > 0 && (
+                    <span className="bg-brand-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                      {t("products.picker.selected", { count: activePhotoQty })}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setPhotoQty(imgIdx, selectedSize, activePhotoQty - 1)}
+                    disabled={activePhotoQty === 0}
+                    className="w-11 h-11 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-brand-300 hover:text-brand-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:text-gray-600 transition-colors bg-white"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="w-10 text-center text-2xl font-bold text-gray-900 tabular-nums">{activePhotoQty}</span>
+                  <button
+                    onClick={() => setPhotoQty(imgIdx, selectedSize, activePhotoQty + 1)}
+                    className="w-11 h-11 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-colors bg-white"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                {!priceUnset && activePhotoQty > 0 && (() => {
+                  const { parts } = computeLineBreakdown(product.price, product.bulkPrices, activePhotoQty);
+                  if (parts.length === 0 || (parts.length === 1 && parts[0].kind === "unit")) return null;
+                  return (
+                    <p className="text-[11px] text-gray-400 mt-2">
+                      {parts
+                        .map((p) =>
+                          p.kind === "bulk"
+                            ? `${p.count} × (${p.tierQuantity} = ${formatPrice(p.tierPrice ?? 0)})`
+                            : `${p.count} × ${formatPrice(product.price)}`
+                        )
+                        .join(" + ")}
+                    </p>
+                  );
+                })()}
+                <p className="text-xs text-gray-400 mt-2">
+                  {product.sizes && product.sizes.length > 0 ? t("products.picker.hintWithSize") : t("products.picker.hintNoSize")}
+                </p>
               </div>
-              <span className="text-sm text-gray-400">
-                {t("products.detail.total")}{" "}
-                <span className="text-brand-600 font-bold">
-                  {priceUnset ? "—" : formatPrice(computeLineTotal(product.price, product.bulkPrices, qty))}
-                </span>
-              </span>
-            </div>
-          </div>
+
+              {/* Recap of every photo configured so far — editable inline, no modal/cart trip needed */}
+              {photoSelections.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+                    {photoSelections.length === 1
+                      ? t("products.picker.yourSelectionOne", { count: photoSelections.length })
+                      : t("products.picker.yourSelectionOther", { count: photoSelections.length })}
+                  </p>
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {photoSelections.map((sel) => {
+                      const media = product.media[sel.imageIndex];
+                      const key = photoSelectionKey(sel.imageIndex, sel.size);
+                      const lineTotal = computeLineTotal(product.price, product.bulkPrices, sel.quantity);
+                      return (
+                        <div key={key} className="flex items-center gap-3 bg-gray-50 rounded-xl p-2.5">
+                          <button
+                            onClick={() => {
+                              setImgIdx(sel.imageIndex);
+                              if (sel.size) setSelectedSize(sel.size);
+                            }}
+                            className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={media?.presignedUrl} alt="" className="w-full h-full object-cover" />
+                          </button>
+                          <span className="flex-1 min-w-0 text-sm text-gray-600 truncate">
+                            {t("products.picker.photo", { n: sel.imageIndex + 1 })}
+                            {sel.size && <span className="text-gray-400"> · {sel.size}</span>}
+                            {!priceUnset && <span className="block text-xs font-semibold text-brand-600">{formatPrice(lineTotal)}</span>}
+                          </span>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              onClick={() => setPhotoQty(sel.imageIndex, sel.size, sel.quantity - 1)}
+                              className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors"
+                            >
+                              <Minus size={12} />
+                            </button>
+                            <span className="w-6 text-center text-sm font-semibold tabular-nums">{sel.quantity}</span>
+                            <button
+                              onClick={() => setPhotoQty(sel.imageIndex, sel.size, sel.quantity + 1)}
+                              className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors"
+                            >
+                              <Plus size={12} />
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => setPhotoQty(sel.imageIndex, sel.size, 0)}
+                            title={t("products.picker.remove")}
+                            className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {!priceUnset && (
+                    <p className="text-right text-sm mt-2">
+                      {t("products.detail.total")}{" "}
+                      <span className="text-brand-600 font-bold">{formatPrice(photoTotalPrice)}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {nothingConfigured && (
+                <p className="mb-5 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5">
+                  {t("products.detail.photoConfigureFirst")}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Sizes — products with no photos fall back to one blanket size/quantity */}
+              {product.sizes && (
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">
+                      {t("products.detail.sizeLabel")} <span className="text-brand-600">{selectedSize}</span>
+                    </span>
+                    <button className="text-xs text-brand-500 underline">{t("products.detail.sizeGuide")}</button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={clsx(
+                          "min-w-[44px] px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
+                          selectedSize === size
+                            ? "border-brand-500 bg-brand-500 text-white"
+                            : "border-gray-200 hover:border-brand-300 text-gray-700"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Quantity */}
+              <div className="mb-6">
+                <span className="text-sm font-semibold text-gray-700 block mb-2">{t("products.detail.quantity")}</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
+                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">−</button>
+                    <span className="w-12 text-center font-semibold text-gray-900">{qty}</span>
+                    <button onClick={() => setQty(qty + 1)} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">+</button>
+                  </div>
+                  <span className="text-sm text-gray-400">
+                    {t("products.detail.total")}{" "}
+                    <span className="text-brand-600 font-bold">
+                      {priceUnset ? "—" : formatPrice(computeLineTotal(product.price, product.bulkPrices, qty))}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* ── Action buttons ── */}
           <div className="flex gap-3 mb-3">
             {/* Add to Cart — usable even when out of stock (we'll follow up once restocked) */}
             <button
               onClick={handleAddToCart}
-              disabled={priceUnset}
-              title={priceUnset ? t("products.detail.contactForPricingTitle") : undefined}
+              disabled={priceUnset || nothingConfigured}
+              title={priceUnset ? t("products.detail.contactForPricingTitle") : nothingConfigured ? t("products.detail.photoConfigureFirst") : undefined}
               className={clsx(
                 "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-base transition-all",
-                priceUnset
+                priceUnset || nothingConfigured
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                   : addedToCart ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-gray-800 text-white"
               )}
@@ -580,14 +732,14 @@ export default function ProductDetailClient({ productId }: { productId: string }
               {addedToCart ? <><Check size={20} /> {t("products.card.added")}</> : <><ShoppingCart size={20} /> {t("products.card.addToCart")}</>}
             </button>
 
-            {/* Order Now — opens checkout modal */}
+            {/* Order Now — adds the configured line(s) to cart, then opens checkout directly */}
             <button
               onClick={handleOrderNow}
-              disabled={priceUnset}
-              title={priceUnset ? t("products.detail.contactForPricingTitle") : undefined}
+              disabled={priceUnset || nothingConfigured}
+              title={priceUnset ? t("products.detail.contactForPricingTitle") : nothingConfigured ? t("products.detail.photoConfigureFirst") : undefined}
               className={clsx(
                 "flex-1 btn-primary py-3.5 rounded-2xl text-base",
-                priceUnset && "opacity-50 cursor-not-allowed"
+                (priceUnset || nothingConfigured) && "opacity-50 cursor-not-allowed"
               )}
             >
               <Zap size={20} /> {t("products.detail.orderNow")}
@@ -769,15 +921,6 @@ export default function ProductDetailClient({ productId }: { productId: string }
       {/* How to Order modal */}
       {howToOrderOpen && (
         <HowToOrderModal onClose={() => setHowToOrderOpen(false)} />
-      )}
-
-      {/* Quantity-by-photo modal */}
-      {imageQuantityOpen && (
-        <ImageQuantityPicker
-          product={product}
-          onClose={() => setImageQuantityOpen(false)}
-          onConfirm={handleImageQuantityConfirm}
-        />
       )}
     </div>
   );

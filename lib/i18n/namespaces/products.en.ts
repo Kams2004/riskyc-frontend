@@ -56,10 +56,7 @@ export const products = {
     colorLabel: "Color:",
     sizeLabel: "Size:",
     sizeGuide: "Size Guide",
-    photoSpecificNotice:
-      "You've added photo-specific items to your cart — color/size selection above is disabled to avoid mixing the two.",
-    chooseQuantityByPhoto: "Choose size & quantity",
-    chooseQuantityByPhotoHint: "Set the quantity and size for each photo/variant",
+    photoConfigureFirst: "Pick a photo above, then set a size and quantity for it before ordering.",
     quantity: "Quantity",
     total: "Total:",
     contactForPricingTitle: "Contact us to get a price for this product",

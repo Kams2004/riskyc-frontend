@@ -58,10 +58,7 @@ export const products: typeof productsEn = {
     colorLabel: "Couleur :",
     sizeLabel: "Taille :",
     sizeGuide: "Guide des tailles",
-    photoSpecificNotice:
-      "Vous avez ajouté des articles liés à une photo dans votre panier — la sélection couleur/taille ci-dessus est désactivée pour éviter de mélanger les deux.",
-    chooseQuantityByPhoto: "Choisir taille et quantité",
-    chooseQuantityByPhotoHint: "Définissez la quantité et la taille pour chaque photo/variante",
+    photoConfigureFirst: "Choisissez une photo ci-dessus, puis définissez une taille et une quantité avant de commander.",
     quantity: "Quantité",
     total: "Total :",
     contactForPricingTitle: "Contactez-nous pour obtenir un prix pour ce produit",
