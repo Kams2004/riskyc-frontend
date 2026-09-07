@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { formatPrice } from "@/lib/data";
-import { computeLineTotal, computeLineBreakdown } from "@/lib/pricing";
+import { computeLineTotal, computeLineBreakdown, allocateGroupedLineTotals } from "@/lib/pricing";
 import { getProduct, listProducts } from "@/lib/api/products";
 import { useCategories } from "@/lib/useCategories";
 import { Product } from "@/lib/types";
@@ -214,7 +214,11 @@ export default function ProductDetailClient({ productId }: { productId: string }
     (a, b) => a.imageIndex - b.imageIndex || a.size.localeCompare(b.size)
   );
   const photoTotalItems = photoSelections.reduce((s, x) => s + x.quantity, 0);
-  const photoTotalPrice = photoSelections.reduce((s, x) => s + computeLineTotal(product.price, product.bulkPrices, x.quantity), 0);
+  // Bulk-tier pricing is pooled across every configured photo/size of this
+  // product — 2 + 3 + 5 units spread across three photos still qualifies
+  // for a 10-unit tier, matching exactly what checkout will charge.
+  const photoLineTotals = allocateGroupedLineTotals(product.price, product.bulkPrices, photoSelections.map((x) => x.quantity));
+  const photoTotalPrice = photoLineTotals.reduce((s, x) => s + x, 0);
   const activePhotoKey = photoSelectionKey(imgIdx, selectedSize);
   const activePhotoQty = photoQuantities[activePhotoKey]?.quantity ?? 0;
   // Nothing configured yet — the order buttons stay disabled until at least
@@ -603,10 +607,10 @@ export default function ProductDetailClient({ productId }: { productId: string }
                       : t("products.picker.yourSelectionOther", { count: photoSelections.length })}
                   </p>
                   <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    {photoSelections.map((sel) => {
+                    {photoSelections.map((sel, i) => {
                       const media = product.media[sel.imageIndex];
                       const key = photoSelectionKey(sel.imageIndex, sel.size);
-                      const lineTotal = computeLineTotal(product.price, product.bulkPrices, sel.quantity);
+                      const lineTotal = photoLineTotals[i] ?? 0;
                       return (
                         <div key={key} className="flex items-center gap-3 bg-gray-50 rounded-xl p-2.5">
                           <button

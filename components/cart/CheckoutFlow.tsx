@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { formatPrice } from "@/lib/data";
-import { computeLineTotal } from "@/lib/pricing";
 import * as ordersApi from "@/lib/api/orders";
 import { PaymentMethod, Order, CustomerInfo, DeliveryType } from "@/lib/types";
 import { StatusBadge } from "@/components/cart/OrdersList";
@@ -41,7 +40,7 @@ type Step = "method" | "awaiting" | "info" | "confirmed";
 
 export default function CheckoutFlow({ orderId, onClose }: Props) {
   const router = useRouter();
-  const { items, getCartTotal, clearCart, setChatOpen, customer } = useStore();
+  const { items, getCartTotal, getLineTotal, clearCart, setChatOpen, customer } = useStore();
   const { t, language } = useTranslation();
 
   const [order, setOrder] = useState<Order | null>(null);
@@ -311,7 +310,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                         {" · ×"}{item.quantity}
                       </p>
                     </div>
-                    <span className="text-sm font-semibold text-brand-600 flex-shrink-0">{formatPrice(computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity))}</span>
+                    <span className="text-sm font-semibold text-brand-600 flex-shrink-0">{formatPrice(getLineTotal(item))}</span>
                   </div>
                 ))}
               </div>

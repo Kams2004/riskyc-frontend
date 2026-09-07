@@ -63,6 +63,7 @@ export const adminOps = {
     deleteUserMessage: "This will permanently delete \"{{name}}\" ({{email}}). This cannot be undone.",
     failedSaveUser: "Failed to save user",
     failedDeleteUser: "Failed to delete user",
+    cannotDeleteSelf: "You can't delete your own account — ask another admin to remove it if needed.",
   },
   roles: {
     editRole: "Edit Role",

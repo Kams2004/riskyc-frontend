@@ -2,7 +2,6 @@
 
 import { useStore } from "@/lib/store";
 import { formatPrice } from "@/lib/data";
-import { computeLineTotal } from "@/lib/pricing";
 import { Trash2, ShoppingBag, Plus, Minus, ArrowRight } from "@/components/icons/fa";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { localized } from "@/lib/i18n/localized";
@@ -13,7 +12,7 @@ interface Props {
 }
 
 export default function CartItems({ onCheckout }: Props) {
-  const { items, removeFromCart, updateQuantity, getCartTotal, clearCart } =
+  const { items, removeFromCart, updateQuantity, getCartTotal, getLineTotal, clearCart } =
     useStore();
   const { t, language } = useTranslation();
 
@@ -38,7 +37,7 @@ export default function CartItems({ onCheckout }: Props) {
 
   const total = getCartTotal();
   const bulkSavings = items.reduce((sum, item) => {
-    const actual = computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity);
+    const actual = getLineTotal(item);
     const undiscounted = item.product.price * item.quantity;
     return sum + Math.max(0, undiscounted - actual);
   }, 0);
@@ -59,7 +58,9 @@ export default function CartItems({ onCheckout }: Props) {
           </button>
         </div>
 
-        {items.map((item) => (
+        {items.map((item) => {
+          const lineTotal = getLineTotal(item);
+          return (
           <div
             key={`${item.product.id}-${item.selectedColor}-${item.selectedSize}-${item.selectedImageIndex ?? ""}`}
             className="card p-4 flex gap-4 border border-gray-100 animate-fade-in"
@@ -157,11 +158,11 @@ export default function CartItems({ onCheckout }: Props) {
                 {/* Price */}
                 <div className="text-right">
                   <div className="font-bold text-brand-600 text-base">
-                    {formatPrice(computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity))}
+                    {formatPrice(lineTotal)}
                   </div>
                   {item.quantity > 1 && (
                     <div className="text-xs text-gray-400">
-                      {formatPrice(computeLineTotal(item.product.price, item.product.bulkPrices, item.quantity) / item.quantity)} {t("cart.items.each")}
+                      {formatPrice(lineTotal / item.quantity)} {t("cart.items.each")}
                     </div>
                   )}
                 </div>
@@ -179,7 +180,8 @@ export default function CartItems({ onCheckout }: Props) {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {/* Add more articles */}
         <Link

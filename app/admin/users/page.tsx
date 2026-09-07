@@ -626,13 +626,23 @@ export default function AdminUsersPage() {
                               >
                                 <Pencil size={11} /> {t("adminOps.users.edit")}
                               </button>
-                              <button
-                                onClick={() => askDeleteUser(u)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                              >
-                                <Trash2 size={11} />
-                                {t("adminOps.users.delete")}
-                              </button>
+                              {u.id === session?.id ? (
+                                <span
+                                  className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold", c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-400")}
+                                  title={t("adminOps.users.cannotDeleteSelf")}
+                                >
+                                  <Lock size={11} />
+                                  {t("adminOps.users.delete")}
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => askDeleteUser(u)}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                                >
+                                  <Trash2 size={11} />
+                                  {t("adminOps.users.delete")}
+                                </button>
+                              )}
                             </div>
                           </td>
                         )}

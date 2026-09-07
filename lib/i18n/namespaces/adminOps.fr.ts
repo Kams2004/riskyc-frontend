@@ -65,6 +65,7 @@ export const adminOps: typeof adminOpsEn = {
     deleteUserMessage: "« {{name}} » ({{email}}) sera définitivement supprimé. Cette action est irréversible.",
     failedSaveUser: "Échec de l'enregistrement de l'utilisateur",
     failedDeleteUser: "Échec de la suppression de l'utilisateur",
+    cannotDeleteSelf: "Vous ne pouvez pas supprimer votre propre compte — demandez à un autre administrateur de le faire si nécessaire.",
   },
   roles: {
     editRole: "Modifier le rôle",

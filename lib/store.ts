@@ -2,7 +2,36 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CartItem, Language, Customer } from "./types";
 import * as customersApi from "./api/customers";
-import { computeLineTotal } from "./pricing";
+import { allocateGroupedLineTotals } from "./pricing";
+
+/**
+ * Bulk-tier pricing is pooled across every cart line of the SAME product
+ * (different color/size/photo lines included) rather than priced per line
+ * in isolation — mirrors the backend's grouped allocation exactly, so the
+ * cart total always matches what checkout will actually charge.
+ */
+function lineKey(i: CartItem) {
+  return `${i.product.id}::${i.selectedColor}::${i.selectedSize ?? ""}::${i.selectedImageIndex ?? ""}`;
+}
+
+function computeLineTotals(items: CartItem[]): Map<string, number> {
+  const byProduct = new Map<string, CartItem[]>();
+  for (const item of items) {
+    const list = byProduct.get(item.product.id) ?? [];
+    list.push(item);
+    byProduct.set(item.product.id, list);
+  }
+  const totals = new Map<string, number>();
+  for (const group of byProduct.values()) {
+    const allocated = allocateGroupedLineTotals(
+      group[0].product.price,
+      group[0].product.bulkPrices,
+      group.map((i) => i.quantity)
+    );
+    group.forEach((item, i) => totals.set(lineKey(item), allocated[i]));
+  }
+  return totals;
+}
 
 interface CartStore {
   items: CartItem[];
@@ -18,6 +47,7 @@ interface CartStore {
   clearCart: () => void;
   getCartTotal: () => number;
   getCartCount: () => number;
+  getLineTotal: (item: CartItem) => number;
 
   // Language
   setLanguage: (lang: Language) => void;
@@ -103,11 +133,15 @@ export const useStore = create<CartStore>()(
 
       clearCart: () => set({ items: [] }),
 
-      getCartTotal: () =>
-        get().items.reduce((sum, i) => sum + computeLineTotal(i.product.price, i.product.bulkPrices, i.quantity), 0),
+      getCartTotal: () => {
+        const totals = computeLineTotals(get().items);
+        return get().items.reduce((sum, i) => sum + (totals.get(lineKey(i)) ?? 0), 0);
+      },
 
       getCartCount: () =>
         get().items.reduce((sum, i) => sum + i.quantity, 0),
+
+      getLineTotal: (item) => computeLineTotals(get().items).get(lineKey(item)) ?? 0,
 
       setLanguage: (lang) => set({ language: lang, languageInitialized: true }),
 
