@@ -95,7 +95,7 @@ export const account = {
     packagingConfirmedHeading: "Your order has been packaged!",
     packagingConfirmedPhotoAlt: "Photo of your sealed parcel",
     deliveryInstructions:
-      "You can either contact the delivery team below to arrange drop-off, or send someone to pick up the order on your behalf. Whoever picks it up will need this parcel photo and the order receipt as proof of the order.",
+      "You can contact any of the delivery team below to come collect your paid parcel, or send someone to pick it up on your behalf — whoever collects it will need this parcel photo and the order receipt as proof. You can also call any of them to be guided to the store if you don't know the location.",
     awaitingPackagingConfirmationHeading: "Awaiting package photo confirmation",
     awaitingPackagingConfirmationBody: "Your order is packaged and sealed — we'll share a photo confirmation and delivery details here shortly.",
     orderSummary: "Order Summary",

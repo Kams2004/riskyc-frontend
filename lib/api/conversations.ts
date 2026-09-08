@@ -42,6 +42,11 @@ export async function sendPackagingConfirmation(
   return res.json();
 }
 
+/** Admin-only: clears the sent packaging confirmation so a replacement can be sent (the next send still auto-attaches the current delivery-contact roster). */
+export function deletePackagingConfirmation(orderId: string, token: string) {
+  return apiFetch<void>(`/api/conversations/order/${orderId}/packaging-confirmation`, { method: "DELETE", token });
+}
+
 export function createConversation(data: { customerName: string; customerId?: string; orderId?: string }) {
   return apiFetch<Conversation>("/api/conversations", { method: "POST", body: JSON.stringify(data) });
 }

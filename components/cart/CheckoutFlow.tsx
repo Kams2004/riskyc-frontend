@@ -148,6 +148,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   const [receiptError, setReceiptError] = useState(false);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPickError, setScreenshotPickError] = useState<string | null>(null);
   const [screenshotName, setScreenshotName] = useState("");
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -223,7 +224,17 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
+    // A photo just taken with the device camera can hand back a File
+    // reference before the OS finished writing it — the picker closes but
+    // the file is empty, so the preview never renders and it looks like
+    // nothing was selected at all.
+    if (file.size === 0) {
+      setScreenshotPickError(t("cart.checkout.photoNotReadyError"));
+      return;
+    }
+    setScreenshotPickError(null);
     setScreenshotFile(file);
     setScreenshotName(file.name);
     const reader = new FileReader();
@@ -502,6 +513,9 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                     </div>
                     <p className="text-xs text-gray-500 truncate">📎 {screenshotName}</p>
                   </div>
+                )}
+                {screenshotPickError && (
+                  <p className="text-xs text-red-500 text-center mt-2">{screenshotPickError}</p>
                 )}
               </div>
 

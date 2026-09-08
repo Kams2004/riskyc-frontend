@@ -133,7 +133,7 @@ const SECTIONS: Record<"en" | "fr", PlaybookSection[]> = {
         'The "Delivery Team" button opens a roster of name + phone number, editable at any time — this list isn\'t tied to any one order.',
         'Once an order is Packaged, the message box on its detail page turns into the packaging-confirmation composer: attach a photo of the sealed parcel, write a short note, and send. The backend automatically appends a snapshot of the current delivery-team roster to that exact message, so even if the roster changes later, this order keeps the names and numbers that were current the moment it shipped. The customer sees this photo, note, and contact card on their tracking page and in the chat thread.',
       ],
-      tip: "Messaging is locked while an order sits in Packaging — there's nothing new to tell the customer yet — and re-locks after Packaged for anyone without SEND_PACKAGING_MESSAGE, even if they can otherwise manage packing.",
+      tip: "The Message Customer box only ever sends the packaging confirmation — it's locked until the order is marked Packaged (nothing to tell the customer yet), stays locked for anyone without SEND_PACKAGING_MESSAGE, and locks again once a confirmation has been sent, so a follow-up send can't silently replace the photo and delivery details already shown to the customer. Delete the sent confirmation first to send a replacement.",
     },
     {
       id: "chat",
@@ -249,7 +249,7 @@ const SECTIONS: Record<"en" | "fr", PlaybookSection[]> = {
         "Le bouton « Équipe de livraison » ouvre une liste de noms et numéros de téléphone, modifiable à tout moment — cette liste n'est liée à aucune commande en particulier.",
         "Une fois une commande Emballée, la zone de message de sa page de détail devient le compositeur de confirmation d'emballage : joignez une photo du colis scellé, rédigez une note courte, et envoyez. Le serveur ajoute automatiquement un instantané de l'équipe de livraison actuelle à ce message précis, afin que même si l'équipe change plus tard, cette commande garde les noms et numéros en vigueur au moment de l'envoi. Le client voit cette photo, cette note et cette carte de contact sur sa page de suivi et dans le fil de discussion.",
       ],
-      tip: "La messagerie est verrouillée tant qu'une commande est en Emballage — il n'y a encore rien de nouveau à dire au client — et se reverrouille après Emballée pour quiconque n'a pas SEND_PACKAGING_MESSAGE, même s'il peut par ailleurs gérer l'emballage.",
+      tip: "La zone Message au client n'envoie que la confirmation d'emballage — elle est verrouillée jusqu'à ce que la commande soit marquée Emballée (rien à dire au client avant), reste verrouillée pour quiconque n'a pas SEND_PACKAGING_MESSAGE, et se reverrouille une fois une confirmation envoyée, afin qu'un envoi ultérieur ne puisse pas remplacer silencieusement la photo et les informations de livraison déjà montrées au client. Supprimez la confirmation envoyée pour en envoyer une nouvelle.",
     },
     {
       id: "chat",

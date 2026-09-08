@@ -55,6 +55,7 @@ export const cart = {
     copyCode: "Copy Code to Pay",
     codeCopied: "Code Copied!",
     copyFailed: "Couldn't copy automatically — select and copy the code above.",
+    photoNotReadyError: "That photo didn't come through — please try again.",
     instructionsLabel: "Instructions:",
     instructionsBefore:
       "Copy the code above, paste it into your phone's dialer exactly as shown, and press call — it already includes the amount ({{amount}}) and account (",

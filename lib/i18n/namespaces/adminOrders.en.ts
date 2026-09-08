@@ -27,6 +27,8 @@ export const adminOrders = {
     rejectConfirmLabel: "Reject",
     rejectReasonLabel: "Reason for rejection",
     rejectReasonPlaceholder: "e.g. Payment screenshot doesn't match the order total",
+    deleteConfirmationTitle: "Delete packaging confirmation?",
+    deleteConfirmationMessage: "This removes the sent photo and delivery details so you can send a replacement — the customer will no longer see the old one. The new one will still include the current delivery team roster.",
   },
   list: {
     title: "Orders",
@@ -108,14 +110,18 @@ export const adminOrders = {
     messageHintPackagingNoPermission:
       "You don't have permission to send the packaging confirmation — ask whoever validated or packaged this order, or a Super Admin.",
     messageHintPackagingInProgress:
-      "You can message the customer once packaging is marked done.",
+      "You'll be able to send the packaging confirmation once this order is marked packaged.",
+    messageHintAlreadySent:
+      "A packaging confirmation was already sent — delete it below to send a replacement.",
     messagePlaceholder: "Type a message to the customer…",
     messagePackagingPlaceholder: "Optional note to include with the packaging confirmation…",
     messageSent: "✓ Message Sent!",
     messageSendError: "Couldn't send — please try again.",
+    photoNotReadyError: "That photo didn't come through — please try again.",
     sendMessage: "Send Message",
     sendPackagingConfirmation: "Send Packaging Confirmation",
-    packagingConfirmationSent: "Packaging confirmation sent",
+    packagingConfirmationSent: "Packing confirmation sent with delivery details",
+    deleteConfirmationAndResend: "Delete & Resend",
     attachPhoto: "Attach a photo",
   },
   steps: {

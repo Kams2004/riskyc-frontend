@@ -57,6 +57,7 @@ export const cart: typeof cartEn = {
     copyCode: "Copier le code à payer",
     codeCopied: "Code copié !",
     copyFailed: "Impossible de copier automatiquement — sélectionnez et copiez le code ci-dessus.",
+    photoNotReadyError: "Cette photo n'est pas arrivée correctement — veuillez réessayer.",
     instructionsLabel: "Instructions :",
     instructionsBefore:
       "Copiez le code ci-dessus, collez-le tel quel dans le clavier d'appel de votre téléphone, puis appelez — il inclut déjà le montant ({{amount}}) et le compte (",

@@ -48,6 +48,7 @@ export default function AdminOrdersPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [validateSuccessOpen, setValidateSuccessOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -73,6 +74,8 @@ export default function AdminOrdersPage() {
       setBusyId(null);
     }
   };
+
+  const handleValidate = (orderId: string) => setStatus(orderId, "VALIDATED").then(() => setValidateSuccessOpen(true)).catch(() => {});
 
   const askReject = (orderId: string) => {
     setConfirm({
@@ -285,7 +288,7 @@ export default function AdminOrdersPage() {
                               {canManageOrders && order.status === "REVIEWING" ? (
                                 <>
                                   <button
-                                    onClick={() => setStatus(order.id, "VALIDATED").catch(() => {})}
+                                    onClick={() => handleValidate(order.id)}
                                     disabled={busyId === order.id}
                                     className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-green-500/15 text-green-600 hover:bg-green-500/25 disabled:opacity-60 disabled:cursor-not-allowed text-xs font-semibold transition-colors whitespace-nowrap"
                                   >
@@ -376,7 +379,7 @@ export default function AdminOrdersPage() {
                         {canManageOrders && order.status === "REVIEWING" && (
                           <>
                             <button
-                              onClick={() => setStatus(order.id, "VALIDATED").catch(() => {})}
+                              onClick={() => handleValidate(order.id)}
                               disabled={busyId === order.id}
                               className="flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-green-500/15 text-green-600 hover:bg-green-500/25 disabled:opacity-60 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
                             >
@@ -487,6 +490,12 @@ export default function AdminOrdersPage() {
       {scannerOpen && <OrderQrScanner onClose={() => setScannerOpen(false)} />}
       <AlertDialog title="Heads Up" message={conflictMessage} onClose={() => setConflictMessage(null)} />
       <AlertDialog title="Couldn't Update Order" message={actionError} onClose={() => setActionError(null)} />
+      <AlertDialog
+        title="Order Validated"
+        message={validateSuccessOpen ? "The order has been validated and the customer has been notified." : null}
+        onClose={() => setValidateSuccessOpen(false)}
+        variant="success"
+      />
     </AdminShell>
   );
 }

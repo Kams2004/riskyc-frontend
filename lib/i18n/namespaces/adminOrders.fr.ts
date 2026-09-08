@@ -29,6 +29,8 @@ export const adminOrders: typeof adminOrdersEn = {
     rejectConfirmLabel: "Refuser",
     rejectReasonLabel: "Motif du refus",
     rejectReasonPlaceholder: "ex. La capture d'écran du paiement ne correspond pas au total de la commande",
+    deleteConfirmationTitle: "Supprimer la confirmation d'emballage ?",
+    deleteConfirmationMessage: "Cela supprime la photo et les informations de livraison envoyées afin que vous puissiez en envoyer une nouvelle — le client ne verra plus l'ancienne. La nouvelle inclura toujours l'équipe de livraison actuelle.",
   },
   list: {
     title: "Commandes",
@@ -110,14 +112,18 @@ export const adminOrders: typeof adminOrdersEn = {
     messageHintPackagingNoPermission:
       "Vous n'avez pas la permission d'envoyer la confirmation d'emballage — demandez à la personne qui a validé ou emballé cette commande, ou à un Super Admin.",
     messageHintPackagingInProgress:
-      "Vous pourrez écrire au client une fois l'emballage marqué comme terminé.",
+      "Vous pourrez envoyer la confirmation d'emballage une fois cette commande marquée comme emballée.",
+    messageHintAlreadySent:
+      "Une confirmation d'emballage a déjà été envoyée — supprimez-la ci-dessous pour en envoyer une nouvelle.",
     messagePlaceholder: "Écrire un message au client…",
     messagePackagingPlaceholder: "Note facultative à joindre à la confirmation d'emballage…",
     messageSent: "✓ Message envoyé !",
     messageSendError: "Échec de l'envoi — veuillez réessayer.",
+    photoNotReadyError: "Cette photo n'est pas arrivée correctement — veuillez réessayer.",
     sendMessage: "Envoyer le message",
     sendPackagingConfirmation: "Envoyer la confirmation d'emballage",
-    packagingConfirmationSent: "Confirmation d'emballage envoyée",
+    packagingConfirmationSent: "Confirmation d'emballage envoyée avec les informations de livraison",
+    deleteConfirmationAndResend: "Supprimer et renvoyer",
     attachPhoto: "Joindre une photo",
   },
   steps: {

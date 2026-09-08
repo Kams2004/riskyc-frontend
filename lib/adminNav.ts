@@ -63,6 +63,14 @@ export function permissionForPath(pathname: string): Permission | null {
  * (nothing to send them to instead).
  */
 export function firstAccessibleHref(permissions: Permission[]): string {
+  // A role scoped mainly to packing (can see Packing but not the general
+  // Orders list) is better served landing directly on it than on the
+  // Dashboard overview — that overview's aggregate stats aren't very
+  // actionable for someone whose whole job is packing, even if Dashboard
+  // also happens to be granted on their role.
+  if (permissions.includes("VIEW_TREATMENT") && !permissions.includes("VIEW_ORDERS")) {
+    return "/admin/treatment";
+  }
   const first = adminNavItems.find((item) => permissions.includes(item.permission));
   return first?.href ?? "/admin";
 }

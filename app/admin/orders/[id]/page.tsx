@@ -64,9 +64,11 @@ export default function AdminOrderDetailPage() {
   const [statusError, setStatusError] = useState<string | null>(null);
   const [pendingGridStatus, setPendingGridStatus] = useState<OrderStatus | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [validateSuccessOpen, setValidateSuccessOpen] = useState(false);
   const [chatImage, setChatImage] = useState<File | null>(null);
   const [chatImagePreview, setChatImagePreview] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [deletingConfirmation, setDeletingConfirmation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -108,14 +110,21 @@ export default function AdminOrderDetailPage() {
   // acting on an order someone else packed.
   const canSendPackagingMessage = isSuperAdmin || order.packagingStartedById === adminId || hasSendPackagingMessagePermission;
   const packagingLocked = order.status === "PACKAGED" && !canSendPackagingMessage;
-  // While packaging is in progress, there's nothing useful to tell the
-  // customer yet — the composer re-opens once it's marked done (as the
-  // packaging-confirmation send, gated by packagingLocked above).
-  const packagingInProgress = order.status === "PACKAGING";
-  const messagingLocked = packagingInProgress || packagingLocked;
-  const lockReasonHint = packagingInProgress
+  // Messaging the customer through this box only exists to deliver the
+  // packaging confirmation — it's not a general pre-packaging chat (the
+  // dedicated Chat inbox covers that). Locked until the order is actually
+  // PACKAGED, and locked again once a confirmation has already been sent —
+  // otherwise a follow-up send would silently replace it (only the latest
+  // packagingConfirmation=true message is shown), burying the photo under
+  // plain text with no delivery info attached.
+  const notYetPackaged = order.status !== "PACKAGED";
+  const alreadySent = !!order.packagingConfirmation;
+  const messagingLocked = notYetPackaged || packagingLocked || alreadySent;
+  const lockReasonHint = notYetPackaged
     ? t("adminOrders.detail.messageHintPackagingInProgress")
-    : t("adminOrders.detail.messageHintPackagingNoPermission");
+    : packagingLocked
+    ? t("adminOrders.detail.messageHintPackagingNoPermission")
+    : t("adminOrders.detail.messageHintAlreadySent");
 
   const setStatus = async (status: OrderStatus, reason?: string) => {
     if (!token) return;
@@ -142,6 +151,8 @@ export default function AdminOrderDetailPage() {
     }
   };
 
+  const handleValidate = () => setStatus("VALIDATED").then(() => setValidateSuccessOpen(true)).catch(() => {});
+
   const askReject = () => {
     setConfirm({
       title: t("adminOrders.confirm.rejectTitle"),
@@ -159,10 +170,39 @@ export default function AdminOrderDetailPage() {
     });
   };
 
+  const askDeletePackagingConfirmation = () => {
+    setConfirm({
+      title: t("adminOrders.confirm.deleteConfirmationTitle"),
+      message: t("adminOrders.confirm.deleteConfirmationMessage"),
+      confirmLabel: t("adminOrders.detail.deleteConfirmationAndResend"),
+      onConfirm: async () => {
+        if (!token) return;
+        setDeletingConfirmation(true);
+        try {
+          await conversationsApi.deletePackagingConfirmation(order.id, token);
+          setOrder(await ordersApi.getOrder(order.id));
+        } finally {
+          setDeletingConfirmation(false);
+        }
+        setConfirm(null);
+      },
+    });
+  };
+
   const handlePickChatImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    // A photo just taken with the device camera can hand back a File
+    // reference before the OS has actually finished writing it — the file
+    // "selects" (the picker closes) but is empty, so nothing ever renders
+    // and it looks like the tap did nothing at all. Catch that case with a
+    // clear message instead of a silent no-op.
+    if (file.size === 0) {
+      setChatError(t("adminOrders.detail.photoNotReadyError"));
+      return;
+    }
+    setChatError(null);
     setChatImage(file);
     setChatImagePreview(URL.createObjectURL(file));
   };
@@ -181,30 +221,12 @@ export default function AdminOrderDetailPage() {
     setChatSending(true);
     setChatError(null);
     try {
-      if (order.status === "PACKAGED") {
-        // Packaging confirmation — the backend appends the delivery team's
-        // contact info automatically and this becomes findable by a guest's
-        // tracking page (GET /api/conversations/order/{orderId}).
-        await conversationsApi.sendPackagingConfirmation(order.id, token, text || undefined, image);
-        setOrder(await ordersApi.getOrder(order.id));
-      } else {
-        // Match by customerId first — that's the thread the customer's own
-        // chat widget will find and reuse. Fall back to orderId for guest
-        // orders, then create a fresh thread only if neither turns one up.
-        const existing = await conversationsApi.listConversations(token);
-        let conv = order.customerId
-          ? existing.find((cv) => cv.customerId === order.customerId)
-          : existing.find((cv) => cv.orderId === order.id);
-        if (!conv) {
-          const name = order.customerInfo ? `${order.customerInfo.firstName} ${order.customerInfo.lastName}` : "Customer";
-          conv = await conversationsApi.createConversation({ customerName: name, customerId: order.customerId ?? undefined, orderId: order.id });
-        }
-        if (image) {
-          await conversationsApi.sendImageMessage(conv.id, "ADMIN", image, text || undefined, token);
-        } else {
-          await conversationsApi.sendMessage({ conversationId: conv.id, sender: "ADMIN", text }, token);
-        }
-      }
+      // This box only ever sends the packaging confirmation now (composer
+      // is hidden unless the order is PACKAGED and none has been sent yet)
+      // — the backend appends the delivery team's contact info
+      // automatically, and this becomes findable by a guest's tracking page.
+      await conversationsApi.sendPackagingConfirmation(order.id, token, text || undefined, image);
+      setOrder(await ordersApi.getOrder(order.id));
       setChatMsg("");
       clearChatImage();
       setChatSent(true);
@@ -254,7 +276,7 @@ export default function AdminOrderDetailPage() {
 
           {canManageOrders && order.status === "REVIEWING" && (
             <div className="flex gap-3">
-              <button onClick={() => setStatus("VALIDATED").catch(() => {})} disabled={statusBusy}
+              <button onClick={handleValidate} disabled={statusBusy}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors">
                 {statusBusy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {t("adminOrders.detail.validateOrder")}
               </button>
@@ -475,7 +497,7 @@ export default function AdminOrderDetailPage() {
                 </div>
                 {canManageOrders && order.status === "REVIEWING" && (
                   <div className="flex gap-3 mt-4">
-                    <button onClick={() => setStatus("VALIDATED").catch(() => {})} disabled={statusBusy}
+                    <button onClick={handleValidate} disabled={statusBusy}
                       className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors">
                       {statusBusy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {t("adminOrders.detail.approveValidate")}
                     </button>
@@ -575,14 +597,12 @@ export default function AdminOrderDetailPage() {
               <h2 className={clsx("font-semibold mb-1 flex items-center gap-2", c.textPrimary)}>
                 <MessageSquare size={16} className="text-brand-500" /> {t("adminOrders.detail.messageCustomerHeading")}
               </h2>
-              <p className={clsx("text-xs mb-3", messagingLocked ? "text-amber-500 font-medium" : c.textMuted)}>
-                {packagingInProgress
+              <p className={clsx("text-xs mb-3", messagingLocked && !alreadySent ? "text-amber-500 font-medium" : c.textMuted)}>
+                {alreadySent
+                  ? t("adminOrders.detail.messageHintAlreadySent")
+                  : notYetPackaged
                   ? t("adminOrders.detail.messageHintPackagingInProgress")
-                  : order.status === "PACKAGED"
-                  ? t(packagingLocked ? "adminOrders.detail.messageHintPackagingNoPermission" : "adminOrders.detail.messageHintPackaging")
-                  : order.customerId
-                  ? t("adminOrders.detail.messageHintWithChat")
-                  : t("adminOrders.detail.messageHintGuest")}
+                  : t(packagingLocked ? "adminOrders.detail.messageHintPackagingNoPermission" : "adminOrders.detail.messageHintPackaging")}
               </p>
 
               {order.packagingConfirmation && (
@@ -603,65 +623,67 @@ export default function AdminOrderDetailPage() {
                     <p className={clsx("text-xs whitespace-pre-line mb-1.5", c.textSecondary)}>{order.packagingConfirmation.text}</p>
                   )}
                   <DeliveryTeamCard contacts={order.packagingConfirmation.deliveryContacts} compact />
+                  {canSendPackagingMessage && (
+                    <button
+                      onClick={askDeletePackagingConfirmation}
+                      disabled={deletingConfirmation}
+                      className="mt-2.5 flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-600 disabled:opacity-50 transition-colors"
+                    >
+                      {deletingConfirmation ? <Loader2 size={12} className="animate-spin" /> : <XIcon size={12} />}
+                      {t("adminOrders.detail.deleteConfirmationAndResend")}
+                    </button>
+                  )}
                 </div>
               )}
 
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePickChatImage} className="hidden" />
-              {chatImagePreview && (
-                <div className="relative inline-block mb-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={chatImagePreview} alt="" className="h-16 w-16 rounded-xl object-cover border border-gray-200" />
-                  <button onClick={clearChatImage} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800 text-white flex items-center justify-center shadow">
-                    <XIcon size={11} />
-                  </button>
-                </div>
-              )}
-              <textarea
-                value={chatMsg}
-                onChange={(e) => { setChatMsg(e.target.value); setChatError(null); }}
-                placeholder={
-                  order.status === "PACKAGED"
-                    ? t("adminOrders.detail.messagePackagingPlaceholder")
-                    : t("adminOrders.detail.messagePlaceholder")
-                }
-                rows={3}
-                disabled={messagingLocked}
-                className={clsx(
-                  "w-full border rounded-xl p-3 text-sm resize-none outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                  c.isDark
-                    ? "bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:border-brand-500"
-                    : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-brand-400"
-                )}
-              />
-              <div className="flex items-center gap-2 mt-2">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={messagingLocked}
-                  title={messagingLocked ? lockReasonHint : t("adminOrders.detail.attachPhoto")}
-                  className={clsx("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-40 disabled:cursor-not-allowed", c.btnGhost)}
-                >
-                  <Paperclip size={16} />
-                </button>
-                <button
-                  onClick={handleSendMessage}
-                  disabled={(!chatMsg.trim() && !chatImage) || chatSending || messagingLocked}
-                  title={messagingLocked ? lockReasonHint : undefined}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
-                >
-                  {chatSending ? (
-                    <Loader2 size={15} className="animate-spin" />
-                  ) : chatSent ? null : order.status === "PACKAGED" ? (
-                    <PackageCheck size={15} />
-                  ) : null}
-                  {chatSent
-                    ? t("adminOrders.detail.messageSent")
-                    : order.status === "PACKAGED"
-                    ? t("adminOrders.detail.sendPackagingConfirmation")
-                    : t("adminOrders.detail.sendMessage")}
-                </button>
-              </div>
-              {chatError && (
-                <p className="text-xs text-red-500 mt-2">{chatError}</p>
+              {!alreadySent && (
+                <>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePickChatImage} className="hidden" />
+                  {chatImagePreview && (
+                    <div className="relative inline-block mb-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={chatImagePreview} alt="" className="h-16 w-16 rounded-xl object-cover border border-gray-200" />
+                      <button onClick={clearChatImage} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800 text-white flex items-center justify-center shadow">
+                        <XIcon size={11} />
+                      </button>
+                    </div>
+                  )}
+                  <textarea
+                    value={chatMsg}
+                    onChange={(e) => { setChatMsg(e.target.value); setChatError(null); }}
+                    placeholder={t("adminOrders.detail.messagePackagingPlaceholder")}
+                    rows={3}
+                    disabled={messagingLocked}
+                    className={clsx(
+                      "w-full border rounded-xl p-3 text-sm resize-none outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      c.isDark
+                        ? "bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:border-brand-500"
+                        : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-brand-400"
+                    )}
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={messagingLocked}
+                      title={messagingLocked ? lockReasonHint : t("adminOrders.detail.attachPhoto")}
+                      className={clsx("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-40 disabled:cursor-not-allowed", c.btnGhost)}
+                    >
+                      <Paperclip size={16} />
+                    </button>
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={(!chatMsg.trim() && !chatImage) || chatSending || messagingLocked}
+                      title={messagingLocked ? lockReasonHint : undefined}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+                    >
+                      {chatSending ? <Loader2 size={15} className="animate-spin" /> : chatSent ? null : <PackageCheck size={15} />}
+                      {chatSent ? t("adminOrders.detail.messageSent") : t("adminOrders.detail.sendPackagingConfirmation")}
+                    </button>
+                  </div>
+                  {chatError && (
+                    <p className="text-xs text-red-500 mt-2">{chatError}</p>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -674,6 +696,12 @@ export default function AdminOrderDetailPage() {
 
       <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
       <AlertDialog title="Heads Up" message={conflictMessage} onClose={() => setConflictMessage(null)} />
+      <AlertDialog
+        title="Order Validated"
+        message={validateSuccessOpen ? "The order has been validated and the customer has been notified." : null}
+        onClose={() => setValidateSuccessOpen(false)}
+        variant="success"
+      />
     </AdminShell>
   );
 }
