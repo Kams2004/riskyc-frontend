@@ -109,7 +109,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/guide" className="hover:text-brand-400 transition-colors">
+                <Link href="/guide/customer" className="hover:text-brand-400 transition-colors">
                   {t("footer.orderingGuide")}
                 </Link>
               </li>

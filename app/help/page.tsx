@@ -43,7 +43,7 @@ export default function HelpCenterPage() {
       </div>
 
       <Link
-        href="/guide"
+        href="/guide/customer"
         className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white shadow-sm px-5 py-4 mb-8 hover:border-brand-200 transition-colors group"
       >
         <div>
