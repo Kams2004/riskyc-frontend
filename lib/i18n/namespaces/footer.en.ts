@@ -9,6 +9,8 @@ export const footer = {
   sizeGuide: "Size Guide",
   shippingPolicy: "Shipping Policy",
   returnsExchanges: "Returns & Exchanges",
+  orderingGuide: "How Ordering Works",
+  termsConditions: "Terms & Conditions",
   privacyPolicy: "Privacy Policy",
   address: "Marché Central, Douala\nPrécisément au Marché des Pommes",
   weAccept: "We accept:",

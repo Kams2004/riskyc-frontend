@@ -26,6 +26,8 @@ import { adminProducts as adminProductsEn } from "./namespaces/adminProducts.en"
 import { adminProducts as adminProductsFr } from "./namespaces/adminProducts.fr";
 import { adminOps as adminOpsEn } from "./namespaces/adminOps.en";
 import { adminOps as adminOpsFr } from "./namespaces/adminOps.fr";
+import { terms as termsEn } from "./namespaces/terms.en";
+import { terms as termsFr } from "./namespaces/terms.fr";
 
 /**
  * One namespace per feature area (see lib/i18n/namespaces/) rather than two
@@ -50,6 +52,7 @@ export const dictionaries = {
     adminOrders: adminOrdersEn,
     adminProducts: adminProductsEn,
     adminOps: adminOpsEn,
+    terms: termsEn,
   },
   fr: {
     common: commonFr,
@@ -65,6 +68,7 @@ export const dictionaries = {
     adminOrders: adminOrdersFr,
     adminProducts: adminProductsFr,
     adminOps: adminOpsFr,
+    terms: termsFr,
   },
 } satisfies Record<Language, Record<string, Record<string, unknown>>>;
 

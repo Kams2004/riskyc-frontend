@@ -109,6 +109,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/guide" className="hover:text-brand-400 transition-colors">
+                  {t("footer.orderingGuide")}
+                </Link>
+              </li>
+              <li>
                 <a href="#" className="hover:text-brand-400 transition-colors">
                   {t("footer.sizeGuide")}
                 </a>
@@ -122,6 +127,11 @@ export default function Footer() {
                 <a href="#" className="hover:text-brand-400 transition-colors">
                   {t("footer.returnsExchanges")}
                 </a>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-brand-400 transition-colors">
+                  {t("footer.termsConditions")}
+                </Link>
               </li>
               <li>
                 <a href="#" className="hover:text-brand-400 transition-colors">

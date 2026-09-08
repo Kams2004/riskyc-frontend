@@ -31,6 +31,9 @@ export const account: typeof accountEn = {
     referralCodeLabel: "Code de parrainage",
     referralCodePlaceholder: "Un code d'un ami ?",
     submit: "Créer le compte",
+    agreeToTermsBefore: "En créant un compte, vous acceptez nos ",
+    agreeToTermsLink: "Conditions générales",
+    agreeToTermsAfter: ".",
     alreadyHaveAccount: "Vous avez déjà un compte ?",
     logIn: "Connectez-vous",
     errors: {

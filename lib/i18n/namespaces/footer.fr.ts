@@ -11,6 +11,8 @@ export const footer: typeof footerEn = {
   sizeGuide: "Guide des tailles",
   shippingPolicy: "Politique de livraison",
   returnsExchanges: "Retours et échanges",
+  orderingGuide: "Comment fonctionne la commande",
+  termsConditions: "Conditions générales",
   privacyPolicy: "Politique de confidentialité",
   address: "Marché Central, Douala\nPrécisément au Marché des Pommes",
   weAccept: "Nous acceptons :",

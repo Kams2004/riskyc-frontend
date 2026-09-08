@@ -4,6 +4,8 @@ export const help: typeof helpEn = {
   page: {
     title: "Centre d'aide",
     subtitle: "Réponses aux questions fréquentes sur les commandes, le paiement et la livraison.",
+    fullGuideTitle: "Lire le guide complet de commande",
+    fullGuideSubtitle: "Chaque étape, écran par écran — de la navigation au suivi de votre livraison.",
   },
   perks: {
     fastDelivery: "Livraison rapide",

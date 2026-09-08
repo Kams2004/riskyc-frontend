@@ -29,6 +29,9 @@ export const account = {
     referralCodeLabel: "Referral Code",
     referralCodePlaceholder: "Got a code from a friend?",
     submit: "Create Account",
+    agreeToTermsBefore: "By creating an account, you agree to our ",
+    agreeToTermsLink: "Terms & Conditions",
+    agreeToTermsAfter: ".",
     alreadyHaveAccount: "Already have an account?",
     logIn: "Log in",
     errors: {

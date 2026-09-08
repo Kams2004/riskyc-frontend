@@ -2,6 +2,8 @@ export const help = {
   page: {
     title: "Help Center",
     subtitle: "Answers to common questions about orders, payment, and delivery.",
+    fullGuideTitle: "Read the full ordering guide",
+    fullGuideSubtitle: "Every screen, step by step — from browsing to tracking your delivery.",
   },
   perks: {
     fastDelivery: "Fast Delivery",

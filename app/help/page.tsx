@@ -42,6 +42,19 @@ export default function HelpCenterPage() {
         </div>
       </div>
 
+      <Link
+        href="/guide"
+        className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white shadow-sm px-5 py-4 mb-8 hover:border-brand-200 transition-colors group"
+      >
+        <div>
+          <p className="font-semibold text-sm text-gray-800 group-hover:text-brand-600 transition-colors">
+            {t("help.page.fullGuideTitle")}
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">{t("help.page.fullGuideSubtitle")}</p>
+        </div>
+        <span className="text-brand-500 text-lg flex-shrink-0">&rarr;</span>
+      </Link>
+
       <div className="space-y-3 mb-12">
         {faqs.map((item, i) => (
           <details

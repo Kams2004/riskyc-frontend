@@ -70,6 +70,7 @@ import {
   faUsers,
   faPen,
   faCheckDouble,
+  faFileLines,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faFacebookF,
@@ -154,3 +155,4 @@ export const Gift = makeIcon(faGift);
 export const Users = makeIcon(faUsers);
 export const Pencil = makeIcon(faPen);
 export const CheckDouble = makeIcon(faCheckDouble);
+export const FileText = makeIcon(faFileLines);

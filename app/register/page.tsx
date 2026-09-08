@@ -207,6 +207,14 @@ function RegisterForm() {
               </div>
             )}
 
+            <p className="text-xs text-gray-400 text-center leading-relaxed">
+              {t("account.register.agreeToTermsBefore")}
+              <Link href="/terms" className="text-brand-600 font-medium hover:underline">
+                {t("account.register.agreeToTermsLink")}
+              </Link>
+              {t("account.register.agreeToTermsAfter")}
+            </p>
+
             <button
               type="submit"
               disabled={loading}
