@@ -96,6 +96,8 @@ export const account: typeof accountEn = {
     contactUsForHelp: "Contactez-nous pour de l'aide",
     packagingConfirmedHeading: "Votre commande a été emballée !",
     packagingConfirmedPhotoAlt: "Photo de votre colis scellé",
+    deliveryInstructions:
+      "Vous pouvez contacter l'équipe de livraison ci-dessous pour organiser la remise, ou envoyer quelqu'un récupérer la commande en votre nom. La personne qui viendra la chercher devra présenter cette photo du colis ainsi que le reçu de commande comme preuve.",
     awaitingPackagingConfirmationHeading: "En attente de la photo de confirmation",
     awaitingPackagingConfirmationBody: "Votre commande est emballée et scellée — nous partagerons ici une photo de confirmation et les informations de livraison sous peu.",
     orderSummary: "Récapitulatif de la commande",

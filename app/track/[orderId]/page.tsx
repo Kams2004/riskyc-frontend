@@ -238,6 +238,7 @@ export default function TrackOrderPage() {
           {order.packagingConfirmation.text && (
             <p className="text-sm text-teal-900 leading-relaxed whitespace-pre-line mb-3">{order.packagingConfirmation.text}</p>
           )}
+          <p className="text-xs text-teal-700/80 leading-relaxed mb-3">{t("account.track.deliveryInstructions")}</p>
           <DeliveryTeamCard contacts={order.packagingConfirmation.deliveryContacts} />
         </div>
       )}
