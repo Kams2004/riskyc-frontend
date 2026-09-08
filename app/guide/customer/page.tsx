@@ -50,15 +50,15 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       id: "open",
       title: "Open a product",
       body: [
-        "Tapping any card opens its detail page: a full photo gallery, name, description, price, available colours and sizes, delivery/warranty notes, and the ordering controls covered next.",
+        "Tapping any card opens its detail page: a full picture gallery, name, description, price, available colours and sizes, delivery/warranty notes, and the ordering controls covered next.",
       ],
     },
     {
       id: "configure",
-      title: "Configure the order using the photos",
+      title: "Configure the order using the pictures",
       body: [
-        "Every photo in the gallery can become its own line of the order. Pick a colour once at the top — it applies no matter which photo is active — then work through the photos one at a time: tap a photo to make it active, choose a size for it if the product has sizes, and use the − / + buttons to set how many of that exact photo to order.",
-        'As soon as one photo has a quantity, a "Your selection" list appears below, recapping every configured photo — its thumbnail, size, quantity, and running price — each with its own −/+/remove controls, so nothing needs a trip to the cart to fix.',
+        "Every picture in the gallery can become its own line of the order. Pick a colour once at the top — it applies no matter which picture is active — then work through the pictures one at a time: tap a picture to make it active, choose a size for it if the product has sizes, and use the − / + buttons to set how many of that exact picture to order.",
+        'As soon as one picture has a quantity, a "Your selection" list appears below, recapping every configured picture — its thumbnail, size, quantity, and running price — each with its own −/+/remove controls, so nothing needs a trip to the cart to fix.',
       ],
     },
     {
@@ -67,7 +67,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       body: [
         'Products that qualify for a volume discount show it right under the price, as plain "quantity = total" tags — for example "10 = ' +
           formatPrice(50000) +
-          '". These tiers count the whole product, not one photo: split 10 units across three different photos (say 2, 3, and 5) and it still qualifies for the 10-unit tier, because the pricing engine adds up every line of that same product first, then spreads the tier price back across your lines.',
+          '". These tiers count the whole product, not one picture: split 10 units across three different pictures (say 2, 3, and 5) and it still qualifies for the 10-unit tier, because the pricing engine adds up every line of that same product first, then spreads the tier price back across your lines.',
         "Add an 11th unit as a fourth line, and ten of them stay at the bulk rate while only the new one is priced on its own — the order never falls back to charging everyone the single-unit price.",
       ],
       tip:
@@ -83,7 +83,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       id: "ask",
       title: "Ask a question about the product",
       body: [
-        'A dashed "Ask about this product" button sits near the bottom of every product page, below the delivery and returns icons. Tapping it opens the chat bubble with a message already drafted — the product\'s name, price, and photo attached — so asking about stock, sizing, or anything else takes one tap, not a fresh explanation.',
+        'A dashed "Ask about this product" button sits near the bottom of every product page, below the delivery and returns icons. Tapping it opens the chat bubble with a message already drafted — the product\'s name, price, and picture attached — so asking about stock, sizing, or anything else takes one tap, not a fresh explanation.',
       ],
     },
     {
@@ -106,7 +106,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       id: "cart-page",
       title: "Managing your cart",
       body: [
-        "The cart page has two tabs: Cart, for what you're about to buy, and My Orders, listing everything you've already placed. Each cart line shows its photo, colour, size, and photo number, with its own quantity stepper.",
+        "The cart page has two tabs: Cart, for what you're about to buy, and My Orders, listing everything you've already placed. Each cart line shows its picture, colour, size, and picture number, with its own quantity stepper.",
         'Tap + to add one more of that line, or − to remove one — taking it down to zero removes the line entirely, the same as tapping its trash icon. "Add more articles" at the bottom of the list goes back to the catalogue to add another product, and "Clear all" empties the whole cart in one action. The order summary alongside shows the subtotal, any bulk savings highlighted in green, and the final total, with a Pay Now button that starts checkout.',
       ],
     },
@@ -148,7 +148,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       title: "Creating an account, and signing in with Google",
       body: [
         "An account is never required to order — a phone number and delivery details are enough as a guest. Creating one adds three things: every order shows up automatically under My Orders, checkout pre-fills your name and phone, and you get a personal referral link and code from your Account page.",
-        'Signing up asks for a first and last name, email, an optional phone number, a password, and an optional referral code from whoever invited you. "Continue with Google" does the same thing in one tap — it only ever shares your name, email, and profile photo, and creates the account automatically the first time you use it.',
+        'Signing up asks for a first and last name, email, an optional phone number, a password, and an optional referral code from whoever invited you. "Continue with Google" does the same thing in one tap — it only ever shares your name, email, and profile picture, and creates the account automatically the first time you use it.',
       ],
     },
     {
@@ -203,15 +203,15 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       id: "open",
       title: "Ouvrir un produit",
       body: [
-        "Appuyer sur une fiche ouvre sa page détaillée : une galerie de photos complète, le nom, la description, le prix, les couleurs et tailles disponibles, les informations de livraison/garantie, et les contrôles de commande décrits ensuite.",
+        "Appuyer sur une fiche ouvre sa page détaillée : une galerie d'images complète, le nom, la description, le prix, les couleurs et tailles disponibles, les informations de livraison/garantie, et les contrôles de commande décrits ensuite.",
       ],
     },
     {
       id: "configure",
-      title: "Configurer la commande à l'aide des photos",
+      title: "Configurer la commande à l'aide des images",
       body: [
-        "Chaque photo de la galerie peut devenir sa propre ligne de commande. Choisissez une couleur une fois en haut — elle s'applique quelle que soit la photo active — puis parcourez les photos une par une : appuyez sur une photo pour la rendre active, choisissez une taille pour elle si le produit en propose, et utilisez les boutons − / + pour définir la quantité souhaitée pour cette photo précise.",
-        "Dès qu'une photo a une quantité définie, une liste « Votre sélection » apparaît en dessous, récapitulant chaque photo configurée — sa miniature, sa taille, sa quantité et son prix cumulé — chacune avec ses propres contrôles −/+/suppression, pour ne jamais avoir besoin d'un détour par le panier.",
+        "Chaque image de la galerie peut devenir sa propre ligne de commande. Choisissez une couleur une fois en haut — elle s'applique quelle que soit l'image active — puis parcourez les images une par une : appuyez sur une image pour la rendre active, choisissez une taille pour elle si le produit en propose, et utilisez les boutons − / + pour définir la quantité souhaitée pour cette image précise.",
+        "Dès qu'une image a une quantité définie, une liste « Votre sélection » apparaît en dessous, récapitulant chaque image configurée — sa miniature, sa taille, sa quantité et son prix cumulé — chacune avec ses propres contrôles −/+/suppression, pour ne jamais avoir besoin d'un détour par le panier.",
       ],
     },
     {
@@ -220,7 +220,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       body: [
         'Les produits éligibles à une remise sur volume l\'affichent juste sous le prix, sous forme d\'étiquettes simples « quantité = total » — par exemple « 10 = ' +
           formatPrice(50000) +
-          ' ». Ces paliers comptent l\'ensemble du produit, pas une seule photo : répartissez 10 unités sur trois photos différentes (par exemple 2, 3 et 5) et cela reste éligible au palier de 10 unités, car le moteur de tarification additionne d\'abord toutes les lignes de ce même produit, puis répartit le prix du palier entre vos lignes.',
+          ' ». Ces paliers comptent l\'ensemble du produit, pas une seule image : répartissez 10 unités sur trois images différentes (par exemple 2, 3 et 5) et cela reste éligible au palier de 10 unités, car le moteur de tarification additionne d\'abord toutes les lignes de ce même produit, puis répartit le prix du palier entre vos lignes.',
         "Ajoutez une 11ᵉ unité en quatrième ligne, et dix d'entre elles restent au tarif dégressif tandis que seule la nouvelle est facturée à son propre tarif — la commande ne revient jamais à facturer tout le monde au tarif unitaire simple.",
       ],
       tip:
@@ -236,7 +236,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       id: "ask",
       title: "Poser une question sur le produit",
       body: [
-        'Un bouton en pointillés « Poser une question sur ce produit » se trouve vers le bas de chaque page produit, sous les icônes de livraison et de retours. Il ouvre la bulle de chat avec un message déjà rédigé — le nom du produit, son prix et sa photo joints — pour que poser une question sur le stock, la taille ou autre chose ne prenne qu\'un geste, sans avoir à tout réexpliquer.',
+        'Un bouton en pointillés « Poser une question sur ce produit » se trouve vers le bas de chaque page produit, sous les icônes de livraison et de retours. Il ouvre la bulle de chat avec un message déjà rédigé — le nom du produit, son prix et son image joints — pour que poser une question sur le stock, la taille ou autre chose ne prenne qu\'un geste, sans avoir à tout réexpliquer.',
       ],
     },
     {
@@ -259,7 +259,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       id: "cart-page",
       title: "Gérer son panier",
       body: [
-        "La page panier comporte deux onglets : Panier, pour ce que vous êtes sur le point d'acheter, et Mes commandes, listant tout ce que vous avez déjà commandé. Chaque ligne du panier affiche sa photo, sa couleur, sa taille et son numéro de photo, avec son propre sélecteur de quantité.",
+        "La page panier comporte deux onglets : Panier, pour ce que vous êtes sur le point d'acheter, et Mes commandes, listant tout ce que vous avez déjà commandé. Chaque ligne du panier affiche son image, sa couleur, sa taille et son numéro d'image, avec son propre sélecteur de quantité.",
         "Appuyez sur + pour ajouter une unité à cette ligne, ou sur − pour en retirer une — la ramener à zéro supprime entièrement la ligne, comme appuyer sur son icône de corbeille. « Ajouter d'autres articles » en bas de la liste retourne au catalogue pour ajouter un autre produit, et « Tout effacer » vide le panier en une seule action. Le résumé de commande à côté affiche le sous-total, les éventuelles économies sur les tarifs dégressifs mises en évidence en vert, et le total final, avec un bouton Payer maintenant qui lance le paiement.",
       ],
     },
@@ -298,7 +298,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       title: "Créer un compte, et se connecter avec Google",
       body: [
         "Un compte n'est jamais requis pour commander — un numéro de téléphone et une adresse de livraison suffisent en tant qu'invité. En créer un ajoute trois choses : chaque commande apparaît automatiquement dans Mes commandes, le paiement pré-remplit votre nom et téléphone, et vous obtenez un lien et un code de parrainage personnels depuis votre page Compte.",
-        "L'inscription demande un prénom, un nom, un e-mail, un numéro de téléphone facultatif, un mot de passe, et un code de parrainage facultatif de la personne qui vous a invité. « Continuer avec Google » fait la même chose en un geste — cela ne partage jamais que votre nom, votre e-mail et votre photo de profil, et crée le compte automatiquement dès la première utilisation.",
+        "L'inscription demande un prénom, un nom, un e-mail, un numéro de téléphone facultatif, un mot de passe, et un code de parrainage facultatif de la personne qui vous a invité. « Continuer avec Google » fait la même chose en un geste — cela ne partage jamais que votre nom, votre e-mail et votre image de profil, et crée le compte automatiquement dès la première utilisation.",
       ],
     },
     {

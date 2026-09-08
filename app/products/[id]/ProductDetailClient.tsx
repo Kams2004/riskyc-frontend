@@ -262,7 +262,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
       selectedSize ? `Size: ${selectedSize}` : null,
       `Qty: ${qty}`,
       `Price: ${formatPrice(computeLineTotal(product.price, product.bulkPrices, qty))}`,
-      imageUrl ? `\nPhoto: ${imageUrl}` : null,
+      imageUrl ? `\nPicture: ${imageUrl}` : null,
       productUrl ? `Product page: ${productUrl}` : null,
     ]
       .filter((l): l is string => Boolean(l))

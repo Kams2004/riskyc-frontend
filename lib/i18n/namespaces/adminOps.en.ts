@@ -119,7 +119,7 @@ export const adminOps = {
     messageCountPlural: "{{count}} msgs",
     messagesLine: "{{count}} messages",
     adminFallbackName: "Admin",
-    sharedPhotoAlt: "Shared photo",
+    sharedPhotoAlt: "Shared picture",
     quickReplies: [
       "Your order has been validated! 🎉",
       "Your payment is being reviewed, please wait.",

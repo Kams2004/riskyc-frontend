@@ -86,7 +86,7 @@ export const home: typeof homeEn = {
         product: "Robe de soirée",
       },
       sophie: {
-        text: "L'ensemble blazer est exactement comme sur la photo, voire encore plus beau en vrai. Le paiement par Orange Money s'est fait sans le moindre souci.",
+        text: "L'ensemble blazer est exactement comme sur l'image, voire encore plus beau en vrai. Le paiement par Orange Money s'est fait sans le moindre souci.",
         product: "Ensemble blazer",
       },
       marcus: {

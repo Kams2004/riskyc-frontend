@@ -11,11 +11,11 @@ export const terms = {
 
     accountsTitle: "2. Accounts",
     accountsBody:
-      "You can browse the catalogue and place an order as a guest, with no account required — only a name, phone number, and delivery details. Creating an account additionally keeps every order you place under \"My Orders\", pre-fills your details at checkout, and gives you a personal referral link and code to share. You're responsible for keeping your password confidential and for everything done under your account. You may also create or sign in to an account using Google — this only ever shares your name, email address, and profile photo with us, nothing else from your Google account.",
+      "You can browse the catalogue and place an order as a guest, with no account required — only a name, phone number, and delivery details. Creating an account additionally keeps every order you place under \"My Orders\", pre-fills your details at checkout, and gives you a personal referral link and code to share. You're responsible for keeping your password confidential and for everything done under your account. You may also create or sign in to an account using Google — this only ever shares your name, email address, and profile picture with us, nothing else from your Google account.",
 
     ordersTitle: "3. Orders and pricing",
     ordersBody:
-      "All prices are shown in CFA francs (XAF) and can change at any time before an order is placed. A product listed without a price is marked \"Price on request\" — contact us via chat for a quote. Some products offer bulk pricing (e.g. \"10 units = 50,000 XAF\"); this discount applies to the total quantity of that product across every colour, size, and photo you configure in one order, not to each line separately. Placing an order is an offer to buy, which we're free to accept, adjust, or decline as described below.",
+      "All prices are shown in CFA francs (XAF) and can change at any time before an order is placed. A product listed without a price is marked \"Price on request\" — contact us via chat for a quote. Some products offer bulk pricing (e.g. \"10 units = 50,000 XAF\"); this discount applies to the total quantity of that product across every colour, size, and picture you configure in one order, not to each line separately. Placing an order is an offer to buy, which we're free to accept, adjust, or decline as described below.",
 
     paymentTitle: "4. Payment",
     paymentBody:
@@ -27,7 +27,7 @@ export const terms = {
 
     deliveryTitle: "6. Delivery and pickup",
     deliveryBody:
-      "Delivery within Cameroon typically takes 2–4 business days from validation, and orders above 50,000 XAF qualify for free delivery. You can choose shop pickup instead at checkout. Once your order is packaged, we send a confirmation message with a photo of the sealed parcel and the names and phone numbers of the delivery team handling it, so there's always someone to reach about the handoff.",
+      "Delivery within Cameroon typically takes 2–4 business days from validation, and orders above 50,000 XAF qualify for free delivery. You can choose shop pickup instead at checkout. Once your order is packaged, we send a confirmation message with a picture of the sealed parcel and the names and phone numbers of the delivery team handling it, so there's always someone to reach about the handoff.",
 
     returnsTitle: "7. Returns and exchanges",
     returnsBody:
@@ -47,7 +47,7 @@ export const terms = {
 
     ipTitle: "11. Intellectual property",
     ipBody:
-      "The Riskyc Fashion name, logo, and the photos, descriptions, and design of the site and app are our property or used with permission, and may not be copied or reused without asking us first.",
+      "The Riskyc Fashion name, logo, and the images, descriptions, and design of the site and app are our property or used with permission, and may not be copied or reused without asking us first.",
 
     liabilityTitle: "12. Limitation of liability",
     liabilityBody:

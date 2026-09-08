@@ -121,7 +121,7 @@ export const adminOps: typeof adminOpsEn = {
     messageCountPlural: "{{count}} msgs",
     messagesLine: "{{count}} messages",
     adminFallbackName: "Admin",
-    sharedPhotoAlt: "Photo partagée",
+    sharedPhotoAlt: "Image partagée",
     quickReplies: [
       "Votre commande a été validée ! 🎉",
       "Votre paiement est en cours de vérification, merci de patienter.",

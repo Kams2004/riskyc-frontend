@@ -13,11 +13,11 @@ export const terms: typeof termsEn = {
 
     accountsTitle: "2. Comptes",
     accountsBody:
-      "Vous pouvez parcourir le catalogue et passer une commande en tant qu'invité, sans compte requis — seuls un nom, un numéro de téléphone et une adresse de livraison sont nécessaires. Créer un compte permet en plus de retrouver toutes vos commandes dans « Mes commandes », de pré-remplir vos informations au paiement, et de vous donner un lien et un code de parrainage personnels à partager. Vous êtes responsable de la confidentialité de votre mot de passe et de tout ce qui est fait depuis votre compte. Vous pouvez aussi créer ou vous connecter à un compte via Google — cela ne partage avec nous que votre nom, votre adresse e-mail et votre photo de profil, rien d'autre de votre compte Google.",
+      "Vous pouvez parcourir le catalogue et passer une commande en tant qu'invité, sans compte requis — seuls un nom, un numéro de téléphone et une adresse de livraison sont nécessaires. Créer un compte permet en plus de retrouver toutes vos commandes dans « Mes commandes », de pré-remplir vos informations au paiement, et de vous donner un lien et un code de parrainage personnels à partager. Vous êtes responsable de la confidentialité de votre mot de passe et de tout ce qui est fait depuis votre compte. Vous pouvez aussi créer ou vous connecter à un compte via Google — cela ne partage avec nous que votre nom, votre adresse e-mail et votre image de profil, rien d'autre de votre compte Google.",
 
     ordersTitle: "3. Commandes et tarifs",
     ordersBody:
-      "Tous les prix sont affichés en francs CFA (XAF) et peuvent changer à tout moment avant qu'une commande ne soit passée. Un produit affiché sans prix est marqué « Prix sur demande » — contactez-nous via le chat pour un devis. Certains produits proposent un tarif dégressif (par exemple « 10 unités = 50 000 XAF ») ; cette remise s'applique à la quantité totale de ce produit, toutes couleurs, tailles et photos confondues configurées dans une même commande, et non à chaque ligne séparément. Passer une commande constitue une offre d'achat, que nous sommes libres d'accepter, d'ajuster ou de refuser comme décrit ci-dessous.",
+      "Tous les prix sont affichés en francs CFA (XAF) et peuvent changer à tout moment avant qu'une commande ne soit passée. Un produit affiché sans prix est marqué « Prix sur demande » — contactez-nous via le chat pour un devis. Certains produits proposent un tarif dégressif (par exemple « 10 unités = 50 000 XAF ») ; cette remise s'applique à la quantité totale de ce produit, toutes couleurs, tailles et images confondues configurées dans une même commande, et non à chaque ligne séparément. Passer une commande constitue une offre d'achat, que nous sommes libres d'accepter, d'ajuster ou de refuser comme décrit ci-dessous.",
 
     paymentTitle: "4. Paiement",
     paymentBody:
@@ -29,7 +29,7 @@ export const terms: typeof termsEn = {
 
     deliveryTitle: "6. Livraison et retrait",
     deliveryBody:
-      "La livraison au Cameroun prend généralement 2 à 4 jours ouvrés après validation, et les commandes de plus de 50 000 XAF bénéficient de la livraison gratuite. Vous pouvez choisir le retrait en boutique à la place, au moment du paiement. Une fois votre commande emballée, nous envoyons un message de confirmation avec une photo du colis scellé ainsi que les noms et numéros de téléphone de l'équipe de livraison en charge, afin qu'il y ait toujours quelqu'un à contacter au sujet de la remise.",
+      "La livraison au Cameroun prend généralement 2 à 4 jours ouvrés après validation, et les commandes de plus de 50 000 XAF bénéficient de la livraison gratuite. Vous pouvez choisir le retrait en boutique à la place, au moment du paiement. Une fois votre commande emballée, nous envoyons un message de confirmation avec une image du colis scellé ainsi que les noms et numéros de téléphone de l'équipe de livraison en charge, afin qu'il y ait toujours quelqu'un à contacter au sujet de la remise.",
 
     returnsTitle: "7. Retours et échanges",
     returnsBody:
@@ -49,7 +49,7 @@ export const terms: typeof termsEn = {
 
     ipTitle: "11. Propriété intellectuelle",
     ipBody:
-      "Le nom Riskyc Fashion, son logo, ainsi que les photos, descriptions et le design du site et de l'application sont notre propriété ou utilisés avec autorisation, et ne peuvent être copiés ou réutilisés sans notre accord préalable.",
+      "Le nom Riskyc Fashion, son logo, ainsi que les images, descriptions et le design du site et de l'application sont notre propriété ou utilisés avec autorisation, et ne peuvent être copiés ou réutilisés sans notre accord préalable.",
 
     liabilityTitle: "12. Limitation de responsabilité",
     liabilityBody:

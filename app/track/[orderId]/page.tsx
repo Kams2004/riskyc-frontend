@@ -193,7 +193,7 @@ export default function TrackOrderPage() {
                 {item.productName}
                 {item.selectedColor ? ` · ${item.selectedColor}` : ""}
                 {item.selectedSize ? ` · ${item.selectedSize}` : ""}
-                {item.selectedImageIndex != null ? ` · Photo ${item.selectedImageIndex + 1}` : ""}
+                {item.selectedImageIndex != null ? ` · Picture ${item.selectedImageIndex + 1}` : ""}
                 <span className="text-gray-400"> ×{item.quantity}</span>
               </span>
               <span className="font-medium text-gray-800 flex-shrink-0 ml-3">{formatPrice(item.unitPrice * item.quantity)}</span>

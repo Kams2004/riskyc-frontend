@@ -17,7 +17,7 @@ export const cart: typeof cartEn = {
     clearAll: "Tout vider",
     removeItem: "Retirer l'article",
     sizeLabel: "Taille : {{size}}",
-    photoLabel: "Photo {{index}}",
+    photoLabel: "Image {{index}}",
     each: "l'unité",
     addMore: "Ajouter d'autres articles",
   },
@@ -57,7 +57,7 @@ export const cart: typeof cartEn = {
     copyCode: "Copier le code à payer",
     codeCopied: "Code copié !",
     copyFailed: "Impossible de copier automatiquement — sélectionnez et copiez le code ci-dessus.",
-    photoNotReadyError: "Cette photo n'est pas arrivée correctement — veuillez réessayer.",
+    photoNotReadyError: "Cette image n'est pas arrivée correctement — veuillez réessayer.",
     instructionsLabel: "Instructions :",
     instructionsBefore:
       "Copiez le code ci-dessus, collez-le tel quel dans le clavier d'appel de votre téléphone, puis appelez — il inclut déjà le montant ({{amount}}) et le compte (",
