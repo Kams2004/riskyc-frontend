@@ -297,7 +297,6 @@ export default function ChatBlob() {
                         {msg.text}
                       </div>
                     )}
-                    <p className="text-[11px] text-gray-500 leading-relaxed px-1">{t("account.track.deliveryInstructions")}</p>
                     <DeliveryTeamCard contacts={msg.deliveryContacts} compact />
                     <p className="text-[10px] text-gray-400">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
