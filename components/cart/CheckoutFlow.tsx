@@ -7,6 +7,7 @@ import * as ordersApi from "@/lib/api/orders";
 import { PaymentMethod, Order, CustomerInfo, DeliveryType } from "@/lib/types";
 import { StatusBadge } from "@/components/cart/OrdersList";
 import { downloadReceipt } from "@/lib/generateReceipt";
+import { usePushSubscription } from "@/lib/usePushSubscription";
 import {
   X,
   Copy,
@@ -23,6 +24,7 @@ import {
   Truck,
   AlertCircle,
   Printer,
+  Bell,
 } from "@/components/icons/fa";
 import Image from "next/image";
 import Link from "next/link";
@@ -37,6 +39,55 @@ interface Props {
 }
 
 type Step = "method" | "awaiting" | "info" | "confirmed";
+
+// A separate component (not inlined into the confirmed step) so the push
+// subscription hook is only ever mounted once a real orderId exists —
+// calling it with an empty/placeholder id before the order is confirmed
+// would re-associate any push subscription already on this browser (from
+// tracking a previous order) with the wrong id.
+function PushOptIn({ orderId }: { orderId: string }) {
+  const { t } = useTranslation();
+  const { status: pushStatus, subscribe } = usePushSubscription(orderId);
+
+  if (pushStatus === "unsupported") return null;
+
+  return (
+    <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 text-left">
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center flex-shrink-0">
+          <Bell size={15} className="text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-gray-900 mb-0.5">{t("account.track.getNotified")}</p>
+          {pushStatus === "subscribed" ? (
+            <p className="text-xs text-green-700">{t("cart.checkout.notificationsEnabled")}</p>
+          ) : pushStatus === "denied" ? (
+            <p className="text-xs text-gray-500">{t("cart.checkout.notificationsBlocked")}</p>
+          ) : (
+            <>
+              <p className="text-xs text-gray-500 mb-2">{t("cart.checkout.notificationsPitch")}</p>
+              <button
+                onClick={subscribe}
+                disabled={pushStatus === "subscribing" || pushStatus === "checking"}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white text-xs font-semibold transition-colors"
+              >
+                {pushStatus === "subscribing" ? (
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Bell size={12} />
+                )}
+                {pushStatus === "subscribing" ? t("cart.checkout.enablingNotifications") : t("cart.checkout.enableNotifications")}
+              </button>
+              {pushStatus === "error" && (
+                <p className="text-[11px] text-red-500 mt-1.5">{t("cart.checkout.notificationsError")}</p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CheckoutFlow({ orderId, onClose }: Props) {
   const router = useRouter();
@@ -575,6 +626,8 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   <p className="text-sm text-red-800">{order.rejectionReason}</p>
                 </div>
               )}
+
+              {order && order.status !== "CANCELLED" && <PushOptIn orderId={order.id} />}
 
               {order && (
                 <button
