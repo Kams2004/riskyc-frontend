@@ -13,6 +13,8 @@ export const nav = {
   helpCenter: "Help Center",
   contactUs: "Contact Us",
   logOut: "Log Out",
+  logoutConfirmTitle: "Log out?",
+  logoutConfirmMessage: "You'll need to log in again to sync your orders across devices.",
   login: "Login",
   register: "Register",
 };

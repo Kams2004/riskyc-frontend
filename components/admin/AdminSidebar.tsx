@@ -10,6 +10,7 @@ import { useAdminNotificationSocket } from "@/lib/chatSocket";
 import { adminNavItems } from "@/lib/adminNav";
 import DownloadAppButton from "@/components/shared/DownloadAppButton";
 import NotificationBell from "./NotificationBell";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { Globe } from "@/components/icons/fa";
 import { useStore } from "@/lib/store";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -43,6 +44,7 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
   const logout = useAdminStore((s) => s.logout);
   const { theme, toggle } = useAdminTheme();
   const [totalUnread, setTotalUnread] = useState(0);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const isDark = theme === "dark";
   const { t } = useTranslation();
   const language = useStore((s) => s.language);
@@ -199,13 +201,31 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
 
         {/* Logout */}
         <button
-          onClick={logout}
+          onClick={() => setLogoutConfirmOpen(true)}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group text-gray-400 hover:bg-red-500/10 hover:text-red-400"
         >
           <LogOut size={18} className="text-gray-500 group-hover:text-red-400" />
           {t("adminCommon.sidebar.logout")}
         </button>
       </div>
+
+      <ConfirmDialog
+        state={
+          logoutConfirmOpen
+            ? {
+                title: t("adminCommon.sidebar.logoutConfirmTitle"),
+                message: t("adminCommon.sidebar.logoutConfirmMessage"),
+                confirmLabel: t("adminCommon.sidebar.logout"),
+                destructive: false,
+                onConfirm: () => {
+                  setLogoutConfirmOpen(false);
+                  logout();
+                },
+              }
+            : null
+        }
+        onCancel={() => setLogoutConfirmOpen(false)}
+      />
     </aside>
   );
 }

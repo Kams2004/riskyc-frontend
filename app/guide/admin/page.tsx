@@ -33,7 +33,7 @@ const ORDER_STATUSES: { label: { en: string; fr: string }; meaning: { en: string
   },
   {
     label: { en: "Validated", fr: "Validée" },
-    meaning: { en: "Payment approved — now sitting in the Treatment queue, waiting to be packed.", fr: "Paiement approuvé — en attente d'emballage dans la file Traitement." },
+    meaning: { en: "Payment approved — now sitting in the Packing queue, waiting to be packed.", fr: "Paiement approuvé — en attente d'emballage dans la file Emballage." },
     classes: "bg-green-100 text-green-700",
   },
   {
@@ -117,11 +117,11 @@ const SECTIONS: Record<"en" | "fr", PlaybookSection[]> = {
         "The order detail page has everything: the item list (photo, colour, size, which numbered image the customer picked, quantity, line price), payment info (method, USSD code used, account name, amount), the customer's shipping info, a timeline of who did what and when, and the messaging panel used for packaging confirmations.",
         'Click the payment screenshot to zoom it full-screen. From here — or from the "Reviewing" tab in the list — Validate moves the order forward, or Cancel/Reject opens a small form requiring a reason, which the customer then sees on their own tracking page.',
       ],
-      tip: 'Once an order reaches Validated, its status can no longer be hand-picked from a dropdown — the "Change status" panel disappears. From here on, progress happens only through the Treatment actions, so a stray click can\'t undo a validated or packaged order.',
+      tip: 'Once an order reaches Validated, its status can no longer be hand-picked from a dropdown — the "Change status" panel disappears. From here on, progress happens only through the Packing actions, so a stray click can\'t undo a validated or packaged order.',
     },
     {
       id: "treatment",
-      title: "Treatment & packaging",
+      title: "Packing",
       perms: [
         { key: "VIEW_TREATMENT", kind: "view" },
         { key: "MANAGE_TREATMENT", kind: "manage" },
@@ -133,7 +133,7 @@ const SECTIONS: Record<"en" | "fr", PlaybookSection[]> = {
         'The "Delivery Team" button opens a roster of name + phone number, editable at any time — this list isn\'t tied to any one order.',
         'Once an order is Packaged, the message box on its detail page turns into the packaging-confirmation composer: attach a photo of the sealed parcel, write a short note, and send. The backend automatically appends a snapshot of the current delivery-team roster to that exact message, so even if the roster changes later, this order keeps the names and numbers that were current the moment it shipped. The customer sees this photo, note, and contact card on their tracking page and in the chat thread.',
       ],
-      tip: "Messaging is locked while an order sits in Packaging — there's nothing new to tell the customer yet — and re-locks after Packaged for anyone without SEND_PACKAGING_MESSAGE, even if they can otherwise manage treatment.",
+      tip: "Messaging is locked while an order sits in Packaging — there's nothing new to tell the customer yet — and re-locks after Packaged for anyone without SEND_PACKAGING_MESSAGE, even if they can otherwise manage packing.",
     },
     {
       id: "chat",
@@ -233,11 +233,11 @@ const SECTIONS: Record<"en" | "fr", PlaybookSection[]> = {
         "La page de détail réunit tout : la liste des articles (photo, couleur, taille, numéro de l'image choisie par le client, quantité, prix de la ligne), les infos de paiement (méthode, code USSD utilisé, nom du compte, montant), les informations de livraison du client, une chronologie de qui a fait quoi et quand, et le panneau de messagerie utilisé pour les confirmations d'emballage.",
         "Cliquez sur la capture d'écran de paiement pour l'agrandir. Depuis cet endroit — ou depuis l'onglet « En vérification » de la liste — Valider fait avancer la commande, ou Annuler/Rejeter ouvre un petit formulaire demandant un motif, que le client voit ensuite sur sa propre page de suivi.",
       ],
-      tip: "Une fois qu'une commande atteint le statut Validée, son statut ne peut plus être choisi manuellement dans un menu déroulant — le panneau « Changer le statut » disparaît. À partir de là, la progression ne se fait plus que via les actions de Traitement, pour qu'un clic malencontreux ne puisse pas annuler une commande validée ou emballée.",
+      tip: "Une fois qu'une commande atteint le statut Validée, son statut ne peut plus être choisi manuellement dans un menu déroulant — le panneau « Changer le statut » disparaît. À partir de là, la progression ne se fait plus que via les actions d'Emballage, pour qu'un clic malencontreux ne puisse pas annuler une commande validée ou emballée.",
     },
     {
       id: "treatment",
-      title: "Traitement et emballage",
+      title: "Emballage",
       perms: [
         { key: "VIEW_TREATMENT", kind: "view" },
         { key: "MANAGE_TREATMENT", kind: "manage" },
@@ -249,7 +249,7 @@ const SECTIONS: Record<"en" | "fr", PlaybookSection[]> = {
         "Le bouton « Équipe de livraison » ouvre une liste de noms et numéros de téléphone, modifiable à tout moment — cette liste n'est liée à aucune commande en particulier.",
         "Une fois une commande Emballée, la zone de message de sa page de détail devient le compositeur de confirmation d'emballage : joignez une photo du colis scellé, rédigez une note courte, et envoyez. Le serveur ajoute automatiquement un instantané de l'équipe de livraison actuelle à ce message précis, afin que même si l'équipe change plus tard, cette commande garde les noms et numéros en vigueur au moment de l'envoi. Le client voit cette photo, cette note et cette carte de contact sur sa page de suivi et dans le fil de discussion.",
       ],
-      tip: "La messagerie est verrouillée tant qu'une commande est en Emballage — il n'y a encore rien de nouveau à dire au client — et se reverrouille après Emballée pour quiconque n'a pas SEND_PACKAGING_MESSAGE, même s'il peut par ailleurs gérer le traitement.",
+      tip: "La messagerie est verrouillée tant qu'une commande est en Emballage — il n'y a encore rien de nouveau à dire au client — et se reverrouille après Emballée pour quiconque n'a pas SEND_PACKAGING_MESSAGE, même s'il peut par ailleurs gérer l'emballage.",
     },
     {
       id: "chat",

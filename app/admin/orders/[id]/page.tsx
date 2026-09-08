@@ -3,6 +3,8 @@
 import AdminShell from "@/components/admin/AdminShell";
 import { useAdminStore } from "@/lib/adminStore";
 import * as ordersApi from "@/lib/api/orders";
+import { ApiError } from "@/lib/apiClient";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 import * as conversationsApi from "@/lib/api/conversations";
 import { useAdminColors } from "@/lib/useAdminColors";
 import { formatPrice } from "@/lib/data";
@@ -10,12 +12,13 @@ import { Order, OrderStatus } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import AlertDialog from "@/components/admin/AlertDialog";
 import DeliveryTeamCard from "@/components/shared/DeliveryTeamCard";
 import { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock,
   CreditCard, Package, ZoomIn, MessageSquare,
-  Truck, Paperclip, X as XIcon, PackageCheck, Loader2,
+  Truck, Paperclip, X as XIcon, PackageCheck, Loader2, AlertCircle,
 } from "lucide-react";
 import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -51,12 +54,15 @@ export default function AdminOrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [zoomImg, setZoomImg] = useState(false);
+  const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
   const [chatMsg, setChatMsg] = useState("");
   const [chatSent, setChatSent] = useState(false);
   const [chatSending, setChatSending] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [statusBusy, setStatusBusy] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [pendingGridStatus, setPendingGridStatus] = useState<OrderStatus | null>(null);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [chatImage, setChatImage] = useState<File | null>(null);
   const [chatImagePreview, setChatImagePreview] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -113,11 +119,25 @@ export default function AdminOrderDetailPage() {
   const setStatus = async (status: OrderStatus, reason?: string) => {
     if (!token) return;
     setStatusBusy(true);
+    setStatusError(null);
+    setPendingGridStatus(status);
     try {
       const updated = await ordersApi.updateOrderStatus(order.id, status, token, reason);
       setOrder(updated);
+    } catch (e) {
+      // Someone else changed this order between when the page loaded and
+      // this click — a popup is harder to miss than a banner, and reloads
+      // the order so the page reflects what actually happened.
+      if (e instanceof ApiError && e.status === 409) {
+        setConflictMessage(e.message);
+        ordersApi.getOrder(order.id).then(setOrder).catch(() => {});
+      } else {
+        setStatusError(e instanceof ApiError ? e.message : "Something went wrong. Please try again.");
+      }
+      throw e;
     } finally {
       setStatusBusy(false);
+      setPendingGridStatus(null);
     }
   };
 
@@ -200,6 +220,13 @@ export default function AdminOrderDetailPage() {
     <AdminShell>
       <div className="p-6 lg:p-8 space-y-6">
 
+        {statusError && (
+          <div className="flex items-start gap-2 text-red-600 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+            <AlertCircle size={15} className="mt-0.5 flex-shrink-0" />
+            <span>{statusError}</span>
+          </div>
+        )}
+
         {/* ── Header ── */}
         <div className="flex items-center gap-4 flex-wrap">
           <button
@@ -226,7 +253,7 @@ export default function AdminOrderDetailPage() {
 
           {order.status === "REVIEWING" && (
             <div className="flex gap-3">
-              <button onClick={() => setStatus("VALIDATED")} disabled={statusBusy}
+              <button onClick={() => setStatus("VALIDATED").catch(() => {})} disabled={statusBusy}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors">
                 {statusBusy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {t("adminOrders.detail.validateOrder")}
               </button>
@@ -304,7 +331,10 @@ export default function AdminOrderDetailPage() {
                 {order.items.map((item, i) => (
                   <div key={i} className={clsx("flex gap-4 p-3 rounded-xl", c.innerCard)}>
                     {/* Product image */}
-                    <div className={clsx("w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border", c.border)}>
+                    <div
+                      className={clsx("w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border", item.productThumbnailUrl && "cursor-zoom-in", c.border)}
+                      onClick={() => item.productThumbnailUrl && setZoomedImageUrl(item.productThumbnailUrl)}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={item.productThumbnailUrl ?? undefined} alt={item.productName} className="w-full h-full object-cover" />
                     </div>
@@ -431,7 +461,7 @@ export default function AdminOrderDetailPage() {
                     {t("adminOrders.detail.submittedByCustomer")}
                   </span>
                 </h2>
-                <div className="relative group cursor-zoom-in" onClick={() => setZoomImg(true)}>
+                <div className="relative group cursor-zoom-in" onClick={() => setZoomedImageUrl(order.paymentScreenshotUrl ?? null)}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={order.paymentScreenshotUrl ?? undefined}
@@ -444,7 +474,7 @@ export default function AdminOrderDetailPage() {
                 </div>
                 {order.status === "REVIEWING" && (
                   <div className="flex gap-3 mt-4">
-                    <button onClick={() => setStatus("VALIDATED")} disabled={statusBusy}
+                    <button onClick={() => setStatus("VALIDATED").catch(() => {})} disabled={statusBusy}
                       className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors">
                       {statusBusy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {t("adminOrders.detail.approveValidate")}
                     </button>
@@ -521,16 +551,17 @@ export default function AdminOrderDetailPage() {
                   {(["PENDING", "AWAITING_PAYMENT", "REVIEWING", "VALIDATED", "CANCELLED"] as OrderStatus[])
                     .filter((s) => s !== order.status)
                     .map((s) => (
-                      <button key={s} onClick={() => (s === "CANCELLED" ? askReject() : setStatus(s))}
+                      <button key={s} onClick={() => (s === "CANCELLED" ? askReject() : setStatus(s).catch(() => {}))}
+                        disabled={statusBusy}
                         className={clsx(
-                          "text-xs py-1.5 px-2 rounded-lg font-medium transition-colors",
+                          "text-xs py-1.5 px-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
                           s === "VALIDATED" ? "bg-green-500/15 text-green-500 hover:bg-green-500/25"
                           : s === "CANCELLED" ? "bg-red-500/15 text-red-500 hover:bg-red-500/25"
                           : c.isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
                                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         )}
                       >
-                        → {statusMeta[s].label}
+                        {pendingGridStatus === s ? <Loader2 size={12} className="inline animate-spin mr-0.5" /> : "→"} {statusMeta[s].label}
                       </button>
                     ))}
                 </div>
@@ -560,7 +591,12 @@ export default function AdminOrderDetailPage() {
                   </p>
                   {order.packagingConfirmation.imageUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={order.packagingConfirmation.imageUrl} alt="" className="rounded-lg max-h-28 object-cover mb-1.5" />
+                    <img
+                      src={order.packagingConfirmation.imageUrl}
+                      alt=""
+                      onClick={() => setZoomedImageUrl(order.packagingConfirmation!.imageUrl!)}
+                      className="rounded-lg max-h-28 object-cover mb-1.5 cursor-zoom-in"
+                    />
                   )}
                   {order.packagingConfirmation.text && (
                     <p className={clsx("text-xs whitespace-pre-line mb-1.5", c.textSecondary)}>{order.packagingConfirmation.text}</p>
@@ -631,17 +667,12 @@ export default function AdminOrderDetailPage() {
         </div>
       </div>
 
-      {/* Zoom modal */}
-      {zoomImg && order.paymentScreenshotUrl && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
-          onClick={() => setZoomImg(false)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={order.paymentScreenshotUrl ?? undefined} alt={t("adminOrders.detail.paymentProofFullscreenAlt")}
-            className="max-w-full max-h-full rounded-xl shadow-2xl object-contain" />
-        </div>
+      {zoomedImageUrl && (
+        <ImageLightbox src={zoomedImageUrl} alt={t("adminOrders.detail.paymentProofFullscreenAlt")} onClose={() => setZoomedImageUrl(null)} />
       )}
 
       <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
+      <AlertDialog title="Heads Up" message={conflictMessage} onClose={() => setConflictMessage(null)} />
     </AdminShell>
   );
 }

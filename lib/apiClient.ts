@@ -49,7 +49,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   });
 
   if (!res.ok) {
-    let message = res.statusText || "Request failed";
+    let message = "Something went wrong. Please try again.";
     try {
       const body = await res.json();
       message = body.message || message;

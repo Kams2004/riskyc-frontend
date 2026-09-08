@@ -24,6 +24,7 @@ import {
 import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import DeliveryContactsPanel from "@/components/admin/DeliveryContactsPanel";
+import AlertDialog from "@/components/admin/AlertDialog";
 
 type Tab = "waiting" | "in_progress" | "done";
 
@@ -42,6 +43,7 @@ export default function AdminTreatmentPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [contactsOpen, setContactsOpen] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -88,7 +90,14 @@ export default function AdminTreatmentPage() {
       const updated = await ordersApi.startPackaging(orderId, token);
       handleOrderUpdate(updated);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : t("adminOrders.treatment.errorStart"));
+      // Someone else claimed this order between when the list loaded and
+      // this click — a popup is harder to miss than the inline banner.
+      if (e instanceof ApiError && e.status === 409) {
+        setConflictMessage(e.message);
+        ordersApi.listOrders(token).then(setOrders).catch(() => {});
+      } else {
+        setError(e instanceof ApiError ? e.message : t("adminOrders.treatment.errorStart"));
+      }
     } finally {
       setBusyId(null);
     }
@@ -281,6 +290,7 @@ export default function AdminTreatmentPage() {
       </div>
 
       {contactsOpen && <DeliveryContactsPanel onClose={() => setContactsOpen(false)} />}
+      <AlertDialog title="Already Being Packed" message={conflictMessage} onClose={() => setConflictMessage(null)} />
     </AdminShell>
   );
 }

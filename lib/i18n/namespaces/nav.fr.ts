@@ -15,6 +15,8 @@ export const nav: typeof navEn = {
   helpCenter: "Centre d'aide",
   contactUs: "Nous contacter",
   logOut: "Se déconnecter",
+  logoutConfirmTitle: "Se déconnecter ?",
+  logoutConfirmMessage: "Vous devrez vous reconnecter pour synchroniser vos commandes entre appareils.",
   login: "Connexion",
   register: "S'inscrire",
 };

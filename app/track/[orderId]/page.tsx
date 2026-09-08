@@ -11,6 +11,7 @@ import { formatPrice } from "@/lib/data";
 import { usePushSubscription } from "@/lib/usePushSubscription";
 import { StatusBadge } from "@/components/cart/OrdersList";
 import DeliveryTeamCard from "@/components/shared/DeliveryTeamCard";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 import {
   CheckCircle2,
   XCircle,
@@ -43,6 +44,7 @@ export default function TrackOrderPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
+  const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
   const { status: pushStatus, subscribe } = usePushSubscription(orderId);
   const { conversationId, setConversationId } = useStore();
 
@@ -229,7 +231,8 @@ export default function TrackOrderPage() {
             <img
               src={order.packagingConfirmation.imageUrl}
               alt={t("account.track.packagingConfirmedPhotoAlt")}
-              className="rounded-xl max-h-56 w-full object-cover mb-3 border border-teal-100"
+              onClick={() => setZoomedImageUrl(order.packagingConfirmation!.imageUrl!)}
+              className="rounded-xl max-h-56 w-full object-cover mb-3 border border-teal-100 cursor-zoom-in"
             />
           )}
           {order.packagingConfirmation.text && (
@@ -280,6 +283,10 @@ export default function TrackOrderPage() {
       <Link href="/" className="w-full btn-primary py-3.5 rounded-2xl flex items-center justify-center gap-2 text-sm">
         <ShoppingBag size={16} /> Continue Shopping
       </Link>
+
+      {zoomedImageUrl && (
+        <ImageLightbox src={zoomedImageUrl} alt={t("account.track.packagingConfirmedPhotoAlt")} onClose={() => setZoomedImageUrl(null)} />
+      )}
     </div>
   );
 }

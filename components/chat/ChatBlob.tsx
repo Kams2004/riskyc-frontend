@@ -11,6 +11,7 @@ import { MessageCircle, X, Send, Minimize2, Paperclip, Mic, Check, CheckDouble }
 import VoiceRecorderBar from "@/components/chat/VoiceRecorderBar";
 import VoiceMessageBubble from "@/components/chat/VoiceMessageBubble";
 import DeliveryTeamCard from "@/components/shared/DeliveryTeamCard";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import clsx from "clsx";
 
@@ -24,6 +25,7 @@ export default function ChatBlob() {
   const [stagedImage, setStagedImage] = useState<File | null>(null);
   const [stagedPreview, setStagedPreview] = useState<string | null>(null);
   const [sendError, setSendError] = useState(false);
+  const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
   const [voiceUploading, setVoiceUploading] = useState(false);
   const [pendingVoiceDuration, setPendingVoiceDuration] = useState<number | null>(null);
   const [readStatus, setReadStatus] = useState<{ customerReadAt: string | null; adminReadAt: string | null }>({
@@ -273,7 +275,8 @@ export default function ChatBlob() {
                       <img
                         src={msg.imageUrl}
                         alt={t("chat.widget.sharedPhotoAlt")}
-                        className="rounded-xl max-w-full max-h-48 object-cover"
+                        onClick={() => setZoomedImageUrl(msg.imageUrl!)}
+                        className="rounded-xl max-w-full max-h-48 object-cover cursor-zoom-in"
                       />
                     )}
                     {msg.text && (
@@ -300,7 +303,8 @@ export default function ChatBlob() {
                     <img
                       src={msg.imageUrl}
                       alt={t("chat.widget.sharedPhotoAlt")}
-                      className={clsx("rounded-xl max-w-full max-h-48 object-cover mb-1.5", msg.text ? "" : "mb-0")}
+                      onClick={() => setZoomedImageUrl(msg.imageUrl!)}
+                      className={clsx("rounded-xl max-w-full max-h-48 object-cover mb-1.5 cursor-zoom-in", msg.text ? "" : "mb-0")}
                     />
                   )}
                   {msg.voiceUrl && (
@@ -462,6 +466,10 @@ export default function ChatBlob() {
           </>
         )}
       </button>
+
+      {zoomedImageUrl && (
+        <ImageLightbox src={zoomedImageUrl} alt={t("chat.widget.sharedPhotoAlt")} onClose={() => setZoomedImageUrl(null)} />
+      )}
     </>
   );
 }

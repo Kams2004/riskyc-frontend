@@ -24,6 +24,7 @@ import { useStore } from "@/lib/store";
 import { useCategories } from "@/lib/useCategories";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import DownloadAppButton from "@/components/shared/DownloadAppButton";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Customer } from "@/lib/types";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { localized } from "@/lib/i18n/localized";
@@ -81,9 +82,17 @@ export default function Navbar() {
     setCurrentCustomer(customer);
   }, [customer]);
 
-  const handleLogout = () => {
-    logoutCustomer();
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  const requestLogout = () => {
     setActiveDropdown(null);
+    setMobileOpen(false);
+    setLogoutConfirmOpen(true);
+  };
+
+  const handleLogout = () => {
+    setLogoutConfirmOpen(false);
+    logoutCustomer();
     router.push("/");
   };
 
@@ -372,7 +381,7 @@ export default function Navbar() {
                         <MapPin size={15} /> {t("nav.contactUs")}
                       </Link>
                       <button
-                        onClick={handleLogout}
+                        onClick={requestLogout}
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                       >
                         <LogOut size={15} /> {t("nav.logOut")}
@@ -565,10 +574,7 @@ export default function Navbar() {
                     <MapPin size={16} /> {t("nav.contactUs")}
                   </Link>
                   <button
-                    onClick={() => {
-                      setMobileOpen(false);
-                      handleLogout();
-                    }}
+                    onClick={requestLogout}
                     className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-red-500 hover:bg-red-50 font-medium"
                   >
                     <LogOut size={16} /> {t("nav.logOut")}
@@ -623,6 +629,15 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={logoutConfirmOpen}
+        title={t("nav.logoutConfirmTitle")}
+        message={t("nav.logoutConfirmMessage")}
+        confirmLabel={t("nav.logOut")}
+        onConfirm={handleLogout}
+        onCancel={() => setLogoutConfirmOpen(false)}
+      />
     </header>
   );
 }

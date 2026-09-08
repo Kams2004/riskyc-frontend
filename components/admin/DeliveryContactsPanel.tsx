@@ -12,7 +12,7 @@ import { useTranslation } from "@/lib/i18n/useTranslation";
 /** Admin CRUD for the delivery team roster auto-attached to packaging-confirmation messages (see ConversationService.buildDeliveryTeamBlock server-side). */
 export default function DeliveryContactsPanel({ onClose }: { onClose: () => void }) {
   const token = useAdminStore((s) => s.session?.token);
-  const canManage = useAdminStore((s) => s.hasPermission("MANAGE_TREATMENT"));
+  const canManage = useAdminStore((s) => s.hasPermission("MANAGE_DELIVERY_AGENTS"));
   const c = useAdminColors();
   const { t } = useTranslation();
 

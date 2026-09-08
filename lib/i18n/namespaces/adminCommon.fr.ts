@@ -7,7 +7,7 @@ export const adminCommon: typeof adminCommonEn = {
     nav: {
       dashboard: "Tableau de bord",
       orders: "Commandes",
-      treatment: "Traitement",
+      treatment: "Emballage",
       products: "Produits",
       categories: "Catégories",
       customers: "Clients",
@@ -20,6 +20,8 @@ export const adminCommon: typeof adminCommonEn = {
     darkBadge: "Sombre",
     viewStore: "Voir la boutique",
     logout: "Déconnexion",
+    logoutConfirmTitle: "Se déconnecter ?",
+    logoutConfirmMessage: "Vous devrez vous reconnecter pour accéder au panneau d'administration.",
     toggleLanguage: "Changer de langue",
   },
   guard: {

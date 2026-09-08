@@ -230,6 +230,7 @@ export type Permission =
   | "VIEW_TREATMENT"
   | "MANAGE_TREATMENT"
   | "SEND_PACKAGING_MESSAGE"
+  | "MANAGE_DELIVERY_AGENTS"
   | "VIEW_PRODUCTS"
   | "MANAGE_PRODUCTS"
   | "VIEW_CATEGORIES"
@@ -245,9 +246,10 @@ export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[
   { key: "VIEW_DASHBOARD",    label: "View Dashboard",    group: "Dashboard" },
   { key: "VIEW_ORDERS",       label: "View Orders",       group: "Orders" },
   { key: "MANAGE_ORDERS",     label: "Manage Orders",     group: "Orders" },
-  { key: "VIEW_TREATMENT",    label: "View Treatment",    group: "Treatment" },
-  { key: "MANAGE_TREATMENT",  label: "Manage Treatment",  group: "Treatment" },
-  { key: "SEND_PACKAGING_MESSAGE", label: "Send Packaging Confirmation", group: "Treatment" },
+  { key: "VIEW_TREATMENT",    label: "View Packing",      group: "Packing" },
+  { key: "MANAGE_TREATMENT",  label: "Manage Packing",    group: "Packing" },
+  { key: "SEND_PACKAGING_MESSAGE", label: "Send Packaging Confirmation", group: "Packing" },
+  { key: "MANAGE_DELIVERY_AGENTS", label: "Manage Delivery Agents", group: "Packing" },
   { key: "VIEW_PRODUCTS",     label: "View Products",     group: "Products" },
   { key: "MANAGE_PRODUCTS",   label: "Manage Products",   group: "Products" },
   { key: "VIEW_CATEGORIES",   label: "View Categories",   group: "Categories" },

@@ -5,7 +5,7 @@ export const adminCommon = {
     nav: {
       dashboard: "Dashboard",
       orders: "Orders",
-      treatment: "Treatment",
+      treatment: "Packing",
       products: "Products",
       categories: "Categories",
       customers: "Customers",
@@ -18,6 +18,8 @@ export const adminCommon = {
     darkBadge: "Dark",
     viewStore: "View Store",
     logout: "Logout",
+    logoutConfirmTitle: "Log out?",
+    logoutConfirmMessage: "You'll need to log back in to access the admin panel.",
     toggleLanguage: "Toggle language",
   },
   guard: {

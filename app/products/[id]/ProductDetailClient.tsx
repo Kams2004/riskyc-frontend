@@ -11,6 +11,7 @@ import { useStore } from "@/lib/store";
 import ProductCard from "@/components/products/ProductCard";
 import CheckoutFlow from "@/components/cart/CheckoutFlow";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 import {
   ShoppingCart,
   Zap,
@@ -379,43 +380,14 @@ export default function ProductDetailClient({ productId }: { productId: string }
 
         {/* Fullscreen image lightbox */}
         {lightboxOpen && (
-          <div
-            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center animate-fade-in"
-            onClick={closeLightbox}
-          >
-            <button
-              onClick={closeLightbox}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
-            >
-              <X size={20} />
-            </button>
-            {product.media.length > 1 && (
-              <>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i - 1 + product.media.length) % product.media.length); }}
-                  className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i + 1) % product.media.length); }}
-                  className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
-                >
-                  <ChevronRight size={20} />
-                </button>
-                <span className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-white/10 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                  {imgIdx + 1} / {product.media.length}
-                </span>
-              </>
-            )}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={product.media[imgIdx]?.presignedUrl}
-              alt={name}
-              onClick={(e) => e.stopPropagation()}
-              className="max-w-[92vw] max-h-[85vh] object-contain"
-            />
-          </div>
+          <ImageLightbox
+            src={product.media[imgIdx]?.presignedUrl}
+            alt={name}
+            onClose={closeLightbox}
+            onPrev={product.media.length > 1 ? () => setImgIdx((i) => (i - 1 + product.media.length) % product.media.length) : undefined}
+            onNext={product.media.length > 1 ? () => setImgIdx((i) => (i + 1) % product.media.length) : undefined}
+            counterLabel={product.media.length > 1 ? `${imgIdx + 1} / ${product.media.length}` : undefined}
+          />
         )}
 
         {/* Product Info */}
