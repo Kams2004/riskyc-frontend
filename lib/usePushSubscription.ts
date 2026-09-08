@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getVapidPublicKey, subscribePush } from "@/lib/api/push";
+import { useStore } from "@/lib/store";
 
 export type PushStatus = "checking" | "unsupported" | "idle" | "subscribing" | "subscribed" | "denied" | "error";
 
@@ -47,7 +48,12 @@ export function usePushSubscription(orderId: string) {
         const json = sub.toJSON();
         if (json.endpoint && json.keys?.p256dh && json.keys?.auth) {
           try {
-            await subscribePush({ orderId, endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } });
+            await subscribePush({
+              orderId,
+              endpoint: json.endpoint,
+              keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+              language: useStore.getState().language,
+            });
             if (!cancelled) setStatus("subscribed");
           } catch {
             if (!cancelled) setStatus("idle");
@@ -84,6 +90,7 @@ export function usePushSubscription(orderId: string) {
         orderId,
         endpoint: json.endpoint,
         keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+        language: useStore.getState().language,
       });
       setStatus("subscribed");
     } catch {

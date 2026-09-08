@@ -8,6 +8,7 @@ export function subscribePush(data: {
   orderId: string;
   endpoint: string;
   keys: { p256dh: string; auth: string };
+  language: string;
 }) {
   return apiFetch<void>("/api/push/subscribe", { method: "POST", body: JSON.stringify(data) });
 }
