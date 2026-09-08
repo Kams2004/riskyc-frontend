@@ -111,7 +111,14 @@ export default function AdminTreatmentPage() {
       const updated = await ordersApi.completePackaging(orderId, token);
       handleOrderUpdate(updated);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : t("adminOrders.treatment.errorComplete"));
+      // Same race as Start Packaging — e.g. someone else already marked it
+      // done, or the order isn't in a packageable state anymore.
+      if (e instanceof ApiError && e.status === 409) {
+        setConflictMessage(e.message);
+        ordersApi.listOrders(token).then(setOrders).catch(() => {});
+      } else {
+        setError(e instanceof ApiError ? e.message : t("adminOrders.treatment.errorComplete"));
+      }
     } finally {
       setBusyId(null);
     }

@@ -206,7 +206,20 @@ export default function ChatBlob() {
     }
   };
 
-  const unreadCount = messages.filter((m) => m.sender === "ADMIN").length;
+  // Conversation.unread (from the API) is admin-perspective only —
+  // incremented when the CUSTOMER sends a message, reset by the admin's own
+  // "mark read" — so it can't drive this badge. Computed here instead: admin
+  // messages newer than the customer's own last-read timestamp, forced to 0
+  // while the widget is actually open and visible (the mark-read effect
+  // above is already handling that case server-side).
+  const unreadCount =
+    chatOpen && !minimized
+      ? 0
+      : messages.filter((m) => {
+          if (m.sender !== "ADMIN") return false;
+          const readTime = readStatus.customerReadAt ? new Date(readStatus.customerReadAt).getTime() : 0;
+          return new Date(m.timestamp).getTime() > readTime;
+        }).length;
 
   return (
     <>

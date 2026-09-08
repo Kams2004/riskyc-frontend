@@ -56,6 +56,7 @@ export const cart: typeof cartEn = {
     dialCodeToSend: "Composez ce code pour envoyer {{amount}}",
     copyCode: "Copier le code à payer",
     codeCopied: "Code copié !",
+    copyFailed: "Impossible de copier automatiquement — sélectionnez et copiez le code ci-dessus.",
     instructionsLabel: "Instructions :",
     instructionsBefore:
       "Copiez le code ci-dessus, collez-le tel quel dans le clavier d'appel de votre téléphone, puis appelez — il inclut déjà le montant ({{amount}}) et le compte (",
@@ -96,6 +97,10 @@ export const cart: typeof cartEn = {
     successBodyAfter: " pour confirmer votre paiement et votre commande.",
     reasonLabel: "Motif",
     downloadReceipt: "Télécharger le reçu",
+    receiptFailed: "Impossible de générer le reçu. Veuillez réessayer.",
+    orderLoadFailedTitle: "Impossible de charger cette commande",
+    orderLoadFailedMessage: "Une erreur s'est produite lors du chargement de cette commande. Vérifiez votre connexion et réessayez depuis Mes commandes.",
+    close: "Fermer",
     orderSummaryLabel: "Récapitulatif de commande",
     orderIdLabel: "Numéro de commande",
     nameLabel: "Nom",

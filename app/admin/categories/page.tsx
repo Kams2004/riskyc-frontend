@@ -40,6 +40,7 @@ function slugify(name: string) {
 
 export default function AdminCategoriesPage() {
   const token = useAdminStore((s) => s.session?.token);
+  const canManage = useAdminStore((s) => s.hasPermission("MANAGE_CATEGORIES"));
   const c = useAdminColors();
   const { t } = useTranslation();
 
@@ -274,12 +275,14 @@ export default function AdminCategoriesPage() {
                 <LayoutGrid size={16} />
               </button>
             </div>
-            <button
-              onClick={startAddCat}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20"
-            >
-              <Plus size={16} /> {t("adminProducts.categories.addCategory")}
-            </button>
+            {canManage && (
+              <button
+                onClick={startAddCat}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20"
+              >
+                <Plus size={16} /> {t("adminProducts.categories.addCategory")}
+              </button>
+            )}
           </div>
         </div>
 
@@ -361,6 +364,7 @@ export default function AdminCategoriesPage() {
                       <ImageIcon size={22} className={c.textMuted} />
                     </div>
                   )}
+                  {canManage && (
                   <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover/img:opacity-100">
                     <button
                       onClick={() => triggerImageUpload(cat.id)}
@@ -380,6 +384,7 @@ export default function AdminCategoriesPage() {
                       </button>
                     )}
                   </div>
+                  )}
                 </div>
                 {/* Grid card header */}
                 <div className={clsx("flex items-center gap-3 px-4 py-4", c.isDark ? "bg-gray-800/60" : "bg-gray-50")}>
@@ -445,6 +450,13 @@ export default function AdminCategoriesPage() {
                         </div>
                       );
                     }
+                    if (!canManage) {
+                      return (
+                        <span key={sub.id} className={clsx("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", c.isDark ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600")}>
+                          <Tag size={10} />{sub.name}
+                        </span>
+                      );
+                    }
                     return (
                       <button
                         key={sub.id}
@@ -490,6 +502,7 @@ export default function AdminCategoriesPage() {
                       ? t("adminProducts.categories.subCountOne", { count: cat.subcategories.length })
                       : t("adminProducts.categories.subCountOther", { count: cat.subcategories.length })}
                   </span>
+                  {canManage && (
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => startAddSub(cat.id)} className={clsx("flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200")}>
                       <Plus size={11} /> {t("adminProducts.categories.subButton")}
@@ -501,6 +514,7 @@ export default function AdminCategoriesPage() {
                       <Trash2 size={11} />{t("adminProducts.common.delete")}
                     </button>
                   </div>
+                  )}
                 </div>
               </div>
             );
@@ -593,7 +607,7 @@ export default function AdminCategoriesPage() {
                     </div>
                   )}
 
-                  {!isEditingCat && (
+                  {!isEditingCat && canManage && (
                     <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => startAddSub(cat.id)}
@@ -657,6 +671,7 @@ export default function AdminCategoriesPage() {
                                 <span className={clsx("text-sm", c.textPrimary)}>{sub.name}</span>
                                 <span className={clsx("ml-2 text-xs font-mono", c.textMuted)}>{sub.id}</span>
                               </div>
+                              {canManage && (
                               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                                 <button
                                   onClick={() => startEditSub(cat.id, sub.id, sub.name)}
@@ -672,6 +687,7 @@ export default function AdminCategoriesPage() {
                                   {t("adminProducts.common.delete")}
                                 </button>
                               </div>
+                              )}
                             </>
                           )}
                         </div>

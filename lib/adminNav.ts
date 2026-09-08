@@ -33,8 +33,19 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/chat",       label: "Chat",       icon: MessageSquare,   permission: "VIEW_CHAT" },
 ];
 
+// These sub-routes need the stricter MANAGE_PRODUCTS permission, not just
+// the section's own VIEW_PRODUCTS — checked before the general nav-item
+// match below so a view-only admin can't reach the create/edit form via a
+// direct URL even though the corresponding buttons are already hidden from
+// them. Not added to adminNavItems itself since that would also duplicate
+// them into the sidebar.
+const PRODUCT_EDIT_PATH = /^\/admin\/products\/[^/]+\/edit/;
+
 /** Resolves which permission a given /admin/... path requires, if any. */
 export function permissionForPath(pathname: string): Permission | null {
+  if (pathname.startsWith("/admin/products/new") || PRODUCT_EDIT_PATH.test(pathname)) {
+    return "MANAGE_PRODUCTS";
+  }
   const matches = adminNavItems.filter((item) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href)
   );

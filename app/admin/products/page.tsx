@@ -9,12 +9,13 @@ import { formatPrice } from "@/lib/data";
 import { Product } from "@/lib/types";
 import Link from "next/link";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import AlertDialog from "@/components/admin/AlertDialog";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useState, useEffect } from "react";
 import {
   Plus, Pencil, Trash2, Search, Star, Package,
   LayoutGrid, List, ChevronLeft, ChevronRight,
-  ChevronsLeft, ChevronsRight, Eye, EyeOff,
+  ChevronsLeft, ChevronsRight, Eye, EyeOff, Loader2,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -22,6 +23,7 @@ const PAGE_SIZES = [10, 20, 50];
 
 export default function AdminProductsPage() {
   const token = useAdminStore((s) => s.session?.token);
+  const canManage = useAdminStore((s) => s.hasPermission("MANAGE_PRODUCTS"));
   const { categories } = useCategories();
   const c = useAdminColors();
   const { t } = useTranslation();
@@ -34,16 +36,25 @@ export default function AdminProductsPage() {
   const [viewMode, setViewMode]     = useState<"grid" | "table">("table");
   const [page, setPage]             = useState(1);
   const [pageSize, setPageSize]     = useState(10);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [visibilityBusyId, setVisibilityBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
-    productsApi.listAdminProducts(token).then(setProducts).catch(() => {}).finally(() => setLoading(false));
+    productsApi.listAdminProducts(token).then(setProducts).catch(() => setActionError("Couldn't load products. Please try again.")).finally(() => setLoading(false));
   }, [token]);
 
   const setHidden = async (id: string, hidden: boolean) => {
     if (!token) return;
-    const updated = await productsApi.setProductVisibility(id, hidden, token);
-    setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    setVisibilityBusyId(id);
+    try {
+      const updated = await productsApi.setProductVisibility(id, hidden, token);
+      setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    } catch {
+      setActionError("Couldn't update visibility. Please try again.");
+    } finally {
+      setVisibilityBusyId(null);
+    }
   };
 
   const filtered = products
@@ -117,10 +128,12 @@ export default function AdminProductsPage() {
               {t("adminProducts.list.subtitle", { count: products.length, categories: categories.length })}
             </p>
           </div>
-          <Link href="/admin/products/new"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20">
-            <Plus size={16} /> {t("adminProducts.list.addProduct")}
-          </Link>
+          {canManage && (
+            <Link href="/admin/products/new"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20">
+              <Plus size={16} /> {t("adminProducts.list.addProduct")}
+            </Link>
+          )}
         </div>
 
         {/* Filters + view toggle */}
@@ -290,15 +303,20 @@ export default function AdminProductsPage() {
 
                           {/* Visibility */}
                           <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={() => setHidden(product.id, !product.hidden)}
-                              title={product.hidden ? t("adminProducts.list.unhideProduct") : t("adminProducts.list.hideProduct")}
-                              className={clsx("inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap",
-                                product.hidden
-                                  ? c.isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                                  : c.isDark ? "bg-green-500/15 text-green-400 hover:bg-green-500/25" : "bg-green-50 text-green-600 hover:bg-green-100")}>
-                              {product.hidden ? <EyeOff size={12} /> : <Eye size={12} />}
-                            </button>
+                            {canManage ? (
+                              <button
+                                onClick={() => setHidden(product.id, !product.hidden)}
+                                disabled={visibilityBusyId === product.id}
+                                title={product.hidden ? t("adminProducts.list.unhideProduct") : t("adminProducts.list.hideProduct")}
+                                className={clsx("inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap disabled:opacity-60",
+                                  product.hidden
+                                    ? c.isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                                    : c.isDark ? "bg-green-500/15 text-green-400 hover:bg-green-500/25" : "bg-green-50 text-green-600 hover:bg-green-100")}>
+                                {visibilityBusyId === product.id ? <Loader2 size={12} className="animate-spin" /> : product.hidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                              </button>
+                            ) : (
+                              <span className={clsx("text-xs", c.textMuted)}>{product.hidden ? <EyeOff size={12} className="inline" /> : <Eye size={12} className="inline" />}</span>
+                            )}
                           </td>
 
                           {/* Actions */}
@@ -309,15 +327,19 @@ export default function AdminProductsPage() {
                                   c.isDark ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-blue-50 text-blue-600 hover:bg-blue-100")}>
                                 <Eye size={12} /> {t("adminProducts.common.view")}
                               </Link>
+                              {canManage && (
                               <Link href={`/admin/products/${product.id}/edit`}
                                 className={clsx("inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap", c.btnGhost)}>
                                 <Pencil size={12} /> {t("adminProducts.common.edit")}
                               </Link>
+                              )}
+                              {canManage && (
                               <button onClick={() => askDelete(product.id, product.name)}
                                 className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap bg-red-500/10 text-red-500 hover:bg-red-500/20">
                                 <Trash2 size={12} />
                                 {t("adminProducts.list.del")}
                               </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -391,29 +413,36 @@ export default function AdminProductsPage() {
                           {product.colors.length > 5 && <span className={clsx("text-xs", c.textMuted)}>+{product.colors.length - 5}</span>}
                         </div>
                         <div className="flex gap-2">
+                          {canManage && (
                           <button
                             onClick={() => setHidden(product.id, !product.hidden)}
+                            disabled={visibilityBusyId === product.id}
                             title={product.hidden ? t("adminProducts.list.unhideProduct") : t("adminProducts.list.hideProduct")}
-                            className={clsx("inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-colors",
+                            className={clsx("inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-colors disabled:opacity-60",
                               product.hidden
                                 ? c.isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-600 hover:bg-gray-300"
                                 : c.isDark ? "bg-green-500/15 text-green-400 hover:bg-green-500/25" : "bg-green-50 text-green-600 hover:bg-green-100")}>
-                            {product.hidden ? <EyeOff size={13} /> : <Eye size={13} />}
+                            {visibilityBusyId === product.id ? <Loader2 size={13} className="animate-spin" /> : product.hidden ? <EyeOff size={13} /> : <Eye size={13} />}
                           </button>
+                          )}
                           <Link href={`/admin/products/${product.id}/view`}
                             className={clsx("inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-colors",
                               c.isDark ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-blue-50 text-blue-600 hover:bg-blue-100")}>
                             <Eye size={13} /> {t("adminProducts.common.view")}
                           </Link>
+                          {canManage && (
                           <Link href={`/admin/products/${product.id}/edit`}
                             className={clsx("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-colors", c.btnGhost)}>
                             <Pencil size={13} /> {t("adminProducts.common.edit")}
                           </Link>
+                          )}
+                          {canManage && (
                           <button onClick={() => askDelete(product.id, product.name)}
                             title={t("adminProducts.list.deleteProductTooltip")}
                             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20">
                             <Trash2 size={13} />
                           </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -428,6 +457,7 @@ export default function AdminProductsPage() {
       </div>
 
       <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
+      <AlertDialog title="Something Went Wrong" message={actionError} onClose={() => setActionError(null)} />
     </AdminShell>
   );
 }

@@ -66,16 +66,18 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   const [step, setStep] = useState<Step>("method");
 
   // Resolve an existing order (re-opened from "My Orders") from the API
+  const [orderLoadError, setOrderLoadError] = useState(false);
   useEffect(() => {
     if (!orderId) return;
     setLoadingOrder(true);
+    setOrderLoadError(false);
     ordersApi
       .getOrder(orderId)
       .then((o) => {
         setOrder(o);
         setStep(getInitialStep(o));
       })
-      .catch(() => {})
+      .catch(() => setOrderLoadError(true))
       .finally(() => setLoadingOrder(false));
   }, [orderId]);
 
@@ -90,6 +92,9 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   });
   const [infoErrors, setInfoErrors] = useState<Partial<Record<keyof CustomerInfo, string>>>({});
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const [downloadingReceipt, setDownloadingReceipt] = useState(false);
+  const [receiptError, setReceiptError] = useState(false);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotName, setScreenshotName] = useState("");
@@ -155,9 +160,14 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
   const handleCopyCode = () => {
     const code = selectedMethod ? buildUssdCode(selectedMethod) : "";
-    navigator.clipboard.writeText(code).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+    setCopyFailed(false);
+    navigator.clipboard.writeText(code).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      },
+      () => setCopyFailed(true)
+    );
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,6 +215,23 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
         <div className="bg-white rounded-3xl shadow-2xl p-10 flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-gray-200 border-t-brand-500 rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (orderLoadError) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center animate-slide-up">
+          <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle size={22} />
+          </div>
+          <p className="font-semibold text-gray-900 mb-1.5">{t("cart.checkout.orderLoadFailedTitle")}</p>
+          <p className="text-sm text-gray-500 mb-5">{t("cart.checkout.orderLoadFailedMessage")}</p>
+          <button onClick={onClose} className="w-full py-3 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors">
+            {t("cart.checkout.close")}
+          </button>
         </div>
       </div>
     );
@@ -392,6 +419,9 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
               )}>
                 {copied ? <><Check size={18} className="text-green-500" />{t("cart.checkout.codeCopied")}</> : <><Copy size={18} />{t("cart.checkout.copyCode")}</>}
               </button>
+              {copyFailed && (
+                <p className="text-xs text-red-500 text-center mt-1.5">{t("cart.checkout.copyFailed")}</p>
+              )}
 
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
                 <strong>{t("cart.checkout.instructionsLabel")}</strong> {t("cart.checkout.instructionsBefore", { amount: formatPrice(total) })}<strong>{paymentInfo[selectedMethod].accountName}</strong>{t("cart.checkout.instructionsAfter")}
@@ -548,11 +578,31 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
               {order && (
                 <button
-                  onClick={() => downloadReceipt(order)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm transition-colors"
+                  onClick={async () => {
+                    if (downloadingReceipt) return;
+                    setDownloadingReceipt(true);
+                    setReceiptError(false);
+                    try {
+                      await downloadReceipt(order);
+                    } catch {
+                      setReceiptError(true);
+                    } finally {
+                      setDownloadingReceipt(false);
+                    }
+                  }}
+                  disabled={downloadingReceipt}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-sm transition-colors"
                 >
-                  <Printer size={18} />{t("cart.checkout.downloadReceipt")}
+                  {downloadingReceipt ? (
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                  ) : (
+                    <Printer size={18} />
+                  )}
+                  {t("cart.checkout.downloadReceipt")}
                 </button>
+              )}
+              {receiptError && (
+                <p className="text-xs text-red-500 text-center -mt-2">{t("cart.checkout.receiptFailed")}</p>
               )}
 
               {order && (

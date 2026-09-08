@@ -13,15 +13,18 @@ import { useState, useEffect } from "react";
 import {
   Eye, CheckCircle2, XCircle, Clock, CreditCard,
   Search, Filter, ShoppingBag, ChevronLeft, ChevronRight,
-  LayoutGrid, List, PackageSearch, PackageCheck, ScanLine,
+  LayoutGrid, List, PackageSearch, PackageCheck, ScanLine, Loader2,
 } from "lucide-react";
 import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import { ApiError } from "@/lib/apiClient";
+import AlertDialog from "@/components/admin/AlertDialog";
 
 const PAGE_SIZE = 5;
 
 export default function AdminOrdersPage() {
   const token = useAdminStore((s) => s.session?.token);
+  const canManageOrders = useAdminStore((s) => s.hasPermission("MANAGE_ORDERS"));
   const c = useAdminColors();
   const { t } = useTranslation();
 
@@ -42,6 +45,9 @@ export default function AdminOrdersPage() {
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -50,8 +56,22 @@ export default function AdminOrdersPage() {
 
   const setStatus = async (orderId: string, status: OrderStatus, reason?: string) => {
     if (!token) return;
-    const updated = await ordersApi.updateOrderStatus(orderId, status, token, reason);
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+    setBusyId(orderId);
+    setActionError(null);
+    try {
+      const updated = await ordersApi.updateOrderStatus(orderId, status, token, reason);
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        setConflictMessage(e.message);
+        ordersApi.listOrders(token).then(setOrders).catch(() => {});
+      } else {
+        setActionError(e instanceof ApiError ? e.message : "Something went wrong. Please try again.");
+        throw e;
+      }
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const askReject = (orderId: string) => {
@@ -262,17 +282,19 @@ export default function AdminOrdersPage() {
                           {/* Validate / Cancel */}
                           <td className="px-4 py-3.5">
                             <div className="flex items-center justify-center gap-1.5">
-                              {order.status === "REVIEWING" ? (
+                              {canManageOrders && order.status === "REVIEWING" ? (
                                 <>
                                   <button
-                                    onClick={() => setStatus(order.id, "VALIDATED")}
-                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-green-500/15 text-green-600 hover:bg-green-500/25 text-xs font-semibold transition-colors whitespace-nowrap"
+                                    onClick={() => setStatus(order.id, "VALIDATED").catch(() => {})}
+                                    disabled={busyId === order.id}
+                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-green-500/15 text-green-600 hover:bg-green-500/25 disabled:opacity-60 disabled:cursor-not-allowed text-xs font-semibold transition-colors whitespace-nowrap"
                                   >
-                                    <CheckCircle2 size={12} /> Validate
+                                    {busyId === order.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />} Validate
                                   </button>
                                   <button
                                     onClick={() => askReject(order.id)}
-                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-red-500/15 text-red-500 hover:bg-red-500/25 text-xs font-semibold transition-colors"
+                                    disabled={busyId === order.id}
+                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-red-500/15 text-red-500 hover:bg-red-500/25 disabled:opacity-60 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
                                   >
                                     <XCircle size={12} /> Cancel
                                   </button>
@@ -351,17 +373,19 @@ export default function AdminOrdersPage() {
                       </div>
 
                       <div className="flex items-center gap-2 pt-1">
-                        {order.status === "REVIEWING" && (
+                        {canManageOrders && order.status === "REVIEWING" && (
                           <>
                             <button
-                              onClick={() => setStatus(order.id, "VALIDATED")}
-                              className="flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-green-500/15 text-green-600 hover:bg-green-500/25 text-xs font-semibold transition-colors"
+                              onClick={() => setStatus(order.id, "VALIDATED").catch(() => {})}
+                              disabled={busyId === order.id}
+                              className="flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-green-500/15 text-green-600 hover:bg-green-500/25 disabled:opacity-60 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
                             >
-                              <CheckCircle2 size={12} /> Validate
+                              {busyId === order.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />} Validate
                             </button>
                             <button
                               onClick={() => askReject(order.id)}
-                              className="flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-red-500/15 text-red-500 hover:bg-red-500/25 text-xs font-semibold transition-colors"
+                              disabled={busyId === order.id}
+                              className="flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-red-500/15 text-red-500 hover:bg-red-500/25 disabled:opacity-60 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
                             >
                               <XCircle size={12} /> Cancel
                             </button>
@@ -371,7 +395,7 @@ export default function AdminOrdersPage() {
                           href={`/admin/orders/${order.id}`}
                           className={clsx(
                             "flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap",
-                            order.status === "REVIEWING" ? c.btnGhost : "flex-1",
+                            canManageOrders && order.status === "REVIEWING" ? c.btnGhost : "flex-1",
                             c.btnGhost
                           )}
                         >
@@ -461,6 +485,8 @@ export default function AdminOrdersPage() {
 
       <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
       {scannerOpen && <OrderQrScanner onClose={() => setScannerOpen(false)} />}
+      <AlertDialog title="Heads Up" message={conflictMessage} onClose={() => setConflictMessage(null)} />
+      <AlertDialog title="Couldn't Update Order" message={actionError} onClose={() => setActionError(null)} />
     </AdminShell>
   );
 }

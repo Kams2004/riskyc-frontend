@@ -54,6 +54,7 @@ export const cart = {
     dialCodeToSend: "Dial this code to send {{amount}}",
     copyCode: "Copy Code to Pay",
     codeCopied: "Code Copied!",
+    copyFailed: "Couldn't copy automatically — select and copy the code above.",
     instructionsLabel: "Instructions:",
     instructionsBefore:
       "Copy the code above, paste it into your phone's dialer exactly as shown, and press call — it already includes the amount ({{amount}}) and account (",
@@ -94,6 +95,10 @@ export const cart = {
     successBodyAfter: " to confirm your payment and order.",
     reasonLabel: "Reason",
     downloadReceipt: "Download Receipt",
+    receiptFailed: "Couldn't generate the receipt. Please try again.",
+    orderLoadFailedTitle: "Couldn't Load This Order",
+    orderLoadFailedMessage: "Something went wrong loading this order. Please check your connection and try again from My Orders.",
+    close: "Close",
     orderSummaryLabel: "Order Summary",
     orderIdLabel: "Order ID",
     nameLabel: "Name",

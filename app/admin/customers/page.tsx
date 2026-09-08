@@ -17,11 +17,14 @@ import {
   Mail,
   Phone,
   Calendar,
+  Loader2,
 } from "lucide-react";
 import clsx from "clsx";
+import AlertDialog from "@/components/admin/AlertDialog";
 
 export default function AdminCustomersPage() {
   const token = useAdminStore((s) => s.session?.token);
+  const canManage = useAdminStore((s) => s.hasPermission("MANAGE_CUSTOMERS"));
   const c = useAdminColors();
   const { t } = useTranslation();
 
@@ -29,13 +32,15 @@ export default function AdminCustomersPage() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
     customersApi
       .listCustomers(token)
       .then(setCustomers)
-      .catch(() => {})
+      .catch(() => setActionError("Couldn't load customers. Please try again."))
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -52,8 +57,17 @@ export default function AdminCustomersPage() {
 
   const setStatus = async (id: string, status: "ACTIVE" | "BLOCKED") => {
     if (!token) return;
-    const updated = await customersApi.updateCustomerStatus(id, status, token);
-    setCustomers((prev) => prev.map((cu) => (cu.id === id ? updated : cu)));
+    setBusyId(id);
+    setActionError(null);
+    try {
+      const updated = await customersApi.updateCustomerStatus(id, status, token);
+      setCustomers((prev) => prev.map((cu) => (cu.id === id ? updated : cu)));
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      throw e;
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const askDelete = (id: string, name: string) => {
@@ -187,19 +201,23 @@ export default function AdminCustomersPage() {
                     )}
                   </td>
                   <td className="px-5 py-3.5">
+                    {canManage ? (
                     <div className="flex items-center gap-2 justify-end">
                       <button
                         onClick={() =>
                           cu.status === "ACTIVE"
                             ? askBlock(cu.id, `${cu.firstName} ${cu.lastName}`)
-                            : setStatus(cu.id, "ACTIVE")
+                            : setStatus(cu.id, "ACTIVE").catch(() => {})
                         }
+                        disabled={busyId === cu.id}
                         className={clsx(
-                          "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                          "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-60",
                           c.btnGhost
                         )}
                       >
-                        {cu.status === "ACTIVE" ? (
+                        {busyId === cu.id ? (
+                          <Loader2 size={11} className="animate-spin" />
+                        ) : cu.status === "ACTIVE" ? (
                           <>
                             <ShieldOff size={11} /> Block
                           </>
@@ -217,6 +235,11 @@ export default function AdminCustomersPage() {
                         Delete
                       </button>
                     </div>
+                    ) : (
+                      <div className="flex justify-end">
+                        <span className={clsx("text-xs", c.textMuted)}>—</span>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -235,6 +258,7 @@ export default function AdminCustomersPage() {
       </div>
 
       <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
+      <AlertDialog title="Something Went Wrong" message={actionError} onClose={() => setActionError(null)} />
     </AdminShell>
   );
 }
