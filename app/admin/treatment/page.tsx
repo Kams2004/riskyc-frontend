@@ -30,6 +30,7 @@ type Tab = "waiting" | "in_progress" | "done";
 export default function AdminTreatmentPage() {
   const token = useAdminStore((s) => s.session?.token);
   const canManage = useAdminStore((s) => s.hasPermission("MANAGE_TREATMENT"));
+  const canSendPackagingMessage = useAdminStore((s) => s.hasPermission("SEND_PACKAGING_MESSAGE"));
   const adminId = useAdminStore((s) => s.session?.id);
   const isSuperAdmin = useAdminStore((s) => s.isSuperAdmin());
   const c = useAdminColors();
@@ -55,14 +56,24 @@ export default function AdminTreatmentPage() {
   }, []);
   useOrdersSocket(handleOrderUpdate);
 
-  // In Progress/Packaged are personalized per admin — a UX declutter, not a
-  // security boundary, since this same order data is visible elsewhere
-  // (Orders list/detail) to anyone with VIEW_ORDERS regardless of role. The
-  // super admin (has every permission) still sees and can act on everyone's.
-  const waiting = orders.filter((o) => o.status === "VALIDATED");
-  const inProgress = orders.filter(
-    (o) => o.status === "PACKAGING" && (isSuperAdmin || o.packagingStartedById === adminId)
+  // Whether *this* admin is allowed to finish packing / send the packaging
+  // confirmation for `order` — the person who started it, a super admin, or
+  // anyone separately granted SEND_PACKAGING_MESSAGE (they're trusted to
+  // speak for the shop on packaging regardless of who packed it). Unlike the
+  // In Progress/Done split below, this one IS the actual security boundary:
+  // it gates the Mark Done button itself, not just which tab an order sits in.
+  const canFinishPackaging = useCallback(
+    (order: Order) => isSuperAdmin || order.packagingStartedById === adminId || canSendPackagingMessage,
+    [isSuperAdmin, adminId, canSendPackagingMessage]
   );
+
+  // In Progress/Packaged are personalized per admin — mostly a UX declutter
+  // (this same order data is visible elsewhere, via Orders list/detail, to
+  // anyone with VIEW_ORDERS) — but also needs to surface an order to anyone
+  // who canFinishPackaging() it, or they'd have permission to act with
+  // nowhere in this UI to do it from.
+  const waiting = orders.filter((o) => o.status === "VALIDATED");
+  const inProgress = orders.filter((o) => o.status === "PACKAGING" && (isSuperAdmin || canFinishPackaging(o)));
   const done = orders.filter(
     (o) => o.status === "PACKAGED" && (isSuperAdmin || o.packagingCompletedById === adminId)
   );
@@ -238,8 +249,14 @@ export default function AdminTreatmentPage() {
                     {order.status === "PACKAGING" && (
                       <button
                         onClick={() => handleComplete(order.id)}
-                        disabled={!canManage || isBusy}
-                        title={!canManage ? t("adminOrders.treatment.noPermission") : undefined}
+                        disabled={!canManage || !canFinishPackaging(order) || isBusy}
+                        title={
+                          !canManage
+                            ? t("adminOrders.treatment.noPermission")
+                            : !canFinishPackaging(order)
+                            ? t("adminOrders.treatment.notYourPackage")
+                            : undefined
+                        }
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-teal-500/15 text-teal-600 hover:bg-teal-500/25 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
                       >
                         <Check size={13} /> {isBusy ? t("adminOrders.treatment.saving") : t("adminOrders.treatment.markDone")}

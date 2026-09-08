@@ -24,7 +24,9 @@ export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const token = useAdminStore((s) => s.session?.token);
-  const canSendPackagingMessage = useAdminStore((s) => s.hasPermission("SEND_PACKAGING_MESSAGE"));
+  const adminId = useAdminStore((s) => s.session?.id);
+  const isSuperAdmin = useAdminStore((s) => s.isSuperAdmin());
+  const hasSendPackagingMessagePermission = useAdminStore((s) => s.hasPermission("SEND_PACKAGING_MESSAGE"));
   const c = useAdminColors();
   const { t } = useTranslation();
 
@@ -93,6 +95,11 @@ export default function AdminOrderDetailPage() {
   const stepOrder: OrderStatus[] = ["PENDING", "AWAITING_PAYMENT", "REVIEWING", "VALIDATED", "PACKAGING", "PACKAGED"];
   const currentIdx = order.status === "CANCELLED" ? -1 : stepOrder.indexOf(order.status);
   const statusLocked = order.status === "VALIDATED" || order.status === "PACKAGING" || order.status === "PACKAGED";
+  // Sending the packaging confirmation is restricted to whoever started
+  // packing this specific order, a super admin, or anyone separately
+  // granted SEND_PACKAGING_MESSAGE — not just anyone with that permission
+  // acting on an order someone else packed.
+  const canSendPackagingMessage = isSuperAdmin || order.packagingStartedById === adminId || hasSendPackagingMessagePermission;
   const packagingLocked = order.status === "PACKAGED" && !canSendPackagingMessage;
   // While packaging is in progress, there's nothing useful to tell the
   // customer yet — the composer re-opens once it's marked done (as the

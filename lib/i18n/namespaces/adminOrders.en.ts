@@ -140,6 +140,7 @@ export const adminOrders = {
     startedLabel: "started",
     finishedLabel: "finished",
     noPermission: "You don't have permission to manage orders",
+    notYourPackage: "Only the admin who started packing this order (or a super admin) can mark it done",
     errorStart: "Failed to start packaging.",
     errorComplete: "Failed to mark packaging done.",
     deliveryTeamButton: "Delivery Team",

@@ -142,6 +142,7 @@ export const adminOrders: typeof adminOrdersEn = {
     startedLabel: "a démarré",
     finishedLabel: "a terminé",
     noPermission: "Vous n'avez pas la permission de gérer les commandes",
+    notYourPackage: "Seul l'administrateur qui a démarré l'emballage de cette commande (ou un super administrateur) peut la marquer comme terminée",
     errorStart: "Échec du démarrage de l'emballage.",
     errorComplete: "Échec de la finalisation de l'emballage.",
     deliveryTeamButton: "Équipe de livraison",
