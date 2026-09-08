@@ -9,7 +9,7 @@ import { formatPrice } from "@/lib/data";
 import { ApiError } from "@/lib/apiClient";
 import { Order } from "@/lib/types";
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   PackageSearch,
   PackageCheck,
@@ -28,6 +28,7 @@ import AlertDialog from "@/components/admin/AlertDialog";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
 
 type Tab = "waiting" | "in_progress" | "done";
+const PAGE_SIZE = 12;
 
 export default function AdminTreatmentPage() {
   const token = useAdminStore((s) => s.session?.token);
@@ -46,6 +47,9 @@ export default function AdminTreatmentPage() {
   const [contactsOpen, setContactsOpen] = useState(false);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -83,6 +87,36 @@ export default function AdminTreatmentPage() {
   );
 
   const list = tab === "waiting" ? waiting : tab === "in_progress" ? inProgress : done;
+
+  // A page at a time, revealed as the sentinel below the grid scrolls into
+  // view — resets whenever the active tab changes so switching tabs doesn't
+  // carry over how far a previous tab had been scrolled.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [tab]);
+  const visibleList = list.slice(0, visibleCount);
+  const hasMore = visibleCount < list.length;
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting || !hasMore || loadingMore) return;
+        setLoadingMore(true);
+        // A brief, deliberate pause rather than an instant reveal — this
+        // page is already fully in memory (client-side pagination over one
+        // already-fetched list), but an instant jump reads as broken.
+        setTimeout(() => {
+          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, list.length));
+          setLoadingMore(false);
+        }, 350);
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, list.length]);
 
   const handleStart = async (orderId: string) => {
     if (!token) return;
@@ -209,7 +243,7 @@ export default function AdminTreatmentPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {list.map((order) => {
+            {visibleList.map((order) => {
               const itemSummary = order.items.map((i) => `${i.productName} ×${i.quantity}`).join(", ");
               const totalQty = order.items.reduce((s, i) => s + i.quantity, 0);
               const isBusy = busyId === order.id;
@@ -303,6 +337,16 @@ export default function AdminTreatmentPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {!loading && list.length > 0 && (
+          <div ref={sentinelRef} className="flex items-center justify-center py-6">
+            {loadingMore ? (
+              <div className="w-5 h-5 border-2 border-gray-200 border-t-brand-500 rounded-full animate-spin" />
+            ) : !hasMore ? (
+              <p className={clsx("text-xs", c.textMuted)}>You&apos;ve reached the end</p>
+            ) : null}
           </div>
         )}
       </div>
