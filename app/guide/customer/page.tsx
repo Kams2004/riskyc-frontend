@@ -140,6 +140,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       title: "Tracking your order",
       body: [
         "The tracking link works for guests and account holders alike — no login needed, just the link — and a refresh button pulls the latest status on demand.",
+        "Once your order is packaged, this page also shows a picture of your sealed parcel and a delivery team card: tap any name to call that person directly, and the pickup steps — choose someone to collect it, send them the parcel picture, ask to be guided to the store — are each laid out with their own icon instead of a paragraph to read through.",
       ],
       tip: undefined,
     },
@@ -155,7 +156,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       id: "referrals",
       title: "Referrals",
       body: [
-        "Every account has its own referral link and code, both on the Account page — share either one, and anyone who signs up through it is linked to you. Your Account page shows both your direct referrals and the people referred by your referrals, one level down.",
+        "Every account has its own referral link and code, both on the Account page (or My Referrals in the mobile app) — share either one, and anyone who signs up through it is linked to you. That page shows both your direct referrals and the people referred by your referrals, one level down, plus how long ago each one joined.",
       ],
       tip: "There's no separate discount or promo-code system today — the referral code is Riskyc's version of one. It's a way to track your network within Riskyc Fashion, not a guaranteed cash reward, and the program can change over time.",
     },
@@ -291,6 +292,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       title: "Suivre sa commande",
       body: [
         "Le lien de suivi fonctionne aussi bien pour les invités que pour les titulaires de compte — aucune connexion nécessaire, juste le lien — et un bouton d'actualisation récupère le dernier statut à la demande.",
+        "Une fois votre commande emballée, cette page affiche aussi une image de votre colis scellé et une carte de l'équipe de livraison : appuyez sur un nom pour appeler directement cette personne, et les étapes de retrait — choisir quelqu'un pour venir le récupérer, lui envoyer l'image du colis, demander à être guidé jusqu'à la boutique — sont chacune illustrée par sa propre icône plutôt que noyées dans un paragraphe.",
       ],
     },
     {
@@ -305,7 +307,7 @@ const SECTIONS: Record<"en" | "fr", GuideSection[]> = {
       id: "referrals",
       title: "Parrainage",
       body: [
-        "Chaque compte dispose de son propre lien et code de parrainage, tous deux sur la page Compte — partagez l'un ou l'autre, et quiconque s'inscrit ainsi est lié à vous. Votre page Compte affiche à la fois vos parrainages directs et les personnes parrainées par vos propres filleuls, un niveau plus loin.",
+        "Chaque compte dispose de son propre lien et code de parrainage, disponibles sur la page Compte (ou Mes parrainages dans l'application mobile) — partagez l'un ou l'autre, et quiconque s'inscrit ainsi est lié à vous. Cette page affiche à la fois vos parrainages directs et les personnes parrainées par vos propres filleuls, un niveau plus loin, ainsi que depuis combien de temps chacun a rejoint.",
       ],
       tip: "Il n'existe pas aujourd'hui de système de code promo ou de remise séparé — le code de parrainage en tient lieu chez Riskyc. C'est un moyen de suivre votre réseau au sein de Riskyc Fashion, pas une récompense en argent garantie, et le programme peut évoluer dans le temps.",
     },
