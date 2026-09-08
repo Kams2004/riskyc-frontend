@@ -30,6 +30,7 @@ export default function AdminOrderDetailPage() {
   const adminId = useAdminStore((s) => s.session?.id);
   const isSuperAdmin = useAdminStore((s) => s.isSuperAdmin());
   const hasSendPackagingMessagePermission = useAdminStore((s) => s.hasPermission("SEND_PACKAGING_MESSAGE"));
+  const canManageOrders = useAdminStore((s) => s.hasPermission("MANAGE_ORDERS"));
   const c = useAdminColors();
   const { t } = useTranslation();
 
@@ -251,7 +252,7 @@ export default function AdminOrderDetailPage() {
             </p>
           </div>
 
-          {order.status === "REVIEWING" && (
+          {canManageOrders && order.status === "REVIEWING" && (
             <div className="flex gap-3">
               <button onClick={() => setStatus("VALIDATED").catch(() => {})} disabled={statusBusy}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors">
@@ -472,7 +473,7 @@ export default function AdminOrderDetailPage() {
                     <ZoomIn size={28} className="text-white" />
                   </div>
                 </div>
-                {order.status === "REVIEWING" && (
+                {canManageOrders && order.status === "REVIEWING" && (
                   <div className="flex gap-3 mt-4">
                     <button onClick={() => setStatus("VALIDATED").catch(() => {})} disabled={statusBusy}
                       className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors">
@@ -544,7 +545,7 @@ export default function AdminOrderDetailPage() {
               {/* Change status — locked once the order has moved past review, so a mis-click
                   here can't undo a validated/packaged order; use the packaging actions
                   below or Treatment instead. */}
-              {!statusLocked && (
+              {canManageOrders && !statusLocked && (
               <div className={clsx("mt-4 pt-4 border-t", c.border)}>
                 <p className={clsx("text-xs font-medium uppercase tracking-wide mb-2", c.textMuted)}>{t("adminOrders.detail.changeStatus")}</p>
                 <div className="grid grid-cols-2 gap-2">
