@@ -25,6 +25,7 @@ import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import DeliveryContactsPanel from "@/components/admin/DeliveryContactsPanel";
 import AlertDialog from "@/components/admin/AlertDialog";
+import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
 
 type Tab = "waiting" | "in_progress" | "done";
 
@@ -44,6 +45,7 @@ export default function AdminTreatmentPage() {
   const [error, setError] = useState<string | null>(null);
   const [contactsOpen, setContactsOpen] = useState(false);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -89,6 +91,7 @@ export default function AdminTreatmentPage() {
     try {
       const updated = await ordersApi.startPackaging(orderId, token);
       handleOrderUpdate(updated);
+      setTab("in_progress");
     } catch (e) {
       // Someone else claimed this order between when the list loaded and
       // this click — a popup is harder to miss than the inline banner.
@@ -103,25 +106,33 @@ export default function AdminTreatmentPage() {
     }
   };
 
-  const handleComplete = async (orderId: string) => {
-    if (!token) return;
-    setBusyId(orderId);
-    setError(null);
-    try {
-      const updated = await ordersApi.completePackaging(orderId, token);
-      handleOrderUpdate(updated);
-    } catch (e) {
-      // Same race as Start Packaging — e.g. someone else already marked it
-      // done, or the order isn't in a packageable state anymore.
-      if (e instanceof ApiError && e.status === 409) {
-        setConflictMessage(e.message);
-        ordersApi.listOrders(token).then(setOrders).catch(() => {});
-      } else {
-        setError(e instanceof ApiError ? e.message : t("adminOrders.treatment.errorComplete"));
-      }
-    } finally {
-      setBusyId(null);
-    }
+  const askFinishPacking = (orderId: string) => {
+    setConfirm({
+      title: "Finish packing?",
+      message: "Confirm that this order has been fully packed and sealed, ready to send. The customer will be notified once you send the delivery details.",
+      confirmLabel: "Yes, Finished",
+      destructive: false,
+      onConfirm: async () => {
+        if (!token) return;
+        try {
+          const updated = await ordersApi.completePackaging(orderId, token);
+          handleOrderUpdate(updated);
+          setConfirm(null);
+          setTab("done");
+        } catch (e) {
+          // Same race as Start Packaging — e.g. someone else already marked
+          // it done. Close this popup and show the conflict one instead of
+          // layering both.
+          if (e instanceof ApiError && e.status === 409) {
+            setConfirm(null);
+            setConflictMessage(e.message);
+            ordersApi.listOrders(token).then(setOrders).catch(() => {});
+            return;
+          }
+          throw e;
+        }
+      },
+    });
   };
 
   const fmtTime = (iso?: string | null) =>
@@ -264,8 +275,8 @@ export default function AdminTreatmentPage() {
                     )}
                     {order.status === "PACKAGING" && (
                       <button
-                        onClick={() => handleComplete(order.id)}
-                        disabled={!canManage || !canFinishPackaging(order) || isBusy}
+                        onClick={() => askFinishPacking(order.id)}
+                        disabled={!canManage || !canFinishPackaging(order)}
                         title={
                           !canManage
                             ? t("adminOrders.treatment.noPermission")
@@ -275,7 +286,7 @@ export default function AdminTreatmentPage() {
                         }
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-teal-500/15 text-teal-600 hover:bg-teal-500/25 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
                       >
-                        <Check size={13} /> {isBusy ? t("adminOrders.treatment.saving") : t("adminOrders.treatment.markDone")}
+                        <Check size={13} /> {t("adminOrders.treatment.markDone")}
                       </button>
                     )}
                     <Link
@@ -298,6 +309,7 @@ export default function AdminTreatmentPage() {
 
       {contactsOpen && <DeliveryContactsPanel onClose={() => setContactsOpen(false)} />}
       <AlertDialog title="Already Being Packed" message={conflictMessage} onClose={() => setConflictMessage(null)} />
+      <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
     </AdminShell>
   );
 }
