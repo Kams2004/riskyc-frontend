@@ -6,6 +6,7 @@ import { useAdminColors } from "@/lib/useAdminColors";
 import { apiFetch, ApiError } from "@/lib/apiClient";
 import { AdminUser, Role, Permission, ALL_PERMISSIONS, UserStatus } from "@/lib/types";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import AlertDialog from "@/components/admin/AlertDialog";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useState, useMemo, useEffect, useCallback, Fragment } from "react";
 import {
@@ -366,6 +367,7 @@ export default function AdminUsersPage() {
   const [userForm,     setUserForm]     = useState<null | "new" | string>(null); // null | "new" | userId
   const [roleForm,     setRoleForm]     = useState<null | "new" | string>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [successAlert, setSuccessAlert] = useState<{ title: string; message: string } | null>(null);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
 
   const token = session?.token;
@@ -419,6 +421,10 @@ export default function AdminUsersPage() {
           }),
         });
         setUsers((prev) => [...prev, created]);
+        setSuccessAlert({
+          title: t("adminOps.users.userCreatedTitle"),
+          message: t("adminOps.users.userCreatedMessage", { name: `${created.firstName} ${created.lastName}` }),
+        });
       }
       setUserForm(null);
     } catch (e) {
@@ -464,6 +470,10 @@ export default function AdminUsersPage() {
           body: JSON.stringify(data),
         });
         setRoles((prev) => [...prev, created]);
+        setSuccessAlert({
+          title: t("adminOps.roles.roleCreatedTitle"),
+          message: t("adminOps.roles.roleCreatedMessage", { name: created.name }),
+        });
       }
       setRoleForm(null);
     } catch (e) {
@@ -804,6 +814,12 @@ export default function AdminUsersPage() {
       </div>
 
       <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
+      <AlertDialog
+        title={successAlert?.title ?? ""}
+        message={successAlert?.message ?? null}
+        variant="success"
+        onClose={() => setSuccessAlert(null)}
+      />
     </AdminShell>
   );
 }

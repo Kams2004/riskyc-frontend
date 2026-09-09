@@ -9,6 +9,7 @@ import * as productsApi from "@/lib/api/products";
 import { API_BASE_URL as apiBaseUrl } from "@/lib/apiClient";
 import { Product, ProductColor, Badge, MediaItem, BulkPriceTier } from "@/lib/types";
 import ImageMarkupEditor from "@/components/admin/ImageMarkupEditor";
+import AlertDialog from "@/components/admin/AlertDialog";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import {
   Plus,
@@ -134,6 +135,7 @@ export default function ProductForm({ initial, mode }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [createdName, setCreatedName] = useState<string | null>(null);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [markupTarget, setMarkupTarget] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -185,6 +187,9 @@ export default function ProductForm({ initial, mode }: Props) {
         for (const pf of pendingFiles) {
           await productsApi.uploadProductMedia(product.id, pf.file, token);
         }
+        setSaving(false);
+        setCreatedName(product.name);
+        return;
       } else {
         // Edit mode only ever submits the sections this admin actually has
         // permission for (the rest are blurred/disabled, so their values in
@@ -1132,6 +1137,12 @@ export default function ProductForm({ initial, mode }: Props) {
           </button>
         </div>
       </div>
+      <AlertDialog
+        title={t("adminProducts.form.productCreatedTitle")}
+        message={createdName ? t("adminProducts.form.productCreatedMessage", { name: createdName }) : null}
+        variant="success"
+        onClose={() => router.push("/admin/products")}
+      />
     </div>
   );
 }

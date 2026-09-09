@@ -7,6 +7,7 @@ import { Category } from "@/lib/types";
 import { useAdminColors } from "@/lib/useAdminColors";
 import FaIconPicker, { FaIconPreview } from "@/components/admin/FaIconPicker";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import AlertDialog from "@/components/admin/AlertDialog";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -56,6 +57,7 @@ export default function AdminCategoriesPage() {
   const [newIcon, setNewIcon] = useState("fa:solid:tag");
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [createdCategoryName, setCreatedCategoryName] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const uploadTargetRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -165,6 +167,7 @@ export default function AdminCategoriesPage() {
       );
       setCategories((prev) => [...prev, created]);
       setAdding(null);
+      setCreatedCategoryName(created.name);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : t("adminProducts.categories.createCategoryError"));
     }
@@ -731,6 +734,12 @@ export default function AdminCategoriesPage() {
       </div>
 
       <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
+      <AlertDialog
+        title={t("adminProducts.categories.categoryCreatedTitle")}
+        message={createdCategoryName ? t("adminProducts.categories.categoryCreatedMessage", { name: createdCategoryName }) : null}
+        variant="success"
+        onClose={() => setCreatedCategoryName(null)}
+      />
     </AdminShell>
   );
 }

@@ -62,6 +62,8 @@ export const adminOps = {
     deleteUserTitle: "Delete user?",
     deleteUserMessage: "This will permanently delete \"{{name}}\" ({{email}}). This cannot be undone.",
     failedSaveUser: "Failed to save user",
+    userCreatedTitle: "User Created",
+    userCreatedMessage: "{{name}} can now log in with their new account.",
     failedDeleteUser: "Failed to delete user",
     cannotDeleteSelf: "You can't delete your own account — ask another admin to remove it if needed.",
   },
@@ -88,6 +90,8 @@ export const adminOps = {
     assignedSingular: ". {{count}} user is currently assigned this role",
     assignedPlural: ". {{count}} users are currently assigned this role",
     failedSaveRole: "Failed to save role",
+    roleCreatedTitle: "Role Created",
+    roleCreatedMessage: "\"{{name}}\" is ready to assign to a user.",
     failedDeleteRole: "Failed to delete role",
   },
   chat: {

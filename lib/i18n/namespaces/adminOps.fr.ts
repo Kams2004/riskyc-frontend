@@ -64,6 +64,8 @@ export const adminOps: typeof adminOpsEn = {
     deleteUserTitle: "Supprimer cet utilisateur ?",
     deleteUserMessage: "« {{name}} » ({{email}}) sera définitivement supprimé. Cette action est irréversible.",
     failedSaveUser: "Échec de l'enregistrement de l'utilisateur",
+    userCreatedTitle: "Utilisateur créé",
+    userCreatedMessage: "{{name}} peut maintenant se connecter avec son nouveau compte.",
     failedDeleteUser: "Échec de la suppression de l'utilisateur",
     cannotDeleteSelf: "Vous ne pouvez pas supprimer votre propre compte — demandez à un autre administrateur de le faire si nécessaire.",
   },
@@ -90,6 +92,8 @@ export const adminOps: typeof adminOpsEn = {
     assignedSingular: ". {{count}} utilisateur est actuellement affecté à ce rôle",
     assignedPlural: ". {{count}} utilisateurs sont actuellement affectés à ce rôle",
     failedSaveRole: "Échec de l'enregistrement du rôle",
+    roleCreatedTitle: "Rôle créé",
+    roleCreatedMessage: "« {{name}} » est prêt à être attribué à un utilisateur.",
     failedDeleteRole: "Échec de la suppression du rôle",
   },
   chat: {
