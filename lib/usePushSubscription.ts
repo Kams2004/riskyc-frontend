@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getVapidPublicKey, subscribePush } from "@/lib/api/push";
 import { useStore } from "@/lib/store";
 
@@ -19,6 +19,17 @@ function urlBase64ToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
 /** Lets the customer opt in to push notifications for one specific order (no account needed). */
 export function usePushSubscription(orderId: string) {
   const [status, setStatus] = useState<PushStatus>("checking");
+  // The button's `disabled` prop only takes effect after React re-renders,
+  // which isn't necessarily before a second click event fires (a fast
+  // double-click, or a click landing while the browser's own native
+  // permission prompt is up) — a synchronous ref closes that gap. Without
+  // it, two concurrent subscribe() calls can both reach
+  // pushManager.subscribe(): most browsers just return the same
+  // subscription to both, but under true concurrency one can throw, whose
+  // catch then overwrites a status the other call had already set to
+  // "subscribed" — the subscription itself still went through, but the UI
+  // is left permanently claiming it failed.
+  const subscribingRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +82,8 @@ export function usePushSubscription(orderId: string) {
   }, [orderId]);
 
   const subscribe = async () => {
+    if (subscribingRef.current) return;
+    subscribingRef.current = true;
     setStatus("subscribing");
     try {
       const reg = await navigator.serviceWorker.register("/sw.js");
@@ -105,6 +118,8 @@ export function usePushSubscription(orderId: string) {
       // ("it says couldn't" and nothing else) — log the real reason instead.
       console.error("Push subscription failed:", e);
       setStatus("error");
+    } finally {
+      subscribingRef.current = false;
     }
   };
 
