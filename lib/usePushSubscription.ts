@@ -79,11 +79,18 @@ export function usePushSubscription(orderId: string) {
         setStatus("denied");
         return;
       }
-      const { publicKey } = await getVapidPublicKey();
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
+      // Re-subscribing with a *different* applicationServerKey than an
+      // already-registered subscription throws InvalidStateError in most
+      // browsers — reuse whatever's already there instead of always calling
+      // subscribe() fresh (the same reuse the mount effect above does).
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        const { publicKey } = await getVapidPublicKey();
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+      }
       const json = sub.toJSON();
       if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) throw new Error("Incomplete subscription");
       await subscribePush({
@@ -93,7 +100,10 @@ export function usePushSubscription(orderId: string) {
         language: useStore.getState().language,
       });
       setStatus("subscribed");
-    } catch {
+    } catch (e) {
+      // Swallowed before, which made this unfixable from a bug report alone
+      // ("it says couldn't" and nothing else) — log the real reason instead.
+      console.error("Push subscription failed:", e);
       setStatus("error");
     }
   };
