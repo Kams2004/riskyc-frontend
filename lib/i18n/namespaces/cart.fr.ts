@@ -88,6 +88,7 @@ export const cart: typeof cartEn = {
     required: "Requis",
     requiredForDelivery: "Requis pour la livraison",
     genericError: "Une erreur s'est produite lors de la commande. Veuillez réessayer.",
+    itemsRemovedNotice: "Nous avons retiré {{names}} de votre panier — non disponible.",
     placingOrder: "Commande en cours...",
     confirmOrder: "Confirmer la commande →",
     cancelledTitle: "Cette commande a été annulée",

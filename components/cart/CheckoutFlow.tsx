@@ -91,7 +91,7 @@ function PushOptIn({ orderId }: { orderId: string }) {
 
 export default function CheckoutFlow({ orderId, onClose }: Props) {
   const router = useRouter();
-  const { items, getCartTotal, getLineTotal, clearCart, setChatOpen, customer } = useStore();
+  const { items, getCartTotal, getLineTotal, clearCart, setChatOpen, customer, refreshCart } = useStore();
   const { t, language } = useTranslation();
 
   const [order, setOrder] = useState<Order | null>(null);
@@ -130,6 +130,28 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
       })
       .catch(() => setOrderLoadError(true))
       .finally(() => setLoadingOrder(false));
+  }, [orderId]);
+
+  // The cart persists product snapshots (media presigned URLs included)
+  // indefinitely in localStorage — a line added a while ago can point at a
+  // presigned URL that's since expired (broken thumbnail) or, worse, a
+  // product that's been deleted since (a hard "Product not found" only
+  // surfacing once the order is actually submitted). Re-validate against the
+  // live catalogue as soon as a fresh checkout opens, not at submit time.
+  const [removedNotice, setRemovedNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (orderId) return;
+    refreshCart().then((removedNames) => {
+      if (removedNames.length === 0) return;
+      if (useStore.getState().items.length === 0) {
+        // Nothing left to check out — closing is more honest than showing
+        // an empty $0 order the customer could otherwise still submit.
+        onClose();
+        return;
+      }
+      setRemovedNotice(t("cart.checkout.itemsRemovedNotice", { names: removedNames.join(", ") }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
   // Customer info form state — prefilled from the logged-in customer, if any
@@ -373,6 +395,12 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
           {/* ===== STEP 1: Choose payment method ===== */}
           {step === "method" && (
             <div className="space-y-4 animate-fade-in">
+              {removedNotice && (
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5">
+                  <AlertCircle size={15} className="text-amber-500 flex-shrink-0" />
+                  <p className="text-amber-700 text-xs font-medium">{removedNotice}</p>
+                </div>
+              )}
               <div className="bg-gray-50 rounded-2xl p-4 space-y-2 max-h-40 overflow-y-auto">
                 {items.map((item, i) => (
                   <div key={i} className="flex items-center gap-3">

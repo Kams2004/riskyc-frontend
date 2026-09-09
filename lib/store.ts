@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { CartItem, Language, Customer } from "./types";
+import { CartItem, Language, Customer, Product } from "./types";
 import * as customersApi from "./api/customers";
+import * as productsApi from "./api/products";
 import { allocateGroupedLineTotals } from "./pricing";
+import { localized } from "./i18n/localized";
 
 /**
  * Bulk-tier pricing is pooled across every cart line of the SAME product
@@ -48,6 +50,18 @@ interface CartStore {
   getCartTotal: () => number;
   getCartCount: () => number;
   getLineTotal: (item: CartItem) => number;
+  /**
+   * The cart persists full product snapshots (name, price, media presigned
+   * URLs) in localStorage indefinitely — a line added before a catalogue
+   * change (or, worse, a product deletion) silently goes stale: broken
+   * thumbnails once the presigned URL expires (an hour, by default), and a
+   * hard "Product not found" from the backend at order-creation time if the
+   * product itself is gone. Re-fetches every distinct product still in the
+   * cart and refreshes each line in place; a line whose product (or
+   * specifically chosen picture) no longer exists is dropped instead. Returns
+   * the names of any dropped lines so the UI can tell the customer why.
+   */
+  refreshCart: () => Promise<string[]>;
 
   // Language
   setLanguage: (lang: Language) => void;
@@ -132,6 +146,35 @@ export const useStore = create<CartStore>()(
         })),
 
       clearCart: () => set({ items: [] }),
+
+      refreshCart: async () => {
+        const currentItems = get().items;
+        const productIds = Array.from(new Set(currentItems.map((i) => i.product.id)));
+        if (productIds.length === 0) return [];
+
+        const results = await Promise.all(
+          productIds.map((id) => productsApi.getProduct(id).catch(() => null))
+        );
+        const freshById = new Map(productIds.map((id, i) => [id, results[i]]));
+
+        const language = get().language;
+        const nameOf = (p: Product) => localized(p.name, p.nameFr, language);
+        const removedNames: string[] = [];
+        const items = get().items.flatMap((item) => {
+          const fresh = freshById.get(item.product.id);
+          if (!fresh) {
+            removedNames.push(nameOf(item.product));
+            return [];
+          }
+          if (item.selectedImageIndex != null && item.selectedImageIndex >= fresh.media.length) {
+            removedNames.push(nameOf(fresh));
+            return [];
+          }
+          return [{ ...item, product: fresh }];
+        });
+        set({ items });
+        return removedNames;
+      },
 
       getCartTotal: () => {
         const totals = computeLineTotals(get().items);

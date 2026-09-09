@@ -86,6 +86,7 @@ export const cart = {
     required: "Required",
     requiredForDelivery: "Required for delivery",
     genericError: "Something went wrong placing your order. Please try again.",
+    itemsRemovedNotice: "We removed {{names}} from your cart — no longer available.",
     placingOrder: "Placing Order...",
     confirmOrder: "Confirm Order →",
     cancelledTitle: "This order was cancelled",

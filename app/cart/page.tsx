@@ -21,7 +21,7 @@ export default function CartPage() {
 function CartPageInner() {
   const searchParams = useSearchParams();
   const startCheckout = searchParams.get("checkout") === "1";
-  const { items } = useStore();
+  const { items, refreshCart } = useStore();
   const { t } = useTranslation();
 
   const [tab, setTab] = useState<"cart" | "orders">(
@@ -35,6 +35,14 @@ function CartPageInner() {
       setCheckoutOpen(true);
     }
   }, [startCheckout, items.length]);
+
+  // A cart line can go stale while just sitting in localStorage between
+  // visits — refresh against the live catalogue as soon as the cart is
+  // actually looked at, not only once checkout is opened.
+  useEffect(() => {
+    refreshCart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleStartCheckout = () => {
     setCheckoutOpen(true);
