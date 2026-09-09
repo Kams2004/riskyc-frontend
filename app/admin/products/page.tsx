@@ -23,7 +23,26 @@ const PAGE_SIZES = [10, 20, 50];
 
 export default function AdminProductsPage() {
   const token = useAdminStore((s) => s.session?.token);
-  const canManage = useAdminStore((s) => s.hasPermission("MANAGE_PRODUCTS"));
+  const canCreate = useAdminStore((s) => s.hasPermission("CREATE_PRODUCT"));
+  const canDelete = useAdminStore((s) => s.hasPermission("DELETE_PRODUCT"));
+  const canUpdateVisibility = useAdminStore((s) => s.hasPermission("UPDATE_PRODUCT_VISIBILITY"));
+  // Only worth showing an Edit link at all if there's at least one section
+  // they could actually change once there — otherwise it just opens a page
+  // where every section is blurred.
+  const canEditAnySection = useAdminStore((s) =>
+    (
+      [
+        "MANAGE_PRODUCTS",
+        "UPDATE_PRODUCT_INFO",
+        "UPDATE_PRODUCT_PRICING",
+        "UPDATE_PRODUCT_IMAGES",
+        "UPDATE_PRODUCT_COLORS",
+        "UPDATE_PRODUCT_STOCK",
+        "UPDATE_PRODUCT_DISPLAY",
+        "UPDATE_PRODUCT_VISIBILITY",
+      ] as const
+    ).some((p) => s.hasPermission(p))
+  );
   const { categories } = useCategories();
   const c = useAdminColors();
   const { t } = useTranslation();
@@ -128,7 +147,7 @@ export default function AdminProductsPage() {
               {t("adminProducts.list.subtitle", { count: products.length, categories: categories.length })}
             </p>
           </div>
-          {canManage && (
+          {canCreate && (
             <Link href="/admin/products/new"
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20">
               <Plus size={16} /> {t("adminProducts.list.addProduct")}
@@ -303,7 +322,7 @@ export default function AdminProductsPage() {
 
                           {/* Visibility */}
                           <td className="px-4 py-3 text-center">
-                            {canManage ? (
+                            {canUpdateVisibility ? (
                               <button
                                 onClick={() => setHidden(product.id, !product.hidden)}
                                 disabled={visibilityBusyId === product.id}
@@ -327,13 +346,13 @@ export default function AdminProductsPage() {
                                   c.isDark ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-blue-50 text-blue-600 hover:bg-blue-100")}>
                                 <Eye size={12} /> {t("adminProducts.common.view")}
                               </Link>
-                              {canManage && (
+                              {canEditAnySection && (
                               <Link href={`/admin/products/${product.id}/edit`}
                                 className={clsx("inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap", c.btnGhost)}>
                                 <Pencil size={12} /> {t("adminProducts.common.edit")}
                               </Link>
                               )}
-                              {canManage && (
+                              {canDelete && (
                               <button onClick={() => askDelete(product.id, product.name)}
                                 className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap bg-red-500/10 text-red-500 hover:bg-red-500/20">
                                 <Trash2 size={12} />
@@ -413,7 +432,7 @@ export default function AdminProductsPage() {
                           {product.colors.length > 5 && <span className={clsx("text-xs", c.textMuted)}>+{product.colors.length - 5}</span>}
                         </div>
                         <div className="flex gap-2">
-                          {canManage && (
+                          {canUpdateVisibility && (
                           <button
                             onClick={() => setHidden(product.id, !product.hidden)}
                             disabled={visibilityBusyId === product.id}
@@ -430,13 +449,13 @@ export default function AdminProductsPage() {
                               c.isDark ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-blue-50 text-blue-600 hover:bg-blue-100")}>
                             <Eye size={13} /> {t("adminProducts.common.view")}
                           </Link>
-                          {canManage && (
+                          {canEditAnySection && (
                           <Link href={`/admin/products/${product.id}/edit`}
                             className={clsx("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-colors", c.btnGhost)}>
                             <Pencil size={13} /> {t("adminProducts.common.edit")}
                           </Link>
                           )}
-                          {canManage && (
+                          {canDelete && (
                           <button onClick={() => askDelete(product.id, product.name)}
                             title={t("adminProducts.list.deleteProductTooltip")}
                             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20">

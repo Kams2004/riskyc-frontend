@@ -33,17 +33,29 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/chat",       label: "Chat",       icon: MessageSquare,   permission: "VIEW_CHAT" },
 ];
 
-// These sub-routes need the stricter MANAGE_PRODUCTS permission, not just
-// the section's own VIEW_PRODUCTS — checked before the general nav-item
-// match below so a view-only admin can't reach the create/edit form via a
-// direct URL even though the corresponding buttons are already hidden from
-// them. Not added to adminNavItems itself since that would also duplicate
-// them into the sidebar.
+// These sub-routes need their own permission, not just the section's
+// general VIEW_PRODUCTS — checked before the general nav-item match below
+// so an admin without it can't reach the route via a direct URL even
+// though the corresponding button is already hidden from them. Not added
+// to adminNavItems itself since that would also duplicate them into the
+// sidebar. The edit route only requires VIEW_PRODUCTS to open at all —
+// which sections are actually editable once there is decided per-field
+// inside ProductForm (see the UPDATE_PRODUCT_* permissions), not gated
+// at the route level like create/delete are.
 const PRODUCT_EDIT_PATH = /^\/admin\/products\/[^/]+\/edit/;
+const PRODUCT_ACTIVITY_PATH = /^\/admin\/products\/[^/]+\/activity/;
 
 /** Resolves which permission a given /admin/... path requires, if any. */
 export function permissionForPath(pathname: string): Permission | null {
-  if (pathname.startsWith("/admin/products/new") || PRODUCT_EDIT_PATH.test(pathname)) {
+  if (pathname.startsWith("/admin/products/new")) {
+    return "CREATE_PRODUCT";
+  }
+  if (PRODUCT_EDIT_PATH.test(pathname)) {
+    return "VIEW_PRODUCTS";
+  }
+  // The audit trail is only useful to (and only meant for) whoever has full
+  // product access — a section-scoped editor doesn't see other people's history.
+  if (PRODUCT_ACTIVITY_PATH.test(pathname)) {
     return "MANAGE_PRODUCTS";
   }
   const matches = adminNavItems.filter((item) =>

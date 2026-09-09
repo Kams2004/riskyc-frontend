@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/apiClient";
-import { Product, MediaItem } from "@/lib/types";
+import { Product, MediaItem, ProductColor } from "@/lib/types";
 
 export interface Page<T> {
   content: T[];
@@ -61,7 +61,7 @@ export interface ProductInput {
   hidden?: boolean;
   rating?: number;
   reviews?: number;
-  colors: { name: string; hex: string; stock?: number | null }[];
+  colors: { id?: string; name: string; hex: string; stock?: number | null }[];
   bulkPrices?: { quantity: number; price: number }[];
 }
 
@@ -104,4 +104,69 @@ export async function uploadProductMedia(productId: string, file: File, token: s
 
 export function deleteMedia(mediaId: string, token: string) {
   return apiFetch<void>(`/api/media/${mediaId}`, { method: "DELETE", token });
+}
+
+// ── Section-scoped updates — each maps to its own permission (see
+// UPDATE_PRODUCT_* in lib/types.ts) so an admin with only, say,
+// UPDATE_PRODUCT_STOCK can save just that section instead of needing
+// MANAGE_PRODUCTS to submit the whole product via updateProduct() above. ──
+
+export interface ProductInfoInput {
+  name: string;
+  description?: string;
+  categorySlug: string;
+  subcategorySlug?: string;
+}
+
+export function updateProductInfo(id: string, data: ProductInfoInput, token: string) {
+  return apiFetch<Product>(`/api/products/${id}/info`, { method: "PATCH", token, body: JSON.stringify(data) });
+}
+
+export interface ProductPricingInput {
+  price: number;
+  originalPrice?: number;
+  bulkPrices?: { quantity: number; price: number }[];
+}
+
+export function updateProductPricing(id: string, data: ProductPricingInput, token: string) {
+  return apiFetch<Product>(`/api/products/${id}/pricing`, { method: "PATCH", token, body: JSON.stringify(data) });
+}
+
+/** Name/hex/add/remove only — a stock value included here is ignored server-side, see updateProductStock. */
+export function updateProductColors(id: string, colors: Pick<ProductColor, "id" | "name" | "hex">[], token: string) {
+  return apiFetch<Product>(`/api/products/${id}/colors`, { method: "PATCH", token, body: JSON.stringify({ colors }) });
+}
+
+/** Updates only the stock count of existing colors (matched by id) — never adds/removes/renames one. */
+export function updateProductStock(id: string, colors: { id: string; stock: number | null }[], token: string) {
+  return apiFetch<Product>(`/api/products/${id}/stock`, { method: "PATCH", token, body: JSON.stringify({ colors }) });
+}
+
+export interface ProductDisplayInput {
+  badge?: string;
+  sizes: string[];
+  rating?: number;
+  reviews?: number;
+}
+
+export function updateProductDisplay(id: string, data: ProductDisplayInput, token: string) {
+  return apiFetch<Product>(`/api/products/${id}/display`, { method: "PATCH", token, body: JSON.stringify(data) });
+}
+
+export interface ProductAuditLogEntry {
+  id: string;
+  productId: string;
+  productName: string;
+  section: string;
+  summary: string;
+  changedByName?: string | null;
+  changedAt: string;
+}
+
+export function getProductAuditLog(id: string, token: string) {
+  return apiFetch<Page<ProductAuditLogEntry>>(`/api/products/${id}/audit-log`, { token });
+}
+
+export function getAllProductAuditLog(token: string) {
+  return apiFetch<Page<ProductAuditLogEntry>>(`/api/products/audit-log`, { token });
 }

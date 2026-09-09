@@ -27,6 +27,7 @@ import {
   Pencil,
   ChevronLeft,
   ChevronRight,
+  Lock,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -91,10 +92,22 @@ interface PendingFile {
 export default function ProductForm({ initial, mode }: Props) {
   const router = useRouter();
   const token = useAdminStore((s) => s.session?.token);
+  const hasPermission = useAdminStore((s) => s.hasPermission);
   const { categories } = useCategories();
   const c = useAdminColors();
   const isDark = c.isDark;
   const { t } = useTranslation();
+
+  // In create mode the whole form is already gated behind CREATE_PRODUCT at
+  // the page level (see app/admin/products/new/page.tsx) — section locking
+  // only applies to editing an existing product.
+  const canUpdateInfo = mode === "new" || hasPermission("UPDATE_PRODUCT_INFO");
+  const canUpdatePricing = mode === "new" || hasPermission("UPDATE_PRODUCT_PRICING");
+  const canUpdateImages = mode === "new" || hasPermission("UPDATE_PRODUCT_IMAGES");
+  const canUpdateColors = mode === "new" || hasPermission("UPDATE_PRODUCT_COLORS");
+  const canUpdateStock = mode === "new" || hasPermission("UPDATE_PRODUCT_STOCK");
+  const canUpdateDisplay = mode === "new" || hasPermission("UPDATE_PRODUCT_DISPLAY");
+  const canUpdateVisibility = mode === "new" || hasPermission("UPDATE_PRODUCT_VISIBILITY");
 
   const [form, setForm] = useState<FormState>(
     initial
@@ -151,30 +164,116 @@ export default function ProductForm({ initial, mode }: Props) {
     setSaving(true);
     setErrors({});
     try {
-      const input: productsApi.ProductInput = {
-        name: form.name.trim(),
-        description: form.description.trim() || undefined,
-        price: form.price,
-        originalPrice: form.originalPrice,
-        categorySlug: form.categorySlug,
-        subcategorySlug: form.subcategorySlug || undefined,
-        sizes: form.sizes,
-        tags: form.tags,
-        badge: form.badge,
-        hidden: form.hidden,
-        rating: form.rating,
-        reviews: form.reviews,
-        colors: form.colors,
-        bulkPrices: [...form.bulkPrices].sort((a, b) => a.quantity - b.quantity),
-      };
+      if (mode === "new") {
+        const input: productsApi.ProductInput = {
+          name: form.name.trim(),
+          description: form.description.trim() || undefined,
+          price: form.price,
+          originalPrice: form.originalPrice,
+          categorySlug: form.categorySlug,
+          subcategorySlug: form.subcategorySlug || undefined,
+          sizes: form.sizes,
+          tags: form.tags,
+          badge: form.badge,
+          hidden: form.hidden,
+          rating: form.rating,
+          reviews: form.reviews,
+          colors: form.colors,
+          bulkPrices: [...form.bulkPrices].sort((a, b) => a.quantity - b.quantity),
+        };
+        const product = await productsApi.createProduct(input, token);
+        for (const pf of pendingFiles) {
+          await productsApi.uploadProductMedia(product.id, pf.file, token);
+        }
+      } else {
+        // Edit mode only ever submits the sections this admin actually has
+        // permission for (the rest are blurred/disabled, so their values in
+        // `form` are already untouched — but the permission check here is
+        // the real boundary, not the UI) — and only when that section is
+        // actually dirty, to avoid spamming the audit log with no-op saves.
+        const sorted = [...form.bulkPrices].sort((a, b) => a.quantity - b.quantity);
+        const initialSorted = [...(initial!.bulkPrices ?? [])].sort((a, b) => a.quantity - b.quantity);
+        const calls: Promise<unknown>[] = [];
 
-      const product =
-        mode === "new"
-          ? await productsApi.createProduct(input, token)
-          : await productsApi.updateProduct(initial!.id, input, token);
+        if (
+          canUpdateInfo &&
+          (form.name.trim() !== initial!.name ||
+            form.description.trim() !== (initial!.description ?? "") ||
+            form.categorySlug !== initial!.categorySlug ||
+            (form.subcategorySlug || "") !== (initial!.subcategorySlug ?? ""))
+        ) {
+          calls.push(
+            productsApi.updateProductInfo(
+              initial!.id,
+              {
+                name: form.name.trim(),
+                description: form.description.trim() || undefined,
+                categorySlug: form.categorySlug,
+                subcategorySlug: form.subcategorySlug || undefined,
+              },
+              token
+            )
+          );
+        }
 
-      for (const pf of pendingFiles) {
-        await productsApi.uploadProductMedia(product.id, pf.file, token);
+        if (
+          canUpdatePricing &&
+          (form.price !== initial!.price ||
+            (form.originalPrice ?? null) !== (initial!.originalPrice ?? null) ||
+            JSON.stringify(sorted) !== JSON.stringify(initialSorted))
+        ) {
+          calls.push(
+            productsApi.updateProductPricing(
+              initial!.id,
+              { price: form.price, originalPrice: form.originalPrice, bulkPrices: sorted },
+              token
+            )
+          );
+        }
+
+        const colorIdentity = (list: ProductColor[]) => JSON.stringify(list.map((cl) => ({ id: cl.id, name: cl.name, hex: cl.hex })));
+        if (canUpdateColors && colorIdentity(form.colors) !== colorIdentity(initial!.colors)) {
+          calls.push(productsApi.updateProductColors(initial!.id, form.colors, token));
+        }
+
+        const colorStock = (list: ProductColor[]) => JSON.stringify(list.filter((cl) => cl.id).map((cl) => ({ id: cl.id, stock: cl.stock ?? null })));
+        if (canUpdateStock && colorStock(form.colors) !== colorStock(initial!.colors)) {
+          calls.push(
+            productsApi.updateProductStock(
+              initial!.id,
+              form.colors.filter((cl) => cl.id).map((cl) => ({ id: cl.id!, stock: cl.stock ?? null })),
+              token
+            )
+          );
+        }
+
+        if (
+          canUpdateDisplay &&
+          (form.badge !== initial!.badge ||
+            JSON.stringify(form.sizes) !== JSON.stringify(initial!.sizes) ||
+            form.rating !== initial!.rating ||
+            form.reviews !== initial!.reviews)
+        ) {
+          calls.push(
+            productsApi.updateProductDisplay(
+              initial!.id,
+              { badge: form.badge, sizes: form.sizes, rating: form.rating, reviews: form.reviews },
+              token
+            )
+          );
+        }
+
+        if (canUpdateVisibility && form.hidden !== initial!.hidden) {
+          calls.push(productsApi.setProductVisibility(initial!.id, form.hidden, token));
+        }
+
+        await Promise.all(calls);
+
+        if (canUpdateImages) {
+          for (const pf of pendingFiles) {
+            await productsApi.uploadProductMedia(initial!.id, pf.file, token);
+          }
+        }
       }
 
       setSaved(true);
@@ -347,6 +446,7 @@ export default function ProductForm({ initial, mode }: Props) {
         <div className="lg:col-span-2 space-y-5">
 
           {/* BASIC INFO */}
+          <Locked granted={canUpdateInfo} isDark={isDark}>
           <Section title={t("adminProducts.form.basicInfoTitle")} icon={<Info size={15} />} isDark={isDark} c={c}>
             <div className="space-y-4">
               <Field label={t("adminProducts.form.productNameLabel")} error={errors.name} isDark={isDark} c={c}>
@@ -371,8 +471,10 @@ export default function ProductForm({ initial, mode }: Props) {
               </Field>
             </div>
           </Section>
+          </Locked>
 
           {/* CATEGORIES CONFIG */}
+          <Locked granted={canUpdateInfo} isDark={isDark}>
           <Section title={t("adminProducts.form.categoryConfigTitle")} icon={<Layers size={15} />} isDark={isDark} c={c}>
             <div className="space-y-3">
               <p className={clsx("text-xs", c.textSecondary)}>
@@ -431,8 +533,10 @@ export default function ProductForm({ initial, mode }: Props) {
               </p>
             </div>
           </Section>
+          </Locked>
 
           {/* PRICING */}
+          <Locked granted={canUpdatePricing} isDark={isDark}>
           <Section title={t("adminProducts.form.pricingTitle")} icon={<DollarSign size={15} />} isDark={isDark} c={c}>
             <div className="grid grid-cols-2 gap-4">
               <Field label={t("adminProducts.form.priceLabel")} isDark={isDark} c={c}>
@@ -557,8 +661,10 @@ export default function ProductForm({ initial, mode }: Props) {
               )}
             </div>
           </Section>
+          </Locked>
 
           {/* IMAGES */}
+          <Locked granted={canUpdateImages} isDark={isDark}>
           <Section title={t("adminProducts.form.imagesTitle")} icon={<ImageIcon size={15} />} error={errors.images} isDark={isDark} c={c}>
             <div className="space-y-3">
               {/* Hidden file input — accepts images and videos */}
@@ -652,8 +758,10 @@ export default function ProductForm({ initial, mode }: Props) {
               )}
             </div>
           </Section>
+          </Locked>
 
-          {/* COLORS & STOCK */}
+          {/* COLORS & STOCK — split per control, not the whole section: name/hex/add/remove
+              need UPDATE_PRODUCT_COLORS, the stock number needs UPDATE_PRODUCT_STOCK. */}
           <Section title={t("adminProducts.form.colorsStockTitle")} icon={<Palette size={15} />} error={errors.colors} isDark={isDark} c={c}>
             <div className="space-y-3">
               {form.colors.map((color, i) => (
@@ -666,6 +774,7 @@ export default function ProductForm({ initial, mode }: Props) {
                       : "bg-gray-50 border-gray-200"
                   )}
                 >
+                  <Locked granted={canUpdateColors} isDark={isDark}>
                   <div className="flex items-center gap-3 flex-1 min-w-[160px]">
                     {/* Color picker */}
                     <ColorPicker
@@ -687,8 +796,10 @@ export default function ProductForm({ initial, mode }: Props) {
                       placeholder={t("adminProducts.form.colorNamePlaceholder")}
                     />
                   </div>
-                  {/* Stock (optional) */}
+                  </Locked>
+                  {/* Stock (optional) — separately permissioned from the name/swatch above. */}
                   <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+                    <Locked granted={canUpdateStock} isDark={isDark}>
                     <input
                       type="number"
                       className={clsx(inpSm, "w-16 text-center")}
@@ -702,12 +813,14 @@ export default function ProductForm({ initial, mode }: Props) {
                       placeholder={t("adminProducts.form.stockQtyPlaceholder")}
                       title={t("adminProducts.form.stockQtyTitle")}
                     />
+                    </Locked>
                     <span className={clsx("text-xs", c.textMuted)}>{t("adminProducts.form.unitsLabel")}</span>
-                    {/* Remove */}
+                    {/* Remove — a colors action (add/remove), not a stock one. */}
                     <button
                       onClick={() => removeColor(i)}
-                      className="text-red-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
-                      title={t("adminProducts.form.removeColorTitle")}
+                      disabled={!canUpdateColors}
+                      className="text-red-400 hover:text-red-500 disabled:opacity-30 disabled:hover:text-red-400 disabled:cursor-not-allowed p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
+                      title={canUpdateColors ? t("adminProducts.form.removeColorTitle") : t("adminProducts.form.sectionLocked")}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -733,7 +846,8 @@ export default function ProductForm({ initial, mode }: Props) {
 
               <button
                 onClick={addColor}
-                className="flex items-center gap-2 text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors"
+                disabled={!canUpdateColors}
+                className="flex items-center gap-2 text-xs text-brand-500 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-brand-500 disabled:cursor-not-allowed font-medium transition-colors"
               >
                 <Plus size={13} /> {t("adminProducts.form.addColorButton")}
               </button>
@@ -746,6 +860,7 @@ export default function ProductForm({ initial, mode }: Props) {
           {/* DISPLAY OPTIONS */}
           <Section title={t("adminProducts.form.displayTitle")} icon={<Info size={15} />} isDark={isDark} c={c}>
             <div className="space-y-4">
+              <Locked granted={canUpdateVisibility} isDark={isDark}>
               <Field label={t("adminProducts.form.visibilityLabel")} isDark={isDark} c={c}>
                 <button
                   type="button"
@@ -766,7 +881,10 @@ export default function ProductForm({ initial, mode }: Props) {
                   </span>
                 </button>
               </Field>
+              </Locked>
 
+              <Locked granted={canUpdateDisplay} isDark={isDark}>
+              <div className="space-y-4">
               <Field label={t("adminProducts.form.badgeLabel")} isDark={isDark} c={c}>
                 <select
                   className={inp()}
@@ -874,6 +992,8 @@ export default function ProductForm({ initial, mode }: Props) {
                   />
                 </Field>
               </div>
+              </div>
+              </Locked>
             </div>
           </Section>
 
@@ -1060,6 +1180,44 @@ function Section({
         </div>
       )}
       {children}
+    </div>
+  );
+}
+
+/**
+ * Wraps a section (or just part of one, e.g. one field within it) that the
+ * current admin lacks the specific permission for — the real permission
+ * boundary is server-side (see the UPDATE_PRODUCT_* section endpoints),
+ * this is purely so a limited admin can see the section exists without
+ * being able to touch it, instead of the section just vanishing.
+ */
+function Locked({
+  granted,
+  isDark,
+  children,
+}: {
+  granted: boolean;
+  isDark: boolean;
+  children: React.ReactNode;
+}) {
+  const { t } = useTranslation();
+  if (granted) return <>{children}</>;
+  return (
+    <div className="relative">
+      <div className="pointer-events-none select-none opacity-50 blur-[2px]" aria-hidden="true">
+        {children}
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center rounded-xl">
+        <span
+          className={clsx(
+            "flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-sm",
+            isDark ? "bg-gray-950/90 text-gray-200" : "bg-gray-900/85 text-white"
+          )}
+          title={t("adminProducts.form.sectionLocked")}
+        >
+          <Lock size={11} /> {t("adminProducts.form.sectionLocked")}
+        </span>
+      </div>
     </div>
   );
 }

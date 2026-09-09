@@ -26,6 +26,7 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  History,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -33,6 +34,23 @@ export default function AdminProductViewPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const token = useAdminStore((s) => s.session?.token);
+  const canUpdateVisibility = useAdminStore((s) => s.hasPermission("UPDATE_PRODUCT_VISIBILITY"));
+  const canDelete = useAdminStore((s) => s.hasPermission("DELETE_PRODUCT"));
+  const canViewActivity = useAdminStore((s) => s.hasPermission("MANAGE_PRODUCTS"));
+  const canEditAnySection = useAdminStore((s) =>
+    (
+      [
+        "MANAGE_PRODUCTS",
+        "UPDATE_PRODUCT_INFO",
+        "UPDATE_PRODUCT_PRICING",
+        "UPDATE_PRODUCT_IMAGES",
+        "UPDATE_PRODUCT_COLORS",
+        "UPDATE_PRODUCT_STOCK",
+        "UPDATE_PRODUCT_DISPLAY",
+        "UPDATE_PRODUCT_VISIBILITY",
+      ] as const
+    ).some((p) => s.hasPermission(p))
+  );
   const c = useAdminColors();
   const { t } = useTranslation();
 
@@ -121,6 +139,7 @@ export default function AdminProductViewPage() {
             <p className={clsx("text-xs mt-0.5 font-mono", c.textMuted)}>{t("adminProducts.view.idLabel", { id: product.id })}</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {canUpdateVisibility && (
             <button
               onClick={() => setHidden(!product.hidden)}
               className={clsx("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors",
@@ -131,6 +150,7 @@ export default function AdminProductViewPage() {
               {product.hidden ? <EyeOff size={13} /> : <Eye size={13} />}
               {product.hidden ? t("adminProducts.view.unhide") : t("adminProducts.view.visible")}
             </button>
+            )}
             <Link
               href={`/products/${product.id}`}
               target="_blank"
@@ -138,12 +158,23 @@ export default function AdminProductViewPage() {
             >
               <ExternalLink size={13} /> {t("adminProducts.view.storefront")}
             </Link>
+            {canViewActivity && (
+            <Link
+              href={`/admin/products/${product.id}/activity`}
+              className={clsx("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-gray-100 hover:bg-gray-200 text-gray-600")}
+            >
+              <History size={13} /> {t("adminProducts.view.activity")}
+            </Link>
+            )}
+            {canEditAnySection && (
             <Link
               href={`/admin/products/${product.id}/edit`}
               className={clsx("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors", c.btnGhost)}
             >
               <Pencil size={13} /> {t("adminProducts.common.edit")}
             </Link>
+            )}
+            {canDelete && (
             <button
               onClick={handleDelete}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
@@ -151,6 +182,7 @@ export default function AdminProductViewPage() {
               <Trash2 size={13} />
               {t("adminProducts.common.delete")}
             </button>
+            )}
           </div>
         </div>
 

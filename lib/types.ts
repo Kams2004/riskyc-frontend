@@ -233,6 +233,15 @@ export type Permission =
   | "MANAGE_DELIVERY_AGENTS"
   | "VIEW_PRODUCTS"
   | "MANAGE_PRODUCTS"
+  | "CREATE_PRODUCT"
+  | "DELETE_PRODUCT"
+  | "UPDATE_PRODUCT_INFO"
+  | "UPDATE_PRODUCT_PRICING"
+  | "UPDATE_PRODUCT_IMAGES"
+  | "UPDATE_PRODUCT_COLORS"
+  | "UPDATE_PRODUCT_STOCK"
+  | "UPDATE_PRODUCT_DISPLAY"
+  | "UPDATE_PRODUCT_VISIBILITY"
   | "VIEW_CATEGORIES"
   | "MANAGE_CATEGORIES"
   | "VIEW_CUSTOMERS"
@@ -251,7 +260,16 @@ export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[
   { key: "SEND_PACKAGING_MESSAGE", label: "Send Packaging Confirmation", group: "Packing" },
   { key: "MANAGE_DELIVERY_AGENTS", label: "Manage Delivery Agents", group: "Packing" },
   { key: "VIEW_PRODUCTS",     label: "View Products",     group: "Products" },
-  { key: "MANAGE_PRODUCTS",   label: "Manage Products",   group: "Products" },
+  { key: "MANAGE_PRODUCTS",   label: "Manage Products (all of the below)", group: "Products" },
+  { key: "CREATE_PRODUCT",    label: "Create Products",   group: "Products" },
+  { key: "DELETE_PRODUCT",    label: "Delete Products",   group: "Products" },
+  { key: "UPDATE_PRODUCT_INFO",       label: "Update: Name/Description/Category", group: "Products" },
+  { key: "UPDATE_PRODUCT_PRICING",    label: "Update: Pricing",         group: "Products" },
+  { key: "UPDATE_PRODUCT_IMAGES",     label: "Update: Images",         group: "Products" },
+  { key: "UPDATE_PRODUCT_COLORS",     label: "Update: Colors",         group: "Products" },
+  { key: "UPDATE_PRODUCT_STOCK",      label: "Update: Stock/Quantity", group: "Products" },
+  { key: "UPDATE_PRODUCT_DISPLAY",    label: "Update: Badge/Sizes/Rating", group: "Products" },
+  { key: "UPDATE_PRODUCT_VISIBILITY", label: "Update: Visibility",     group: "Products" },
   { key: "VIEW_CATEGORIES",   label: "View Categories",   group: "Categories" },
   { key: "MANAGE_CATEGORIES", label: "Manage Categories", group: "Categories" },
   { key: "VIEW_CUSTOMERS",    label: "View Customers",    group: "Customers" },
