@@ -9,7 +9,7 @@ import * as conversationsApi from "@/lib/api/conversations";
 import { useAdminColors } from "@/lib/useAdminColors";
 import { formatPrice } from "@/lib/data";
 import { Order, OrderStatus } from "@/lib/types";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
 import AlertDialog from "@/components/admin/AlertDialog";
@@ -26,6 +26,7 @@ import { useTranslation } from "@/lib/i18n/useTranslation";
 export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const token = useAdminStore((s) => s.session?.token);
   const adminId = useAdminStore((s) => s.session?.id);
   const isSuperAdmin = useAdminStore((s) => s.isSuperAdmin());
@@ -79,6 +80,13 @@ export default function AdminOrderDetailPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Landed here right after finishing packing (see FinishPackingModal) —
+  // jump straight to the confirmation that was just sent.
+  useEffect(() => {
+    if (loading || !order || searchParams.get("scrollTo") !== "message") return;
+    document.getElementById("message-customer")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [loading, order, searchParams]);
 
   if (loading) {
     return (
@@ -593,7 +601,7 @@ export default function AdminOrderDetailPage() {
             </div>
 
             {/* Message customer */}
-            <div className={clsx("rounded-2xl border p-5", c.card)}>
+            <div id="message-customer" className={clsx("rounded-2xl border p-5", c.card)}>
               <h2 className={clsx("font-semibold mb-1 flex items-center gap-2", c.textPrimary)}>
                 <MessageSquare size={16} className="text-brand-500" /> {t("adminOrders.detail.messageCustomerHeading")}
               </h2>

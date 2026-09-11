@@ -9,6 +9,7 @@ import { formatPrice } from "@/lib/data";
 import { ApiError } from "@/lib/apiClient";
 import { Order } from "@/lib/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   PackageSearch,
@@ -25,12 +26,13 @@ import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import DeliveryContactsPanel from "@/components/admin/DeliveryContactsPanel";
 import AlertDialog from "@/components/admin/AlertDialog";
-import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
+import FinishPackingModal from "@/components/admin/FinishPackingModal";
 
 type Tab = "waiting" | "in_progress" | "done";
 const PAGE_SIZE = 12;
 
 export default function AdminTreatmentPage() {
+  const router = useRouter();
   const token = useAdminStore((s) => s.session?.token);
   const canManage = useAdminStore((s) => s.hasPermission("MANAGE_TREATMENT"));
   const canSendPackagingMessage = useAdminStore((s) => s.hasPermission("SEND_PACKAGING_MESSAGE"));
@@ -46,7 +48,7 @@ export default function AdminTreatmentPage() {
   const [error, setError] = useState<string | null>(null);
   const [contactsOpen, setContactsOpen] = useState(false);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [finishTarget, setFinishTarget] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -140,33 +142,20 @@ export default function AdminTreatmentPage() {
     }
   };
 
-  const askFinishPacking = (orderId: string) => {
-    setConfirm({
-      title: "Finish packing?",
-      message: "Confirm that this order has been fully packed and sealed, ready to send. The customer will be notified once you send the delivery details.",
-      confirmLabel: "Yes, Finished",
-      destructive: false,
-      onConfirm: async () => {
-        if (!token) return;
-        try {
-          const updated = await ordersApi.completePackaging(orderId, token);
-          handleOrderUpdate(updated);
-          setConfirm(null);
-          setTab("done");
-        } catch (e) {
-          // Same race as Start Packaging — e.g. someone else already marked
-          // it done. Close this popup and show the conflict one instead of
-          // layering both.
-          if (e instanceof ApiError && e.status === 409) {
-            setConfirm(null);
-            setConflictMessage(e.message);
-            ordersApi.listOrders(token).then(setOrders).catch(() => {});
-            return;
-          }
-          throw e;
-        }
-      },
-    });
+  const askFinishPacking = (orderId: string) => setFinishTarget(orderId);
+
+  const handleFinishDone = (updated: Order) => {
+    handleOrderUpdate(updated);
+    setFinishTarget(null);
+    router.push(`/admin/orders/${updated.id}?scrollTo=message`);
+  };
+
+  const handleFinishConflict = (message: string) => {
+    // Same race as Start Packaging — e.g. someone else already marked it
+    // done. Close this popup and show the conflict one instead of layering both.
+    setFinishTarget(null);
+    setConflictMessage(message);
+    if (token) ordersApi.listOrders(token).then(setOrders).catch(() => {});
   };
 
   const fmtTime = (iso?: string | null) =>
@@ -353,7 +342,15 @@ export default function AdminTreatmentPage() {
 
       {contactsOpen && <DeliveryContactsPanel onClose={() => setContactsOpen(false)} />}
       <AlertDialog title="Already Being Packed" message={conflictMessage} onClose={() => setConflictMessage(null)} />
-      <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
+      {finishTarget && token && (
+        <FinishPackingModal
+          orderId={finishTarget}
+          token={token}
+          onCancel={() => setFinishTarget(null)}
+          onDone={handleFinishDone}
+          onConflict={handleFinishConflict}
+        />
+      )}
     </AdminShell>
   );
 }
