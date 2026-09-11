@@ -9,7 +9,7 @@ export interface CreateOrderItemInput {
   selectedImageIndex?: number;
 }
 
-export function createOrder(data: { customerId?: string; items: CreateOrderItemInput[]; customerInfo: CustomerInfo }) {
+export function createOrder(data: { customerId?: string; items: CreateOrderItemInput[]; customerInfo: CustomerInfo; language?: string }) {
   return apiFetch<Order>("/api/orders", { method: "POST", body: JSON.stringify(data) });
 }
 

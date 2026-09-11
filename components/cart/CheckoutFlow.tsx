@@ -208,6 +208,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
           selectedImageIndex: item.selectedImageIndex,
         })),
         customerInfo,
+        language: useStore.getState().language,
       });
       await ordersApi.setOrderPaymentMethod(newOrder.id, selectedMethod);
       const finalOrder = await ordersApi.uploadPaymentProof(newOrder.id, screenshotFile);

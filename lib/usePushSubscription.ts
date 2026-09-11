@@ -19,6 +19,11 @@ function urlBase64ToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
 /** Lets the customer opt in to push notifications for one specific order (no account needed). */
 export function usePushSubscription(orderId: string) {
   const [status, setStatus] = useState<PushStatus>("checking");
+  // Subscribed (not just read via getState()) so a live in-session language
+  // toggle re-runs the mount effect below and re-syncs the subscription's
+  // stored language, instead of leaving it stuck at whatever it was when
+  // this hook first mounted.
+  const language = useStore((s) => s.language);
   // The button's `disabled` prop only takes effect after React re-renders,
   // which isn't necessarily before a second click event fires (a fast
   // double-click, or a click landing while the browser's own native
@@ -63,7 +68,7 @@ export function usePushSubscription(orderId: string) {
               orderId,
               endpoint: json.endpoint,
               keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-              language: useStore.getState().language,
+              language,
             });
             if (!cancelled) setStatus("subscribed");
           } catch {
@@ -79,7 +84,7 @@ export function usePushSubscription(orderId: string) {
     return () => {
       cancelled = true;
     };
-  }, [orderId]);
+  }, [orderId, language]);
 
   const subscribe = async () => {
     if (subscribingRef.current) return;
@@ -110,7 +115,7 @@ export function usePushSubscription(orderId: string) {
         orderId,
         endpoint: json.endpoint,
         keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-        language: useStore.getState().language,
+        language,
       });
       setStatus("subscribed");
     } catch (e) {
