@@ -44,9 +44,14 @@ export const adminNavItems: AdminNavItem[] = [
 // at the route level like create/delete are.
 const PRODUCT_EDIT_PATH = /^\/admin\/products\/[^/]+\/edit/;
 const PRODUCT_ACTIVITY_PATH = /^\/admin\/products\/[^/]+\/activity/;
+// A single order's detail — reachable by someone who can only see the
+// Packing queue (VIEW_TREATMENT), not just by full order management
+// (VIEW_ORDERS), since the Packing page's own eye icon links here. Doesn't
+// match "/admin/orders" itself (the full list, still VIEW_ORDERS-only).
+const ORDER_DETAIL_PATH = /^\/admin\/orders\/[^/]+\/?$/;
 
-/** Resolves which permission a given /admin/... path requires, if any. */
-export function permissionForPath(pathname: string): Permission | null {
+/** Resolves which permission(s) a given /admin/... path requires, if any — an array means "any one of these". */
+export function permissionForPath(pathname: string): Permission | Permission[] | null {
   if (pathname.startsWith("/admin/products/new")) {
     return "CREATE_PRODUCT";
   }
@@ -57,6 +62,9 @@ export function permissionForPath(pathname: string): Permission | null {
   // product access — a section-scoped editor doesn't see other people's history.
   if (PRODUCT_ACTIVITY_PATH.test(pathname)) {
     return "MANAGE_PRODUCTS";
+  }
+  if (ORDER_DETAIL_PATH.test(pathname)) {
+    return ["VIEW_ORDERS", "VIEW_TREATMENT"];
   }
   const matches = adminNavItems.filter((item) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href)

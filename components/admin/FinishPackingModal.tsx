@@ -8,6 +8,7 @@ import * as ordersApi from "@/lib/api/orders";
 import * as conversationsApi from "@/lib/api/conversations";
 import { ApiError } from "@/lib/apiClient";
 import { Order } from "@/lib/types";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 interface Props {
   orderId: string;
@@ -30,6 +31,7 @@ type Step = "confirm" | "capture" | "sending";
  */
 export default function FinishPackingModal({ orderId, token, onCancel, onDone, onConflict }: Props) {
   const c = useAdminColors();
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>("confirm");
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export default function FinishPackingModal({ orderId, token, onCancel, onDone, o
     // A just-taken photo can briefly hand off a 0-byte file before the OS
     // finishes writing it — same guard used elsewhere in this app.
     if (picked.size === 0) {
-      setError("That picture wasn't ready yet — please try again.");
+      setError(t("adminOrders.finishPacking.photoNotReadyError"));
       return;
     }
     setError(null);
@@ -80,7 +82,7 @@ export default function FinishPackingModal({ orderId, token, onCancel, onDone, o
         onConflict(e.message);
         return;
       }
-      setError(e instanceof Error ? e.message : "Something went wrong — please try again.");
+      setError(e instanceof Error ? e.message : t("adminOrders.finishPacking.genericError"));
       setStep("capture");
     }
   };
@@ -94,20 +96,19 @@ export default function FinishPackingModal({ orderId, token, onCancel, onDone, o
             <div className="w-11 h-11 rounded-full flex items-center justify-center mb-4 bg-teal-500/10 text-teal-600">
               <CheckCircle2 size={20} />
             </div>
-            <h3 className={clsx("font-semibold text-base mb-1.5", c.textPrimary)}>Finish packing?</h3>
+            <h3 className={clsx("font-semibold text-base mb-1.5", c.textPrimary)}>{t("adminOrders.finishPacking.confirmTitle")}</h3>
             <p className={clsx("text-sm mb-5 leading-relaxed", c.textSecondary)}>
-              Confirm that this order has been fully packed and sealed. Next you&apos;ll take a picture of the sealed
-              parcel to send the customer, along with the delivery team&apos;s contact details.
+              {t("adminOrders.finishPacking.confirmBody")}
             </p>
             <div className="flex gap-3">
               <button onClick={onCancel} className={clsx("flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors", c.btnGhost)}>
-                Cancel
+                {t("adminOrders.finishPacking.cancel")}
               </button>
               <button
                 onClick={() => setStep("capture")}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 transition-colors"
               >
-                Yes, Finished
+                {t("adminOrders.finishPacking.confirmButton")}
               </button>
             </div>
           </>
@@ -118,9 +119,9 @@ export default function FinishPackingModal({ orderId, token, onCancel, onDone, o
             <div className="w-11 h-11 rounded-full flex items-center justify-center mb-4 bg-teal-500/10 text-teal-600">
               <Camera size={20} />
             </div>
-            <h3 className={clsx("font-semibold text-base mb-1.5", c.textPrimary)}>Snap the Sealed Parcel</h3>
+            <h3 className={clsx("font-semibold text-base mb-1.5", c.textPrimary)}>{t("adminOrders.finishPacking.captureTitle")}</h3>
             <p className={clsx("text-sm mb-4 leading-relaxed", c.textSecondary)}>
-              Take a picture of the sealed parcel to confirm packaging is done.
+              {t("adminOrders.finishPacking.captureBody")}
             </p>
 
             <input
@@ -135,9 +136,9 @@ export default function FinishPackingModal({ orderId, token, onCancel, onDone, o
             {previewUrl ? (
               <div className="mb-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={previewUrl} alt="Sealed parcel" className="w-full h-48 object-cover rounded-xl mb-2" />
+                <img src={previewUrl} alt={t("adminOrders.finishPacking.photoAlt")} className="w-full h-48 object-cover rounded-xl mb-2" />
                 <p className={clsx("text-xs leading-relaxed", c.textMuted)}>
-                  Delivery details are already attached — click send to confirm and notify the customer.
+                  {t("adminOrders.finishPacking.previewCaption")}
                 </p>
               </div>
             ) : (
@@ -150,7 +151,7 @@ export default function FinishPackingModal({ orderId, token, onCancel, onDone, o
                 )}
               >
                 <Camera size={22} />
-                <span className="text-xs font-semibold">Open Camera</span>
+                <span className="text-xs font-semibold">{t("adminOrders.finishPacking.openCamera")}</span>
               </button>
             )}
 
@@ -167,7 +168,7 @@ export default function FinishPackingModal({ orderId, token, onCancel, onDone, o
                   onClick={retake}
                   className={clsx("flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors", c.btnGhost)}
                 >
-                  <RotateCcw size={14} /> Retake
+                  <RotateCcw size={14} /> {t("adminOrders.finishPacking.retake")}
                 </button>
               )}
               <button
@@ -178,7 +179,7 @@ export default function FinishPackingModal({ orderId, token, onCancel, onDone, o
                 {step === "sending" ? (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : null}
-                {step === "sending" ? "Sending…" : "Send & Confirm"}
+                {step === "sending" ? t("adminOrders.finishPacking.sending") : t("adminOrders.finishPacking.sendButton")}
               </button>
             </div>
           </>

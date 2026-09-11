@@ -55,13 +55,21 @@ export default function AdminTreatmentPage() {
 
   useEffect(() => {
     if (!token) return;
-    ordersApi.listOrders(token).then(setOrders).catch(() => {}).finally(() => setLoading(false));
+    ordersApi.listPackingQueue(token).then(setOrders).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
 
   const handleOrderUpdate = useCallback((updated: Order) => {
     setOrders((prev) => {
       const exists = prev.some((o) => o.id === updated.id);
-      return exists ? prev.map((o) => (o.id === updated.id ? updated : o)) : [updated, ...prev];
+      if (exists) return prev.map((o) => (o.id === updated.id ? updated : o));
+      // /topic/orders broadcasts every order to every connected admin
+      // regardless of permission — this page's own fetch is already scoped
+      // to the Packing queue (VALIDATED/PACKAGING/PACKAGED), so a brand-new
+      // order outside that set (e.g. still PENDING) must be dropped here
+      // too, or a Packing-only admin would end up with its full data sitting
+      // in this page's state despite never having permission to see it.
+      const isPackingRelevant = updated.status === "VALIDATED" || updated.status === "PACKAGING" || updated.status === "PACKAGED";
+      return isPackingRelevant ? [updated, ...prev] : prev;
     });
   }, []);
   useOrdersSocket(handleOrderUpdate);
@@ -341,7 +349,7 @@ export default function AdminTreatmentPage() {
       </div>
 
       {contactsOpen && <DeliveryContactsPanel onClose={() => setContactsOpen(false)} />}
-      <AlertDialog title="Already Being Packed" message={conflictMessage} onClose={() => setConflictMessage(null)} />
+      <AlertDialog title={t("adminOrders.treatment.alreadyPacked")} message={conflictMessage} onClose={() => setConflictMessage(null)} />
       {finishTarget && token && (
         <FinishPackingModal
           orderId={finishTarget}

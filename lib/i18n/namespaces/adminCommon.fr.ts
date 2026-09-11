@@ -76,7 +76,7 @@ export const adminCommon: typeof adminCommonEn = {
     statusAwaitingPayment: "En attente de paiement",
     statusReviewing: "En cours d'examen",
     statusValidated: "Validée",
-    statusPackaging: "En emballage",
+    statusPackaging: "Emballage",
     statusPackaged: "Emballée",
     statusCancelled: "Annulée",
   },

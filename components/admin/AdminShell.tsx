@@ -27,7 +27,14 @@ export default function AdminShell({
   if (isLogin) return <AdminGuard>{children}</AdminGuard>;
 
   const requiredPermission = permissionForPath(pathname);
-  const isAllowed = !requiredPermission || (session?.permissions.includes(requiredPermission) ?? false);
+  const requiredPermissions = Array.isArray(requiredPermission)
+    ? requiredPermission
+    : requiredPermission
+      ? [requiredPermission]
+      : [];
+  const isAllowed =
+    requiredPermissions.length === 0 ||
+    requiredPermissions.some((p) => session?.permissions.includes(p) ?? false);
 
   return (
     <AdminGuard>

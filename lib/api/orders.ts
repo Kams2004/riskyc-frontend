@@ -47,6 +47,11 @@ export function listOrders(token: string) {
   return apiFetch<Order[]>("/api/orders", { token });
 }
 
+/** Admin — the Packing queue only (validated/packaging/packaged), reachable via VIEW_TREATMENT alone. */
+export function listPackingQueue(token: string) {
+  return apiFetch<Order[]>("/api/orders/packing-queue", { token });
+}
+
 export function updateOrderStatus(orderId: string, status: OrderStatus, token: string, reason?: string) {
   return apiFetch<Order>(`/api/orders/${orderId}/status`, {
     method: "PATCH",
