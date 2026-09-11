@@ -30,6 +30,8 @@ import { terms as termsEn } from "./namespaces/terms.en";
 import { terms as termsFr } from "./namespaces/terms.fr";
 import { privacy as privacyEn } from "./namespaces/privacy.en";
 import { privacy as privacyFr } from "./namespaces/privacy.fr";
+import { deleteAccount as deleteAccountEn } from "./namespaces/deleteAccount.en";
+import { deleteAccount as deleteAccountFr } from "./namespaces/deleteAccount.fr";
 
 /**
  * One namespace per feature area (see lib/i18n/namespaces/) rather than two
@@ -56,6 +58,7 @@ export const dictionaries = {
     adminOps: adminOpsEn,
     terms: termsEn,
     privacy: privacyEn,
+    deleteAccount: deleteAccountEn,
   },
   fr: {
     common: commonFr,
@@ -73,6 +76,7 @@ export const dictionaries = {
     adminOps: adminOpsFr,
     terms: termsFr,
     privacy: privacyFr,
+    deleteAccount: deleteAccountFr,
   },
 } satisfies Record<Language, Record<string, Record<string, unknown>>>;
 
