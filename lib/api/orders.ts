@@ -63,3 +63,11 @@ export function startPackaging(orderId: string, token: string) {
 export function completePackaging(orderId: string, token: string) {
   return apiFetch<Order>(`/api/orders/${orderId}/packaging/complete`, { method: "PATCH", token });
 }
+
+/** Public — links a guest order to a customer account right after they sign up or log in from the order's confirmation/tracking screen. Never overwrites an existing attachment. */
+export function attachCustomerToOrder(orderId: string, customerId: string) {
+  return apiFetch<Order>(`/api/orders/${orderId}/attach-customer`, {
+    method: "POST",
+    body: JSON.stringify({ customerId }),
+  });
+}

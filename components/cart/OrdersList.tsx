@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
-import { listOrdersForCustomer } from "@/lib/api/orders";
+import { listOrdersForCustomer, getOrder } from "@/lib/api/orders";
+import { getLocalOrderIds } from "@/lib/localOrders";
 import { formatPrice } from "@/lib/data";
 import { Order, OrderStatus } from "@/lib/types";
 import {
@@ -131,12 +132,18 @@ export default function OrdersList({ onOpenOrder }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     if (!customer) {
-      setOrders([]);
-      setLoading(false);
+      // A guest has no server-side order list to fetch — fall back to
+      // whatever orders this browser recorded locally at checkout, same
+      // pattern the mobile app already uses for the same reason.
+      const ids = getLocalOrderIds();
+      Promise.all(ids.map((id) => getOrder(id).catch(() => null)))
+        .then((results) => setOrders(results.filter((o): o is Order => o != null)))
+        .catch(() => setOrders([]))
+        .finally(() => setLoading(false));
       return;
     }
-    setLoading(true);
     listOrdersForCustomer(customer.id)
       .then(setOrders)
       .catch(() => setOrders([]))

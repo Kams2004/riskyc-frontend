@@ -22,6 +22,7 @@ import {
   RotateCcw,
   MessageCircle,
   Clock,
+  UserPlus,
 } from "@/components/icons/fa";
 import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -46,7 +47,7 @@ export default function TrackOrderPage() {
   const [error, setError] = useState(false);
   const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
   const { status: pushStatus, subscribe } = usePushSubscription(orderId);
-  const { conversationId, setConversationId } = useStore();
+  const { conversationId, setConversationId, customer } = useStore();
 
   const fetchOrder = () => {
     if (!orderId) return Promise.resolve();
@@ -205,6 +206,27 @@ export default function TrackOrderPage() {
           <span className="text-brand-600">{formatPrice(order.total)}</span>
         </div>
       </div>
+
+      {!customer && (
+        <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 mb-5 text-left space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-gray-900 mb-1">{t("cart.checkout.createAccountPromptTitle")}</p>
+            <p className="text-xs text-gray-500 leading-relaxed">{t("cart.checkout.createAccountPromptBody")}</p>
+          </div>
+          <Link
+            href={`/register?attachOrder=${order.id}`}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors"
+          >
+            <UserPlus size={16} /> {t("cart.checkout.createAccountPromptSignUp")}
+          </Link>
+          <Link
+            href={`/login?attachOrder=${order.id}`}
+            className="block text-center text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors"
+          >
+            {t("cart.checkout.createAccountPromptLogIn")}
+          </Link>
+        </div>
+      )}
 
       {/* Packaged, but the admin hasn't sent the photo confirmation yet — a
           distinct waiting state so the customer isn't left staring at a

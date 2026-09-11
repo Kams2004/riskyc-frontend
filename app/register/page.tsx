@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { attachCustomerToOrder } from "@/lib/api/orders";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus, AlertCircle, Gift } from "@/components/icons/fa";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -12,6 +13,7 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
+  const attachOrder = searchParams.get("attachOrder") || "";
   const registerCustomer = useStore((s) => s.registerCustomer);
   const { t } = useTranslation();
 
@@ -52,11 +54,17 @@ function RegisterForm() {
     });
     setLoading(false);
     if (result.ok) {
+      if (attachOrder) attachCustomerToOrder(attachOrder, result.customer.id).catch(() => {});
       router.replace(redirectTo);
     } else {
       setErrors({ email: result.error });
     }
   };
+
+  const loginLinkParams = new URLSearchParams();
+  if (redirectTo !== "/") loginLinkParams.set("redirect", redirectTo);
+  if (attachOrder) loginLinkParams.set("attachOrder", attachOrder);
+  const loginLinkQuery = loginLinkParams.toString() ? `?${loginLinkParams.toString()}` : "";
 
   const inputCls = (field: string) =>
     `w-full bg-gray-50 border ${
@@ -247,13 +255,14 @@ function RegisterForm() {
           <GoogleSignInButton
             redirectTo={redirectTo}
             referralCode={referralCode.trim() || undefined}
+            attachOrderId={attachOrder || undefined}
             onError={setGoogleError}
           />
 
           <p className="text-center text-gray-500 text-sm mt-6">
             {t("account.register.alreadyHaveAccount")}{" "}
             <Link
-              href={`/login${redirectTo !== "/" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
+              href={`/login${loginLinkQuery}`}
               className="text-brand-600 font-semibold hover:underline"
             >
               {t("account.register.logIn")}

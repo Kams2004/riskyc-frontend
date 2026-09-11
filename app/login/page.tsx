@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { attachCustomerToOrder } from "@/lib/api/orders";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle } from "@/components/icons/fa";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -12,6 +13,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
+  const attachOrder = searchParams.get("attachOrder") || "";
   const loginCustomer = useStore((s) => s.loginCustomer);
   const { t } = useTranslation();
 
@@ -29,11 +31,20 @@ function LoginForm() {
     const result = await loginCustomer(email, password);
     setLoading(false);
     if (result.ok) {
+      if (attachOrder) {
+        const customer = useStore.getState().customer;
+        if (customer) attachCustomerToOrder(attachOrder, customer.id).catch(() => {});
+      }
       router.replace(redirectTo);
     } else {
       setError(result.error);
     }
   };
+
+  const registerLinkParams = new URLSearchParams();
+  if (redirectTo !== "/") registerLinkParams.set("redirect", redirectTo);
+  if (attachOrder) registerLinkParams.set("attachOrder", attachOrder);
+  const registerLinkQuery = registerLinkParams.toString() ? `?${registerLinkParams.toString()}` : "";
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
@@ -126,12 +137,12 @@ function LoginForm() {
             </div>
           )}
 
-          <GoogleSignInButton redirectTo={redirectTo} onError={setGoogleError} />
+          <GoogleSignInButton redirectTo={redirectTo} attachOrderId={attachOrder || undefined} onError={setGoogleError} />
 
           <p className="text-center text-gray-500 text-sm mt-6">
             {t("account.login.noAccount")}{" "}
             <Link
-              href={`/register${redirectTo !== "/" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
+              href={`/register${registerLinkQuery}`}
               className="text-brand-600 font-semibold hover:underline"
             >
               {t("account.login.signUp")}

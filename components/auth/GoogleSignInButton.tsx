@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { attachCustomerToOrder } from "@/lib/api/orders";
 
 interface GoogleCredentialResponse {
   credential: string;
@@ -26,11 +27,13 @@ interface Props {
   redirectTo: string;
   /** Only meaningful on the register flow — applied once, on account creation. */
   referralCode?: string;
+  /** The order id from a "?attachOrder=" link (confirmation screen/tracking page prompt) — attached to this customer's account once sign-in succeeds. */
+  attachOrderId?: string;
   onError?: (message: string) => void;
 }
 
 /** Renders Google's own "Sign in with Google" button once the Identity Services script + a Client ID are both available; renders nothing otherwise (e.g. before GOOGLE_CLIENT_ID is configured). */
-export default function GoogleSignInButton({ redirectTo, referralCode, onError }: Props) {
+export default function GoogleSignInButton({ redirectTo, referralCode, attachOrderId, onError }: Props) {
   const router = useRouter();
   const loginWithGoogle = useStore((s) => s.loginWithGoogle);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -64,6 +67,10 @@ export default function GoogleSignInButton({ redirectTo, referralCode, onError }
       callback: async (response) => {
         const result = await loginWithGoogle(response.credential, referralCode);
         if (result.ok) {
+          const customer = useStore.getState().customer;
+          if (attachOrderId && customer) {
+            attachCustomerToOrder(attachOrderId, customer.id).catch(() => {});
+          }
           router.replace(redirectTo);
         } else {
           onError?.(result.error);
@@ -81,7 +88,7 @@ export default function GoogleSignInButton({ redirectTo, referralCode, onError }
       width: Math.min(container.offsetWidth || 320, 400),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scriptReady, redirectTo, referralCode]);
+  }, [scriptReady, redirectTo, referralCode, attachOrderId]);
 
   if (!CLIENT_ID) return null;
 
