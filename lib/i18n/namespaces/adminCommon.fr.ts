@@ -8,6 +8,7 @@ export const adminCommon: typeof adminCommonEn = {
       dashboard: "Tableau de bord",
       orders: "Commandes",
       treatment: "Emballage",
+      delivery: "Équipe de livraison",
       products: "Produits",
       categories: "Catégories",
       customers: "Clients",

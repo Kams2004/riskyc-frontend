@@ -6,6 +6,7 @@ export const adminCommon = {
       dashboard: "Dashboard",
       orders: "Orders",
       treatment: "Packing",
+      delivery: "Delivery Agents",
       products: "Products",
       categories: "Categories",
       customers: "Customers",
