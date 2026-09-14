@@ -215,7 +215,7 @@ export const adminProducts = {
   },
 
   markup: {
-    heading: "Draw on image",
+    heading: "Edit image",
     loadError: "Couldn't load this image for editing.",
     penThin: "Thin",
     penMedium: "Medium",
@@ -223,5 +223,11 @@ export const adminProducts = {
     undo: "Undo",
     eraseAll: "Erase all",
     saving: "Saving…",
+    modeDraw: "Draw",
+    modeCrop: "Crop",
+    modeRotate: "Rotate",
+    applyCrop: "Apply Crop",
+    rotateLeft: "Rotate Left",
+    rotateRight: "Rotate Right",
   },
 };

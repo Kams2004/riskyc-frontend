@@ -8,6 +8,7 @@ import { useAdminColors } from "@/lib/useAdminColors";
 import FaIconPicker, { FaIconPreview } from "@/components/admin/FaIconPicker";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
 import AlertDialog from "@/components/admin/AlertDialog";
+import ImageMarkupEditor from "@/components/admin/ImageMarkupEditor";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -59,6 +60,7 @@ export default function AdminCategoriesPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [createdCategoryName, setCreatedCategoryName] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [editingImage, setEditingImage] = useState<{ catId: string; previewUrl: string } | null>(null);
   const uploadTargetRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,19 +73,36 @@ export default function AdminCategoriesPage() {
     fileInputRef.current?.click();
   };
 
-  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Picking a file opens the crop/rotate/markup editor instead of
+  // uploading straight away — the actual upload happens once the admin
+  // saves out of that editor (handleEditedImageSave below), same
+  // stage-then-edit-then-upload flow ProductForm already uses.
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     const catId = uploadTargetRef.current;
-    if (!file || !catId || !token) return;
+    uploadTargetRef.current = null;
+    if (!file || !catId) return;
+    setEditingImage({ catId, previewUrl: URL.createObjectURL(file) });
+  };
+
+  const handleEditedImageSave = async (file: File) => {
+    if (!editingImage || !token) return;
+    const { catId, previewUrl } = editingImage;
     setUploadingId(catId);
+    setEditingImage(null);
+    URL.revokeObjectURL(previewUrl);
     try {
       const updated = await categoriesApi.uploadCategoryImage(catId, file, token);
       setCategories((prev) => prev.map((cat) => (cat.id === catId ? { ...cat, imageUrl: updated.imageUrl } : cat)));
     } finally {
       setUploadingId(null);
-      uploadTargetRef.current = null;
     }
+  };
+
+  const handleEditedImageCancel = () => {
+    if (editingImage) URL.revokeObjectURL(editingImage.previewUrl);
+    setEditingImage(null);
   };
 
   const handleDeleteImage = async (catId: string) => {
@@ -740,6 +759,13 @@ export default function AdminCategoriesPage() {
         variant="success"
         onClose={() => setCreatedCategoryName(null)}
       />
+      {editingImage && (
+        <ImageMarkupEditor
+          imageUrl={editingImage.previewUrl}
+          onCancel={handleEditedImageCancel}
+          onSave={handleEditedImageSave}
+        />
+      )}
     </AdminShell>
   );
 }

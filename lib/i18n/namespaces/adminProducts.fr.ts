@@ -217,7 +217,7 @@ export const adminProducts: typeof adminProductsEn = {
   },
 
   markup: {
-    heading: "Dessiner sur l'image",
+    heading: "Modifier l'image",
     loadError: "Impossible de charger cette image pour l'édition.",
     penThin: "Fin",
     penMedium: "Moyen",
@@ -225,5 +225,11 @@ export const adminProducts: typeof adminProductsEn = {
     undo: "Annuler",
     eraseAll: "Tout effacer",
     saving: "Enregistrement…",
+    modeDraw: "Dessiner",
+    modeCrop: "Recadrer",
+    modeRotate: "Pivoter",
+    applyCrop: "Appliquer le recadrage",
+    rotateLeft: "Pivoter à gauche",
+    rotateRight: "Pivoter à droite",
   },
 };
