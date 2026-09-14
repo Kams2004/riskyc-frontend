@@ -41,6 +41,7 @@ export const adminOrders: typeof adminOrdersEn = {
     tableView: "Tableau",
     gridView: "Grille",
     filterAll: "Toutes",
+    filterArchived: "Archivées",
     table: {
       orderId: "N° de commande",
       items: "Articles",

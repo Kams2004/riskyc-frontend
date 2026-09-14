@@ -39,6 +39,7 @@ export const adminOrders = {
     tableView: "Table",
     gridView: "Grid",
     filterAll: "All",
+    filterArchived: "Archived",
     table: {
       orderId: "Order ID",
       items: "Items",

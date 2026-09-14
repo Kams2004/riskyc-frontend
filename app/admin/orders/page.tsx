@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import {
   Eye, CheckCircle2, XCircle, Clock, CreditCard,
   Search, Filter, ShoppingBag, ChevronLeft, ChevronRight,
-  LayoutGrid, List, PackageSearch, PackageCheck, ScanLine, Loader2,
+  LayoutGrid, List, PackageSearch, PackageCheck, ScanLine, Loader2, Archive,
 } from "lucide-react";
 import clsx from "clsx";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -39,7 +39,7 @@ export default function AdminOrdersPage() {
   };
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<OrderStatus | "all">("all");
+  const [filter, setFilter] = useState<OrderStatus | "all" | "archived">("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
@@ -90,8 +90,17 @@ export default function AdminOrdersPage() {
     });
   };
 
-  const filtered = orders
-    .filter((o) => filter === "all" || o.status === filter)
+  // A packaged order left untouched for a week is done business, not
+  // something that still needs attention — archiving it out of the normal
+  // tabs (including "All") keeps those focused on orders someone might
+  // still need to act on.
+  const ARCHIVE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+  const isArchived = (o: Order) => o.status === "PACKAGED" && Date.now() - new Date(o.createdAt).getTime() >= ARCHIVE_AGE_MS;
+
+  const active = orders.filter((o) => !isArchived(o));
+
+  const filtered = (filter === "archived" ? orders.filter(isArchived) : active)
+    .filter((o) => filter === "all" || filter === "archived" || o.status === filter)
     .filter((o) => !search || o.id.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -100,18 +109,19 @@ export default function AdminOrdersPage() {
   const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Reset to page 1 when filter/search changes
-  const handleFilter = (f: OrderStatus | "all") => { setFilter(f); setPage(1); };
+  const handleFilter = (f: OrderStatus | "all" | "archived") => { setFilter(f); setPage(1); };
   const handleSearch = (v: string) => { setSearch(v); setPage(1); };
 
   const counts: Record<string, number> = {
-    all: orders.length,
-    REVIEWING:        orders.filter((o) => o.status === "REVIEWING").length,
-    AWAITING_PAYMENT: orders.filter((o) => o.status === "AWAITING_PAYMENT").length,
-    VALIDATED:        orders.filter((o) => o.status === "VALIDATED").length,
-    PACKAGING:        orders.filter((o) => o.status === "PACKAGING").length,
-    PACKAGED:         orders.filter((o) => o.status === "PACKAGED").length,
-    PENDING:          orders.filter((o) => o.status === "PENDING").length,
-    CANCELLED:        orders.filter((o) => o.status === "CANCELLED").length,
+    all: active.length,
+    REVIEWING:        active.filter((o) => o.status === "REVIEWING").length,
+    AWAITING_PAYMENT: active.filter((o) => o.status === "AWAITING_PAYMENT").length,
+    VALIDATED:        active.filter((o) => o.status === "VALIDATED").length,
+    PACKAGING:        active.filter((o) => o.status === "PACKAGING").length,
+    PACKAGED:         active.filter((o) => o.status === "PACKAGED").length,
+    PENDING:          active.filter((o) => o.status === "PENDING").length,
+    CANCELLED:        active.filter((o) => o.status === "CANCELLED").length,
+    archived:         orders.filter(isArchived).length,
   };
 
   return (
@@ -163,15 +173,15 @@ export default function AdminOrdersPage() {
 
         {/* ── Filter tabs ── */}
         <div className="flex flex-wrap gap-2">
-          {(["all", "REVIEWING", "AWAITING_PAYMENT", "PENDING", "VALIDATED", "PACKAGING", "PACKAGED", "CANCELLED"] as const).map((s) => (
+          {(["all", "REVIEWING", "AWAITING_PAYMENT", "PENDING", "VALIDATED", "PACKAGING", "PACKAGED", "CANCELLED", "archived"] as const).map((s) => (
             <button key={s} onClick={() => handleFilter(s)}
               className={clsx(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
                 filter === s ? "bg-brand-500 text-white shadow-sm" : c.filterInactive
               )}
             >
-              {s === "all" ? <Filter size={11} /> : statusMeta[s as OrderStatus].icon}
-              {s === "all" ? t("adminOrders.list.filterAll") : statusMeta[s as OrderStatus].label}
+              {s === "all" ? <Filter size={11} /> : s === "archived" ? <Archive size={11} /> : statusMeta[s as OrderStatus].icon}
+              {s === "all" ? t("adminOrders.list.filterAll") : s === "archived" ? t("adminOrders.list.filterArchived") : statusMeta[s as OrderStatus].label}
               <span className={clsx("rounded-full px-1.5 py-0.5 text-xs",
                 filter === s ? "bg-white/25 text-white" : c.isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-500"
               )}>
