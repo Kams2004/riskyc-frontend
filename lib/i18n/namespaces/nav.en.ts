@@ -1,5 +1,5 @@
 export const nav = {
-  topBanner: "✨ Free delivery on orders above 50,000 XAF   |   Pay with no extra charges via Orange Money or Mobile Money",
+  topBanner: "✨ Pay only for your products — no hidden fees   |   Pay with no extra charges via Orange Money or Mobile Money",
   home: "Home",
   allProducts: "All Products",
   allOfCategory: "All {{category}}",

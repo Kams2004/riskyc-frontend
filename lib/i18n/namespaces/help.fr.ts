@@ -21,7 +21,7 @@ export const help: typeof helpEn = {
     question2: "Quels moyens de paiement acceptez-vous ?",
     answer2: "Nous acceptons les transferts Orange Money et MTN Mobile Money. Composez *150# pour Orange Money ou *126# pour MTN MoMo, ou utilisez directement leurs applications.",
     question3: "Combien de temps prend la livraison ?",
-    answer3: "La livraison prend généralement 2 à 4 jours ouvrés au Cameroun. Les commandes de plus de 50 000 XAF bénéficient de la livraison gratuite.",
+    answer3: "La livraison prend généralement 2 à 4 jours ouvrés au Cameroun. Le montant payé via l'application couvre uniquement vos produits — les frais de livraison éventuels sont réglés directement avec le membre de l'équipe de livraison lors de la remise de votre commande.",
     question4: "Puis-je suivre ma commande ?",
     answer4: "Oui — créez un compte ou connectez-vous, puis consultez la section « Mes commandes » dans le menu du compte, dans l'en-tête.",
     question5: "Quelle est votre politique de retour ?",

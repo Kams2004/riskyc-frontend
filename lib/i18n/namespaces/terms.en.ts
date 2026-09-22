@@ -27,7 +27,7 @@ export const terms = {
 
     deliveryTitle: "6. Delivery and pickup",
     deliveryBody:
-      "Delivery within Cameroon typically takes 2–4 business days from validation, and orders above 50,000 XAF qualify for free delivery. You can choose shop pickup instead at checkout. Once your order is packaged, we send a confirmation message with a picture of the sealed parcel and the names and phone numbers of the delivery team handling it, so there's always someone to reach about the handoff.",
+      "Delivery within Cameroon typically takes 2–4 business days from validation. What you pay through the app covers only the products you selected — any delivery fee is settled directly with the delivery team member at handoff, not through the app. You can choose shop pickup instead at checkout. Once your order is packaged, we send a confirmation message with a picture of the sealed parcel and the names and phone numbers of the delivery team handling it, so there's always someone to reach about the handoff.",
 
     returnsTitle: "7. Returns and exchanges",
     returnsBody:

@@ -178,8 +178,9 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   const [submitError, setSubmitError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Delivery is free on every order, so what the customer pays is exactly
+  // the sum of what they selected — no separate "total" needed.
   const subtotal = order ? order.total : getCartTotal();
-  const total = order ? order.total : (subtotal >= 50000 ? subtotal : subtotal + 2500);
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
 
@@ -296,7 +297,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   // Bakes the amount to pay into the dial code so the customer can copy one
   // string straight into their phone's dialer, e.g. *126*14*673267022*12000#
   const buildUssdCode = (method: PaymentMethod) =>
-    paymentInfo[method].ussdTemplate.replace("%s", String(Math.round(total)));
+    paymentInfo[method].ussdTemplate.replace("%s", String(Math.round(subtotal)));
 
   if (loadingOrder) {
     return (
@@ -438,7 +439,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
               <div className="flex justify-between items-center bg-brand-50 rounded-xl px-4 py-3">
                 <span className="font-semibold text-gray-700">{t("cart.checkout.totalToPay")}</span>
-                <span className="font-bold text-2xl text-brand-600">{formatPrice(total)}</span>
+                <span className="font-bold text-2xl text-brand-600">{formatPrice(subtotal)}</span>
               </div>
 
               <p className="text-sm text-gray-500 text-center">{t("cart.checkout.selectMethodPrompt")}</p>
@@ -500,7 +501,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                     <Image src={paymentInfo[selectedMethod].logo} alt={paymentInfo[selectedMethod].name} width={56} height={56} className="w-full h-full object-contain" />
                   </div>
                 </div>
-                <p className="font-semibold text-gray-700 mb-1">{t("cart.checkout.dialCodeToSend", { amount: formatPrice(total) })}</p>
+                <p className="font-semibold text-gray-700 mb-1">{t("cart.checkout.dialCodeToSend", { amount: formatPrice(subtotal) })}</p>
                 <p className="font-bold text-xl text-gray-900 tracking-wide mb-1 break-all">{buildUssdCode(selectedMethod)}</p>
                 <p className={clsx("font-semibold text-sm", paymentInfo[selectedMethod].color)}>
                   {paymentInfo[selectedMethod].name} · {paymentInfo[selectedMethod].accountName}
@@ -518,7 +519,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
               )}
 
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
-                <strong>{t("cart.checkout.instructionsLabel")}</strong> {t("cart.checkout.instructionsBefore", { amount: formatPrice(total) })}<strong>{paymentInfo[selectedMethod].accountName}</strong>{t("cart.checkout.instructionsAfter")}
+                <strong>{t("cart.checkout.instructionsLabel")}</strong> {t("cart.checkout.instructionsBefore", { amount: formatPrice(subtotal) })}<strong>{paymentInfo[selectedMethod].accountName}</strong>{t("cart.checkout.instructionsAfter")}
               </div>
 
               <div>

@@ -29,7 +29,7 @@ export const terms: typeof termsEn = {
 
     deliveryTitle: "6. Livraison et retrait",
     deliveryBody:
-      "La livraison au Cameroun prend généralement 2 à 4 jours ouvrés après validation, et les commandes de plus de 50 000 XAF bénéficient de la livraison gratuite. Vous pouvez choisir le retrait en boutique à la place, au moment du paiement. Une fois votre commande emballée, nous envoyons un message de confirmation avec une image du colis scellé ainsi que les noms et numéros de téléphone de l'équipe de livraison en charge, afin qu'il y ait toujours quelqu'un à contacter au sujet de la remise.",
+      "La livraison au Cameroun prend généralement 2 à 4 jours ouvrés après validation. Le montant payé via l'application couvre uniquement les produits sélectionnés — les frais de livraison éventuels sont réglés directement avec le membre de l'équipe de livraison lors de la remise, et non via l'application. Vous pouvez choisir le retrait en boutique à la place, au moment du paiement. Une fois votre commande emballée, nous envoyons un message de confirmation avec une image du colis scellé ainsi que les noms et numéros de téléphone de l'équipe de livraison en charge, afin qu'il y ait toujours quelqu'un à contacter au sujet de la remise.",
 
     returnsTitle: "7. Retours et échanges",
     returnsBody:

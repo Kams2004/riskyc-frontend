@@ -19,7 +19,7 @@ export const help = {
     question2: "What payment methods do you accept?",
     answer2: "We accept Orange Money and MTN Mobile Money transfers. Dial *150# for Orange Money or *126# for MTN MoMo, or use their apps directly.",
     question3: "How long does delivery take?",
-    answer3: "Delivery typically takes 2–4 business days within Cameroon. Orders above 50,000 XAF qualify for free delivery.",
+    answer3: "Delivery typically takes 2–4 business days within Cameroon. The amount you pay through the app covers only your products — any delivery fee is settled directly with the delivery team member when your order is handed over.",
     question4: "Can I track my order?",
     answer4: "Yes — create an account or log in, then check the \"My Orders\" section from the account menu in the header.",
     question5: "What is your return policy?",

@@ -1,7 +1,7 @@
 import type { nav as navEn } from "./nav.en";
 
 export const nav: typeof navEn = {
-  topBanner: "✨ Livraison gratuite pour les commandes de plus de 50 000 XAF   |   Payez sans frais supplémentaires via Orange Money ou Mobile Money",
+  topBanner: "✨ Payez uniquement vos produits — aucun frais caché   |   Payez sans frais supplémentaires via Orange Money ou Mobile Money",
   home: "Accueil",
   allProducts: "Tous les produits",
   allOfCategory: "Tout : {{category}}",
