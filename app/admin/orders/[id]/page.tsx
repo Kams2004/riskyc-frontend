@@ -308,23 +308,24 @@ export default function AdminOrderDetailPage() {
             <h2 className={clsx("text-sm font-semibold mb-5", c.textPrimary)}>{t("adminOrders.detail.progressHeading")}</h2>
             <div className="flex items-center">
               {steps.map((step, i) => {
-                const done = i <= currentIdx;
-                const active = i === currentIdx;
+                // Only a step the order has actually moved past counts as
+                // done — the current (in-progress) step stays neutral like
+                // the upcoming ones, so color only ever means "completed".
+                const done = i < currentIdx;
                 return (
                   <div key={step.key} className="flex items-center flex-1 last:flex-none">
                     <div className="flex flex-col items-center gap-1">
                       <div className={clsx(
                         "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
-                        done && !active ? "bg-green-500 border-green-500 text-white"
-                        : active        ? "bg-brand-500 border-brand-500 text-white"
-                        : c.isDark      ? "bg-gray-800 border-gray-600 text-gray-500"
-                                        : "bg-gray-100 border-gray-300 text-gray-400"
+                        done       ? "bg-green-500 border-green-500 text-white"
+                        : c.isDark ? "bg-gray-800 border-gray-600 text-gray-500"
+                                   : "bg-gray-100 border-gray-300 text-gray-400"
                       )}>
-                        {done && !active ? "✓" : i + 1}
+                        {done ? "✓" : i + 1}
                       </div>
                       <span className={clsx(
                         "text-[10px] font-medium text-center max-w-[64px] leading-tight",
-                        active ? "text-brand-500" : done ? "text-green-500" : c.textMuted
+                        done ? "text-green-500" : c.textMuted
                       )}>
                         {step.label}
                       </span>

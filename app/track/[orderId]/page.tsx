@@ -146,27 +146,27 @@ export default function TrackOrderPage() {
         ) : (
           <div className="flex items-center">
             {STEP_KEYS.map((step, i) => {
-              const done = i <= currentIdx;
-              const active = i === currentIdx;
+              // Only a step the order has actually moved past counts as
+              // done — the current (in-progress) step stays neutral like
+              // the upcoming ones, so color only ever means "completed".
+              const done = i < currentIdx;
               return (
                 <div key={step.key} className="flex items-center flex-1 last:flex-none">
                   <div className="flex flex-col items-center gap-1.5">
                     <div
                       className={clsx(
                         "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all flex-shrink-0",
-                        done && !active
+                        done
                           ? "bg-green-500 border-green-500 text-white"
-                          : active
-                          ? "bg-brand-500 border-brand-500 text-white"
                           : "bg-gray-100 border-gray-200 text-gray-400"
                       )}
                     >
-                      {done && !active ? <CheckCircle2 size={14} /> : i + 1}
+                      {done ? <CheckCircle2 size={14} /> : i + 1}
                     </div>
                     <span
                       className={clsx(
                         "text-[10px] font-medium text-center max-w-[60px] leading-tight",
-                        active ? "text-brand-600" : done ? "text-green-600" : "text-gray-400"
+                        done ? "text-green-600" : "text-gray-400"
                       )}
                     >
                       {t(step.labelKey)}
