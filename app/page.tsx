@@ -4,9 +4,11 @@ import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatPrice } from "@/lib/data";
 import { listProducts } from "@/lib/api/products";
+import { listPublicity } from "@/lib/api/publicity";
 import { useCategories } from "@/lib/useCategories";
-import { Product } from "@/lib/types";
+import { Product, PublicityItem } from "@/lib/types";
 import ProductCard from "@/components/products/ProductCard";
+import PublicityCarousel from "@/components/home/PublicityCarousel";
 import { FaIconPreview } from "@/components/admin/FaIconPicker";
 import { SlidersHorizontal, X, ChevronDown, Search } from "@/components/icons/fa";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -37,6 +39,7 @@ function ProductsPageInner() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [publicity, setPublicity] = useState<PublicityItem[]>([]);
   const { categories: allCategories } = useCategories();
   // A category with no storefront-visible products would just be a filter
   // option that always yields zero results — hide it here too.
@@ -47,6 +50,9 @@ function ProductsPageInner() {
       .then((page) => setProducts(page.content))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
+    listPublicity()
+      .then(setPublicity)
+      .catch(() => setPublicity([]));
   }, []);
 
   const [search, setSearch] = useState(query);
@@ -138,6 +144,8 @@ function ProductsPageInner() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <PublicityCarousel items={publicity} />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>

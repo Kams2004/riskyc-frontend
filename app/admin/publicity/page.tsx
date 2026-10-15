@@ -167,10 +167,10 @@ export default function AdminPublicityPage() {
                 <div className="relative aspect-video bg-black/5">
                   {item.type === "VIDEO" ? (
                     // eslint-disable-next-line jsx-a11y/media-has-caption
-                    <video src={item.presignedUrl} className="w-full h-full object-cover" muted loop playsInline autoPlay />
+                    <video src={item.presignedUrl} className="w-full h-full object-contain" muted loop playsInline autoPlay />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.presignedUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={item.presignedUrl} alt="" className="w-full h-full object-contain" />
                   )}
                 </div>
                 <div className="p-3 flex flex-col gap-2 flex-1">
