@@ -7,6 +7,7 @@ import { useAdminColors } from "@/lib/useAdminColors";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import * as publicityApi from "@/lib/api/publicity";
 import { PublicityItem } from "@/lib/types";
+import { CAPTION_FONT_VALUES, CAPTION_STYLE_VALUES, captionClassName, captionTextShadow } from "@/lib/publicityCaption";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
 import clsx from "clsx";
 import {
@@ -73,6 +74,33 @@ export default function AdminPublicityPage() {
       setError(t("adminPublicity.errorSave"));
     }
   };
+
+  const handleCaptionStyleChange = async (
+    item: PublicityItem,
+    patch: { captionFont?: PublicityItem["captionFont"]; captionStyle?: PublicityItem["captionStyle"] }
+  ) => {
+    if (!token) return;
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...patch } : i))); // optimistic, preview updates instantly
+    try {
+      const updated = await publicityApi.updatePublicityItem(item.id, patch, token);
+      setItems((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
+    } catch {
+      setError(t("adminPublicity.errorSave"));
+      setItems((prev) => prev.map((i) => (i.id === item.id ? item : i)));
+    }
+  };
+
+  const fontLabel = (v: PublicityItem["captionFont"]) => t(v === "display" ? "adminPublicity.fontDisplay" : "adminPublicity.fontSans");
+  const styleLabel = (v: PublicityItem["captionStyle"]) =>
+    t(
+      v === "bold"
+        ? "adminPublicity.styleBold"
+        : v === "italic"
+        ? "adminPublicity.styleItalic"
+        : v === "boldItalic"
+        ? "adminPublicity.styleBoldItalic"
+        : "adminPublicity.styleNormal"
+    );
 
   const toggleActive = async (item: PublicityItem) => {
     if (!token) return;
@@ -172,6 +200,17 @@ export default function AdminPublicityPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={item.presignedUrl} alt="" className="w-full h-full object-contain" />
                   )}
+                  {/* Live preview — exactly the scrim + font/style treatment the real carousel renders */}
+                  {item.caption && (
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-3 pt-8 pb-2.5 pointer-events-none">
+                      <p
+                        className={clsx("text-white text-xs sm:text-sm line-clamp-2", captionClassName(item))}
+                        style={{ textShadow: captionTextShadow }}
+                      >
+                        {item.caption}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 flex flex-col gap-2 flex-1">
                   <input
@@ -185,6 +224,40 @@ export default function AdminPublicityPage() {
                       c.isDark ? "bg-gray-800 border-gray-600 text-white focus:border-brand-500" : "bg-white border-gray-300 text-gray-900 focus:border-brand-400"
                     )}
                   />
+                  {canManage && item.caption && (
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        value={item.captionFont}
+                        onChange={(e) => handleCaptionStyleChange(item, { captionFont: e.target.value as PublicityItem["captionFont"] })}
+                        title={t("adminPublicity.captionFontLabel")}
+                        className={clsx(
+                          "flex-1 border rounded-lg px-2 py-1.5 text-xs outline-none transition-colors",
+                          c.isDark ? "bg-gray-800 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"
+                        )}
+                      >
+                        {CAPTION_FONT_VALUES.map((v) => (
+                          <option key={v} value={v}>
+                            {fontLabel(v)}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={item.captionStyle}
+                        onChange={(e) => handleCaptionStyleChange(item, { captionStyle: e.target.value as PublicityItem["captionStyle"] })}
+                        title={t("adminPublicity.captionStyleLabel")}
+                        className={clsx(
+                          "flex-1 border rounded-lg px-2 py-1.5 text-xs outline-none transition-colors",
+                          c.isDark ? "bg-gray-800 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"
+                        )}
+                      >
+                        {CAPTION_STYLE_VALUES.map((v) => (
+                          <option key={v} value={v}>
+                            {styleLabel(v)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between gap-2 mt-auto pt-1">
                     <div className="flex items-center gap-1">
                       <button

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { PublicityItem } from "@/lib/types";
+import { captionClassName, captionTextShadow } from "@/lib/publicityCaption";
 
 const AUTO_ADVANCE_MS = 5000;
 const MAX_HEIGHT = 380;
@@ -68,8 +69,13 @@ function PublicitySlide({
           />
         )}
         {item.caption && (
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-5 py-4">
-            <p className="text-white font-semibold text-sm sm:text-base line-clamp-2">{item.caption}</p>
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-5 pt-10 pb-4">
+            <p
+              className={clsx("text-white text-sm sm:text-base line-clamp-2", captionClassName(item))}
+              style={{ textShadow: captionTextShadow }}
+            >
+              {item.caption}
+            </p>
           </div>
         )}
       </div>

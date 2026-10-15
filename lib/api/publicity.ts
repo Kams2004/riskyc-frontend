@@ -29,7 +29,11 @@ export async function addPublicityItem(file: File, caption: string | undefined, 
   return res.json();
 }
 
-export function updatePublicityItem(id: string, data: { caption?: string; active?: boolean }, token: string) {
+export function updatePublicityItem(
+  id: string,
+  data: { caption?: string; active?: boolean; captionFont?: PublicityItem["captionFont"]; captionStyle?: PublicityItem["captionStyle"] },
+  token: string
+) {
   return apiFetch<PublicityItem>(`/api/publicity/${id}`, {
     method: "PATCH",
     token,

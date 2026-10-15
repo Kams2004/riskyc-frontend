@@ -19,6 +19,8 @@ export interface PublicityItem {
   presignedUrl: string;
   type: "IMAGE" | "VIDEO";
   caption: string | null;
+  captionFont: "sans" | "display";
+  captionStyle: "normal" | "bold" | "italic" | "boldItalic";
   position: number;
   active: boolean;
   uploadedAt?: string | null;
