@@ -1,16 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { PublicityItem } from "@/lib/types";
 
 const AUTO_ADVANCE_MS = 5000;
+const MAX_HEIGHT = 380;
+const DEFAULT_RATIO = 16 / 9;
 
 /**
- * object-contain (not cover) + a neutral letterbox background — admin-uploaded
- * media can be any aspect ratio, and nothing here should ever be cropped.
+ * object-contain (not cover) — admin-uploaded media can be any aspect ratio,
+ * and nothing here should ever be cropped. The box itself is sized (by the
+ * parent) to match the active item's own ratio, so this rarely needs to
+ * letterbox at all — only "max-w-full" guards the rare case a very wide
+ * image doesn't fit the shared box height on a narrow viewport.
  */
-function PublicitySlide({ item, active }: { item: PublicityItem; active: boolean }) {
+function PublicitySlide({
+  item,
+  active,
+  ratio,
+  onRatio,
+}: {
+  item: PublicityItem;
+  active: boolean;
+  ratio: number;
+  onRatio: (id: string, ratio: number) => void;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -21,8 +36,11 @@ function PublicitySlide({ item, active }: { item: PublicityItem; active: boolean
   }, [active]);
 
   return (
-    <div className="w-full flex-shrink-0 px-0.5">
-      <div className="relative w-full aspect-[16/9] max-h-[320px] rounded-3xl overflow-hidden bg-gray-100">
+    <div className="w-full h-full flex-shrink-0 flex items-center justify-center px-0.5">
+      <div
+        className="relative h-full max-w-full rounded-3xl overflow-hidden bg-gray-100"
+        style={{ aspectRatio: ratio }}
+      >
         {item.type === "VIDEO" ? (
           // eslint-disable-next-line jsx-a11y/media-has-caption
           <video
@@ -32,10 +50,22 @@ function PublicitySlide({ item, active }: { item: PublicityItem; active: boolean
             muted
             loop
             playsInline
+            onLoadedMetadata={(e) => {
+              const v = e.currentTarget;
+              if (v.videoWidth && v.videoHeight) onRatio(item.id, v.videoWidth / v.videoHeight);
+            }}
           />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.presignedUrl} alt={item.caption ?? ""} className="w-full h-full object-contain" />
+          <img
+            src={item.presignedUrl}
+            alt={item.caption ?? ""}
+            className="w-full h-full object-contain"
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              if (img.naturalWidth && img.naturalHeight) onRatio(item.id, img.naturalWidth / img.naturalHeight);
+            }}
+          />
         )}
         {item.caption && (
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-5 py-4">
@@ -50,6 +80,13 @@ function PublicitySlide({ item, active }: { item: PublicityItem; active: boolean
 /** Promo carousel, admin-managed via /admin/publicity. Renders nothing until at least one item exists. */
 export default function PublicityCarousel({ items }: { items: PublicityItem[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [ratios, setRatios] = useState<Record<string, number>>({});
+  const [height, setHeight] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleRatio = useCallback((id: string, ratio: number) => {
+    setRatios((prev) => (prev[id] === ratio ? prev : { ...prev, [id]: ratio }));
+  }, []);
 
   useEffect(() => {
     if (items.length <= 1) return;
@@ -59,17 +96,43 @@ export default function PublicityCarousel({ items }: { items: PublicityItem[] })
     return () => clearInterval(id);
   }, [items.length]);
 
+  const activeId = items[activeIndex]?.id;
+  const activeRatio = (activeId && ratios[activeId]) || DEFAULT_RATIO;
+
+  // The box's height tracks the active slide's own ratio (capped) instead of
+  // a single fixed ratio for every upload — a 16:9 default would leave big
+  // empty bars next to a portrait fashion photo, which is most of what gets uploaded here.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const recompute = () => setHeight(Math.min(MAX_HEIGHT, el.clientWidth / activeRatio));
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [activeRatio]);
+
   if (items.length === 0) return null;
 
   return (
     <div className="mb-8">
-      <div className="relative overflow-hidden rounded-3xl">
+      <div
+        ref={containerRef}
+        className="relative overflow-hidden transition-[height] duration-500 ease-out"
+        style={{ height: height || undefined }}
+      >
         <div
-          className="flex transition-transform duration-500 ease-out"
+          className="flex h-full transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${activeIndex * 100}%)` }}
         >
           {items.map((item, i) => (
-            <PublicitySlide key={item.id} item={item} active={i === activeIndex} />
+            <PublicitySlide
+              key={item.id}
+              item={item}
+              active={i === activeIndex}
+              ratio={ratios[item.id] ?? DEFAULT_RATIO}
+              onRatio={handleRatio}
+            />
           ))}
         </div>
       </div>
