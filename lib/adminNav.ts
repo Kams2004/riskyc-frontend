@@ -8,6 +8,7 @@ import {
   MessageSquare,
   PackageCheck,
   Truck,
+  Megaphone,
   LucideIcon,
 } from "lucide-react";
 import { Permission } from "./types";
@@ -33,6 +34,7 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/customers",  label: "Customers",  icon: UserRound,       permission: "VIEW_CUSTOMERS" },
   { href: "/admin/users",      label: "Users",      icon: Users,           permission: "VIEW_USERS" },
   { href: "/admin/chat",       label: "Chat",       icon: MessageSquare,   permission: "VIEW_CHAT" },
+  { href: "/admin/publicity",  label: "Publicity",  icon: Megaphone,       permission: "VIEW_PUBLICITY" },
 ];
 
 // These sub-routes need their own permission, not just the section's

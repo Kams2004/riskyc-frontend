@@ -14,6 +14,16 @@ export interface MediaItem {
   uploadedAt?: string | null;
 }
 
+export interface PublicityItem {
+  id: string;
+  presignedUrl: string;
+  type: "IMAGE" | "VIDEO";
+  caption: string | null;
+  position: number;
+  active: boolean;
+  uploadedAt?: string | null;
+}
+
 export interface ProductColor {
   id?: string;
   name: string;
@@ -249,7 +259,9 @@ export type Permission =
   | "VIEW_CHAT"
   | "MANAGE_CHAT"
   | "VIEW_USERS"
-  | "MANAGE_USERS";
+  | "MANAGE_USERS"
+  | "VIEW_PUBLICITY"
+  | "MANAGE_PUBLICITY";
 
 export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[] = [
   { key: "VIEW_DASHBOARD",    label: "View Dashboard",    group: "Dashboard" },
@@ -278,6 +290,8 @@ export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[
   { key: "MANAGE_CHAT",       label: "Manage Chat",       group: "Chat" },
   { key: "VIEW_USERS",        label: "View Users",        group: "Users" },
   { key: "MANAGE_USERS",      label: "Manage Users",      group: "Users" },
+  { key: "VIEW_PUBLICITY",    label: "View Publicity",    group: "Publicity" },
+  { key: "MANAGE_PUBLICITY",  label: "Manage Publicity",  group: "Publicity" },
 ];
 
 export interface Role {

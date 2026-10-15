@@ -37,6 +37,7 @@ const NAV_LABEL_KEYS: Record<string, string> = {
   "/admin/customers": "customers",
   "/admin/users": "users",
   "/admin/chat": "chat",
+  "/admin/publicity": "publicity",
 };
 
 export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
