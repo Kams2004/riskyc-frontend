@@ -137,9 +137,9 @@ export function updateProductColors(id: string, colors: Pick<ProductColor, "id" 
   return apiFetch<Product>(`/api/products/${id}/colors`, { method: "PATCH", token, body: JSON.stringify({ colors }) });
 }
 
-/** Updates only the stock count of existing colors (matched by id) — never adds/removes/renames one. */
-export function updateProductStock(id: string, colors: { id: string; stock: number | null }[], token: string) {
-  return apiFetch<Product>(`/api/products/${id}/stock`, { method: "PATCH", token, body: JSON.stringify({ colors }) });
+/** Upserts the real per-(color,size) stock ledger — colorName/size are "" for a colorless/sizeless product, matching ProductVariant's own convention. */
+export function updateProductStock(id: string, variants: { colorName: string; size: string; quantity: number }[], token: string) {
+  return apiFetch<Product>(`/api/products/${id}/stock`, { method: "PATCH", token, body: JSON.stringify({ variants }) });
 }
 
 export interface ProductDisplayInput {

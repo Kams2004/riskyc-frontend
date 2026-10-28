@@ -30,8 +30,23 @@ export interface ProductColor {
   id?: string;
   name: string;
   hex: string;
-  /** Null/undefined means the admin never tracked quantity for this color — treat as available. */
+  /** Deprecated — no longer read anywhere; stock now lives on ProductVariant. */
   stock?: number | null;
+}
+
+/**
+ * The real stock ledger — one entry per (color, size) combination that's
+ * actually been stocked. colorName/size are "" when the product has no
+ * color/size options, matching how a cart line's selectedColor/selectedSize
+ * already work — never null/undefined.
+ */
+export interface ProductVariant {
+  id: string;
+  colorName: string;
+  size: string;
+  quantity: number;
+  /** True for a migration-backfilled sentinel quantity — treat as always available, same as the old stock===null convention. */
+  untracked: boolean;
 }
 
 export type Badge = "NEW" | "SALE" | "HOT";
@@ -61,6 +76,7 @@ export interface Product {
   badge?: Badge | null;
   hidden: boolean;
   colors: ProductColor[];
+  variants: ProductVariant[];
   bulkPrices: BulkPriceTier[];
   media: MediaItem[];
   createdByName?: string | null;

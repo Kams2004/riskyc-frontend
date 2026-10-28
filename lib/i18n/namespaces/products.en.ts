@@ -57,6 +57,7 @@ export const products = {
     sizeLabel: "Size:",
     sizeGuide: "Size Guide",
     photoConfigureFirst: "Pick a picture above, then set a size and quantity for it before ordering.",
+    soldOut: "Sold out",
     quantity: "Quantity",
     total: "Total:",
     contactForPricingTitle: "Contact us to get a price for this product",

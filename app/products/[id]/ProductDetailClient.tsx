@@ -7,6 +7,7 @@ import { computeLineTotal, computeLineBreakdown, allocateGroupedLineTotals } fro
 import { getProduct, listProducts } from "@/lib/api/products";
 import { useCategories } from "@/lib/useCategories";
 import { Product } from "@/lib/types";
+import { availableQuantity, isProductSoldOut } from "@/lib/stock";
 import { useStore } from "@/lib/store";
 import ProductCard from "@/components/products/ProductCard";
 import CheckoutFlow from "@/components/cart/CheckoutFlow";
@@ -198,6 +199,18 @@ export default function ProductDetailClient({ productId }: { productId: string }
     ? localized(subcategoryInfo.name, subcategoryInfo.nameFr, language)
     : (product.subcategorySlug ?? "").replace("-", " ");
 
+  // ── Stock — selectedAvailable drives the plain (no-photos) quantity cap
+  // and the Add/Order buttons; colorAvailable/sizeAvailable drive which
+  // swatch/size buttons look sold-out. "Infinity" (untracked or no variant
+  // row yet) never blocks anything.
+  const productSoldOut = isProductSoldOut(product);
+  const selectedAvailable = availableQuantity(product, selectedColor, selectedSize);
+  const colorAvailable = (colorName: string) => {
+    const sizes = product.sizes && product.sizes.length > 0 ? product.sizes : [""];
+    return sizes.some((sz) => availableQuantity(product, colorName, sz) > 0);
+  };
+  const sizeAvailable = (size: string) => availableQuantity(product, selectedColor, size) > 0;
+
   // ── Per-photo quantity — the only way to configure quantity once the
   // product has photos (see photoQuantities above). Keyed by image index +
   // size so the same photo can carry different quantities per size.
@@ -226,9 +239,18 @@ export default function ProductDetailClient({ productId }: { productId: string }
   // one photo has a quantity set, even for someone who lands straight on
   // this page (e.g. from a shared link) without touching anything first.
   const nothingConfigured = imageCount > 0 && photoSelections.length === 0;
+  // Stock is tracked per (color, size), not per photo — several photos can
+  // share the same size, so the cap on any one photo's quantity is however
+  // much of that size's stock every OTHER photo configured so far hasn't
+  // already claimed.
+  const activeSizeAvailable = availableQuantity(product, selectedColor, selectedSize);
+  const activeSizeClaimedElsewhere = photoSelections
+    .filter((s) => s.size === selectedSize && s.imageIndex !== imgIdx)
+    .reduce((sum, s) => sum + s.quantity, 0);
+  const activePhotoMax = Math.max(0, activeSizeAvailable - activeSizeClaimedElsewhere);
 
   const handleAddToCart = () => {
-    if (priceUnset || nothingConfigured) return;
+    if (priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)) return;
     if (imageCount > 0) {
       for (const sel of photoSelections) {
         addToCart({ product, quantity: sel.quantity, selectedColor, selectedSize: sel.size || undefined, selectedImageIndex: sel.imageIndex });
@@ -241,7 +263,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
   };
 
   const handleOrderNow = () => {
-    if (priceUnset || nothingConfigured) return;
+    if (priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)) return;
     if (imageCount > 0) {
       for (const sel of photoSelections) {
         addToCart({ product, quantity: sel.quantity, selectedColor, selectedSize: sel.size || undefined, selectedImageIndex: sel.imageIndex });
@@ -320,6 +342,11 @@ export default function ProductDetailClient({ productId }: { productId: string }
               className="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in"
             />
             <div className="absolute top-4 left-4 flex flex-col gap-2">
+              {productSoldOut && (
+                <span className="bg-gray-900 text-white text-sm font-bold px-3 py-1 rounded-full">
+                  {t("products.detail.soldOut")}
+                </span>
+              )}
               {product.badge === "NEW" && <span className="badge-new text-sm px-3 py-1">{t("products.card.badgeNew")}</span>}
               {product.badge === "SALE" && <span className="badge-sale text-sm px-3 py-1">{t("products.card.badgeSale")}</span>}
               {product.badge === "HOT" && <span className="badge-hot text-sm px-3 py-1">{t("products.card.badgeHot")}</span>}
@@ -467,23 +494,28 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
-                {product.colors.map((color) => (
-                  <button
-                    key={color.name}
-                    title={color.name}
-                    onClick={() => setSelectedColor(color.name)}
-                    className={clsx(
-                      "flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
-                      selectedColor === color.name
-                        ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-gray-200 hover:border-brand-300 text-gray-700"
-                    )}
-                  >
-                    <span className="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
-                    {color.name}
-                    {selectedColor === color.name && <Check size={14} className="text-brand-500" />}
-                  </button>
-                ))}
+                {product.colors.map((color) => {
+                  const outOfStock = !colorAvailable(color.name);
+                  return (
+                    <button
+                      key={color.name}
+                      title={outOfStock ? t("products.detail.soldOut") : color.name}
+                      onClick={() => setSelectedColor(color.name)}
+                      className={clsx(
+                        "flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
+                        outOfStock && "opacity-50",
+                        selectedColor === color.name
+                          ? "border-brand-500 bg-brand-50 text-brand-700"
+                          : "border-gray-200 hover:border-brand-300 text-gray-700"
+                      )}
+                    >
+                      <span className="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
+                      <span className={outOfStock ? "line-through" : undefined}>{color.name}</span>
+                      {outOfStock && <span className="text-[10px] font-bold text-red-500">{t("products.detail.soldOut")}</span>}
+                      {selectedColor === color.name && !outOfStock && <Check size={14} className="text-brand-500" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -500,20 +532,25 @@ export default function ProductDetailClient({ productId }: { productId: string }
                     <button className="text-xs text-brand-500 underline">{t("products.detail.sizeGuide")}</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {product.sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={clsx(
-                          "min-w-[44px] px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
-                          selectedSize === size
-                            ? "border-brand-500 bg-brand-500 text-white"
-                            : "border-gray-200 hover:border-brand-300 text-gray-700"
-                        )}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {product.sizes.map((size) => {
+                      const outOfStock = !sizeAvailable(size);
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          title={outOfStock ? t("products.detail.soldOut") : undefined}
+                          className={clsx(
+                            "min-w-[44px] px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
+                            outOfStock && "opacity-50 line-through",
+                            selectedSize === size
+                              ? "border-brand-500 bg-brand-500 text-white"
+                              : "border-gray-200 hover:border-brand-300 text-gray-700"
+                          )}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -545,11 +582,15 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   <span className="w-10 text-center text-2xl font-bold text-gray-900 tabular-nums">{activePhotoQty}</span>
                   <button
                     onClick={() => setPhotoQty(imgIdx, selectedSize, activePhotoQty + 1)}
-                    className="w-11 h-11 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-colors bg-white"
+                    disabled={activePhotoQty >= activePhotoMax}
+                    className="w-11 h-11 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-brand-300 hover:text-brand-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:text-gray-600 transition-colors bg-white"
                   >
                     <Plus size={16} />
                   </button>
                 </div>
+                {Number.isFinite(activePhotoMax) && activePhotoMax <= 0 && (
+                  <p className="text-xs font-semibold text-red-500 mt-2">{t("products.detail.soldOut")}</p>
+                )}
                 {!priceUnset && activePhotoQty > 0 && (() => {
                   const { parts } = computeLineBreakdown(product.price, product.bulkPrices, activePhotoQty);
                   if (parts.length === 0 || (parts.length === 1 && parts[0].kind === "unit")) return null;
@@ -653,20 +694,25 @@ export default function ProductDetailClient({ productId }: { productId: string }
                     <button className="text-xs text-brand-500 underline">{t("products.detail.sizeGuide")}</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {product.sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={clsx(
-                          "min-w-[44px] px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
-                          selectedSize === size
-                            ? "border-brand-500 bg-brand-500 text-white"
-                            : "border-gray-200 hover:border-brand-300 text-gray-700"
-                        )}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {product.sizes.map((size) => {
+                      const outOfStock = !sizeAvailable(size);
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          title={outOfStock ? t("products.detail.soldOut") : undefined}
+                          className={clsx(
+                            "min-w-[44px] px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all",
+                            outOfStock && "opacity-50 line-through",
+                            selectedSize === size
+                              ? "border-brand-500 bg-brand-500 text-white"
+                              : "border-gray-200 hover:border-brand-300 text-gray-700"
+                          )}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -678,7 +724,13 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
                     <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">−</button>
                     <span className="w-12 text-center font-semibold text-gray-900">{qty}</span>
-                    <button onClick={() => setQty(qty + 1)} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold">+</button>
+                    <button
+                      onClick={() => setQty(Math.min(qty + 1, Number.isFinite(selectedAvailable) ? selectedAvailable : qty + 1))}
+                      disabled={qty >= selectedAvailable}
+                      className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
+                      +
+                    </button>
                   </div>
                   <span className="text-sm text-gray-400">
                     {t("products.detail.total")}{" "}
@@ -687,20 +739,31 @@ export default function ProductDetailClient({ productId }: { productId: string }
                     </span>
                   </span>
                 </div>
+                {selectedAvailable <= 0 && (
+                  <p className="text-xs font-semibold text-red-500 mt-2">{t("products.detail.soldOut")}</p>
+                )}
               </div>
             </>
           )}
 
           {/* ── Action buttons ── */}
           <div className="flex gap-3 mb-3">
-            {/* Add to Cart — usable even when out of stock (we'll follow up once restocked) */}
+            {/* Add to Cart — blocked once the selected color/size is out of stock (plain mode only; the photo picker already caps itself at 0 before this gate is reached) */}
             <button
               onClick={handleAddToCart}
-              disabled={priceUnset || nothingConfigured}
-              title={priceUnset ? t("products.detail.contactForPricingTitle") : nothingConfigured ? t("products.detail.photoConfigureFirst") : undefined}
+              disabled={priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)}
+              title={
+                priceUnset
+                  ? t("products.detail.contactForPricingTitle")
+                  : nothingConfigured
+                  ? t("products.detail.photoConfigureFirst")
+                  : imageCount === 0 && selectedAvailable <= 0
+                  ? t("products.detail.soldOut")
+                  : undefined
+              }
               className={clsx(
                 "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-base transition-all",
-                priceUnset || nothingConfigured
+                priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                   : addedToCart ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-gray-800 text-white"
               )}
@@ -711,11 +774,19 @@ export default function ProductDetailClient({ productId }: { productId: string }
             {/* Order Now — adds the configured line(s) to cart, then opens checkout directly */}
             <button
               onClick={handleOrderNow}
-              disabled={priceUnset || nothingConfigured}
-              title={priceUnset ? t("products.detail.contactForPricingTitle") : nothingConfigured ? t("products.detail.photoConfigureFirst") : undefined}
+              disabled={priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)}
+              title={
+                priceUnset
+                  ? t("products.detail.contactForPricingTitle")
+                  : nothingConfigured
+                  ? t("products.detail.photoConfigureFirst")
+                  : imageCount === 0 && selectedAvailable <= 0
+                  ? t("products.detail.soldOut")
+                  : undefined
+              }
               className={clsx(
                 "flex-1 btn-primary py-3.5 rounded-2xl text-base",
-                (priceUnset || nothingConfigured) && "opacity-50 cursor-not-allowed"
+                (priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)) && "opacity-50 cursor-not-allowed"
               )}
             >
               <Zap size={20} /> {t("products.detail.orderNow")}
@@ -826,7 +897,9 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 { label: t("products.detail.availableSizes"), value: product.sizes?.join(", ") || t("products.detail.oneSize") },
                 {
                   label: t("products.detail.totalStock"),
-                  value: t("products.detail.unitsCount", { count: product.colors.reduce((s, c) => s + (c.stock ?? 0), 0) }),
+                  value: t("products.detail.unitsCount", {
+                    count: product.variants.filter((v) => !v.untracked).reduce((s, v) => s + Math.max(0, v.quantity), 0),
+                  }),
                 },
                 { label: t("products.detail.sku"), value: `RC-${product.id.toUpperCase()}` },
               ].map((row) => (

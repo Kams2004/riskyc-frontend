@@ -8,6 +8,7 @@ import { useCategories } from "@/lib/useCategories";
 import * as productsApi from "@/lib/api/products";
 import { API_BASE_URL as apiBaseUrl } from "@/lib/apiClient";
 import { Product, ProductColor, Badge, MediaItem, BulkPriceTier } from "@/lib/types";
+import { variantKey } from "@/lib/stock";
 import ImageMarkupEditor from "@/components/admin/ImageMarkupEditor";
 import AlertDialog from "@/components/admin/AlertDialog";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -130,6 +131,14 @@ export default function ProductForm({ initial, mode }: Props) {
         }
       : emptyForm()
   );
+  // The real per-(color,size) stock ledger — keyed by variantKey(colorName, size), seeded from the product's existing variants. A brand-new product has no variants yet (none exist until this form's first save), so stock for a new product is set afterward, on the edit screen.
+  const [variantStock, setVariantStock] = useState<Record<string, number>>(() => {
+    const map: Record<string, number> = {};
+    (initial?.variants ?? []).forEach((v) => {
+      map[variantKey(v.colorName, v.size)] = v.quantity;
+    });
+    return map;
+  });
   const [existingMedia, setExistingMedia] = useState<MediaItem[]>(initial?.media ?? []);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -241,12 +250,18 @@ export default function ProductForm({ initial, mode }: Props) {
           calls.push(productsApi.updateProductColors(initial!.id, form.colors, token));
         }
 
-        const colorStock = (list: ProductColor[]) => JSON.stringify(list.filter((cl) => cl.id).map((cl) => ({ id: cl.id, stock: cl.stock ?? null })));
-        if (canUpdateStock && colorStock(form.colors) !== colorStock(initial!.colors)) {
+        const initialVariantStock: Record<string, number> = {};
+        (initial!.variants ?? []).forEach((v) => {
+          initialVariantStock[variantKey(v.colorName, v.size)] = v.quantity;
+        });
+        if (canUpdateStock && JSON.stringify(variantStock) !== JSON.stringify(initialVariantStock)) {
           calls.push(
             productsApi.updateProductStock(
               initial!.id,
-              form.colors.filter((cl) => cl.id).map((cl) => ({ id: cl.id!, stock: cl.stock ?? null })),
+              Object.entries(variantStock).map(([key, quantity]) => {
+                const [colorName, size] = key.split("::");
+                return { colorName, size, quantity };
+              }),
               token
             )
           );
@@ -802,52 +817,17 @@ export default function ProductForm({ initial, mode }: Props) {
                     />
                   </div>
                   </Locked>
-                  {/* Stock (optional) — separately permissioned from the name/swatch above. */}
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
-                    <Locked granted={canUpdateStock} isDark={isDark}>
-                    <input
-                      type="number"
-                      className={clsx(inpSm, "w-16 text-center")}
-                      value={color.stock ?? ""}
-                      onChange={(e) =>
-                        updateColor(i, {
-                          stock: e.target.value === "" ? undefined : Number(e.target.value),
-                        })
-                      }
-                      min={0}
-                      placeholder={t("adminProducts.form.stockQtyPlaceholder")}
-                      title={t("adminProducts.form.stockQtyTitle")}
-                    />
-                    </Locked>
-                    <span className={clsx("text-xs", c.textMuted)}>{t("adminProducts.form.unitsLabel")}</span>
-                    {/* Remove — a colors action (add/remove), not a stock one. */}
-                    <button
-                      onClick={() => removeColor(i)}
-                      disabled={!canUpdateColors}
-                      className="text-red-400 hover:text-red-500 disabled:opacity-30 disabled:hover:text-red-400 disabled:cursor-not-allowed p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
-                      title={canUpdateColors ? t("adminProducts.form.removeColorTitle") : t("adminProducts.form.sectionLocked")}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  {/* Remove — a colors action (add/remove); stock now lives in its own grid below, not per-row. */}
+                  <button
+                    onClick={() => removeColor(i)}
+                    disabled={!canUpdateColors}
+                    className="text-red-400 hover:text-red-500 disabled:opacity-30 disabled:hover:text-red-400 disabled:cursor-not-allowed p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0 ml-auto"
+                    title={canUpdateColors ? t("adminProducts.form.removeColorTitle") : t("adminProducts.form.sectionLocked")}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               ))}
-
-              {/* Stock summary */}
-              {form.colors.length > 0 && (
-                <div className={clsx("flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium", isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500")}>
-                  <span>{t("adminProducts.form.totalStockLabel")}</span>
-                  <span className={clsx("font-bold", c.textPrimary)}>
-                    {form.colors.reduce((s, col) => s + (col.stock ?? 0), 0)} {t("adminProducts.form.unitsLabel")}
-                  </span>
-                  <span className="ml-2">·</span>
-                  <span>
-                    {form.colors.length === 1
-                      ? t("adminProducts.form.colorCountOne", { count: form.colors.length })
-                      : t("adminProducts.form.colorCountOther", { count: form.colors.length })}
-                  </span>
-                </div>
-              )}
 
               <button
                 onClick={addColor}
@@ -856,6 +836,60 @@ export default function ProductForm({ initial, mode }: Props) {
               >
                 <Plus size={13} /> {t("adminProducts.form.addColorButton")}
               </button>
+
+              {/* Stock — per (color, size), the real shared ledger. A brand-new
+                  product has no id yet to key variants against, so stock is
+                  set after creation, from the edit screen. */}
+              {mode === "edit" && (
+                <div className={clsx("p-3 rounded-xl border", isDark ? "bg-gray-900/50 border-gray-700" : "bg-gray-50 border-gray-200")}>
+                  <p className={clsx("text-xs font-semibold uppercase tracking-wide mb-3", c.textMuted)}>
+                    {t("adminProducts.form.stockGridTitle")}
+                  </p>
+                  <Locked granted={canUpdateStock} isDark={isDark}>
+                    <div className="space-y-2.5">
+                      {(form.colors.length > 0 ? form.colors.map((cl) => cl.name) : [""]).map((colorName) => (
+                        <div key={colorName || "__none__"} className="flex flex-wrap items-center gap-2">
+                          <span className={clsx("text-xs font-medium w-20 truncate flex-shrink-0", c.textSecondary)}>
+                            {colorName || t("adminProducts.form.stockNoColor")}
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {(form.sizes.length > 0 ? form.sizes : [""]).map((size) => {
+                              const key = variantKey(colorName, size);
+                              return (
+                                <div key={key} className="flex items-center gap-1">
+                                  {size && <span className={clsx("text-[10px] font-semibold", c.textMuted)}>{size}</span>}
+                                  <input
+                                    type="number"
+                                    className={clsx(inpSm, "w-14 text-center")}
+                                    value={variantStock[key] ?? ""}
+                                    onChange={(e) =>
+                                      setVariantStock((v) => ({
+                                        ...v,
+                                        [key]: e.target.value === "" ? 0 : Number(e.target.value),
+                                      }))
+                                    }
+                                    min={0}
+                                    placeholder="0"
+                                    title={t("adminProducts.form.stockQtyTitle")}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Locked>
+
+                  {/* Stock summary */}
+                  <div className={clsx("flex items-center gap-2 mt-3 px-3 py-2 rounded-lg text-xs font-medium", isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500")}>
+                    <span>{t("adminProducts.form.totalStockLabel")}</span>
+                    <span className={clsx("font-bold", c.textPrimary)}>
+                      {Object.values(variantStock).reduce((s, q) => s + Math.max(0, q), 0)} {t("adminProducts.form.unitsLabel")}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </Section>
         </div>

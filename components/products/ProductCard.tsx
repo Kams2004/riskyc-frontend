@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ShoppingCart, Zap, Heart, Star, Check } from "@/components/icons/fa";
 import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
+import { availableQuantity, isProductSoldOut } from "@/lib/stock";
 import { useStore } from "@/lib/store";
 import { useState } from "react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -31,10 +32,15 @@ export default function ProductCard({ product }: Props) {
     : null;
   const priceUnset = product.price <= 0;
   const name = localized(product.name, product.nameFr, language);
+  const soldOut = isProductSoldOut(product);
+  // The quick-add button always adds the first color/size — if that
+  // specific combination is out of stock, send the shopper to the detail
+  // page to pick one that isn't, rather than quietly blocking the whole card.
+  const defaultComboSoldOut = availableQuantity(product, firstColor?.name ?? "", firstSize ?? "") <= 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (priceUnset) return;
+    if (priceUnset || defaultComboSoldOut) return;
     addToCart({ product, quantity: 1, selectedColor: firstColor?.name ?? "", selectedSize: firstSize });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
@@ -65,6 +71,11 @@ export default function ProductCard({ product }: Props) {
 
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
+          {soldOut && (
+            <span className="bg-gray-900 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {t("products.detail.soldOut")}
+            </span>
+          )}
           {product.badge === "NEW"  && <span className="badge-new">{t("products.card.badgeNew")}</span>}
           {product.badge === "SALE" && <span className="badge-sale">{t("products.card.badgeSale")}</span>}
           {product.badge === "HOT"  && <span className="badge-hot">{t("products.card.badgeHot")}</span>}
@@ -131,17 +142,17 @@ export default function ProductCard({ product }: Props) {
 
         {/* ── Action buttons ── */}
         <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
-          {/* Add to Cart — usable even when out of stock; icon only on mobile, full label on sm+ */}
+          {/* Add to Cart — icon only on mobile, full label on sm+; blocked once the default color/size is out of stock */}
           <button
             onClick={handleAddToCart}
-            disabled={priceUnset}
+            disabled={priceUnset || defaultComboSoldOut}
             className={clsx(
               "flex-1 min-w-0 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap",
-              priceUnset
+              priceUnset || defaultComboSoldOut
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                 : added ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-brand-500 text-white"
             )}
-            title={priceUnset ? t("products.card.contactForPricing") : t("products.card.addToCart")}
+            title={priceUnset ? t("products.card.contactForPricing") : defaultComboSoldOut ? t("products.detail.soldOut") : t("products.card.addToCart")}
           >
             {added ? <Check size={13} /> : <ShoppingCart size={13} />}
             <span className="hidden sm:inline">{added ? t("products.card.added") : t("products.card.addToCart")}</span>
