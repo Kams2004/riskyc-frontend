@@ -21,6 +21,13 @@ export function availableQuantity(product: Pick<Product, "variants">, selectedCo
   return Math.max(0, variant.quantity);
 }
 
+/** Sums a color's stock across every size — null ("no stock set") only when every variant for this color is still an untracked migration sentinel. Used by the admin product list/view pages, which show one figure per color, not per (color, size). */
+export function colorTotalStock(product: Pick<Product, "variants">, colorName: string): number | null {
+  const variants = product.variants.filter((v) => v.colorName === colorName);
+  if (variants.length === 0 || variants.every((v) => v.untracked)) return null;
+  return variants.filter((v) => !v.untracked).reduce((s, v) => s + Math.max(0, v.quantity), 0);
+}
+
 /**
  * Whether every *tracked* variant of this product is at 0 — used for the
  * product-grid "Sold out" ribbon. A product with no tracked variants yet

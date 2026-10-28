@@ -6,6 +6,7 @@ import { useAdminColors } from "@/lib/useAdminColors";
 import * as productsApi from "@/lib/api/products";
 import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
+import { colorTotalStock } from "@/lib/stock";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -90,7 +91,8 @@ export default function AdminProductViewPage() {
     );
   }
 
-  const totalStock = product.colors.reduce((s, col) => s + (col.stock ?? 0), 0);
+  const totalStock = product.variants.filter((v) => !v.untracked).reduce((s, v) => s + Math.max(0, v.quantity), 0);
+  const colorStock = (colorName: string) => colorTotalStock(product, colorName);
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
@@ -348,8 +350,8 @@ export default function AdminProductViewPage() {
               </div>
               <div className="space-y-2">
                 {product.colors.map((col) => {
-                  const stock = col.stock;
-                  const maxStock = Math.max(...product.colors.map((c) => c.stock ?? 0), 1);
+                  const stock = colorStock(col.name);
+                  const maxStock = Math.max(...product.colors.map((c) => colorStock(c.name) ?? 0), 1);
                   return (
                     <div key={col.name} className={clsx("flex flex-wrap items-center gap-x-3 gap-y-2 p-3 rounded-xl", c.isDark ? "bg-gray-900/40" : "bg-gray-50")}>
                       <div
@@ -418,8 +420,8 @@ export default function AdminProductViewPage() {
           </div>
           <div className="space-y-3">
             {product.colors.map((col) => {
-              const stock = col.stock;
-              const maxStock = Math.max(...product.colors.map((c) => c.stock ?? 0), 1);
+              const stock = colorStock(col.name);
+              const maxStock = Math.max(...product.colors.map((c) => colorStock(c.name) ?? 0), 1);
               const pct = Math.round(((stock ?? 0) / maxStock) * 100);
               return (
                 <div key={col.name} className="flex items-center gap-3">

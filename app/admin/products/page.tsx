@@ -7,6 +7,7 @@ import { useCategories } from "@/lib/useCategories";
 import * as productsApi from "@/lib/api/products";
 import { formatPrice } from "@/lib/data";
 import { Product } from "@/lib/types";
+import { colorTotalStock } from "@/lib/stock";
 import Link from "next/link";
 import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
 import AlertDialog from "@/components/admin/AlertDialog";
@@ -268,7 +269,7 @@ export default function AdminProductsPage() {
                             </div>
                             <div className="flex items-center gap-1 mt-1.5">
                               {product.colors.slice(0, 6).map((col) => (
-                                <div key={col.name} title={`${col.name}${col.stock != null ? ` (${col.stock})` : ""}`}
+                                <div key={col.name} title={`${col.name}${colorTotalStock(product, col.name) != null ? ` (${colorTotalStock(product, col.name)})` : ""}`}
                                   className="w-3 h-3 rounded-full border flex-shrink-0"
                                   style={{ backgroundColor: col.hex, borderColor: c.isDark ? "#4b5563" : "#d1d5db" }} />
                               ))}
@@ -425,7 +426,7 @@ export default function AdminProductsPage() {
                         </div>
                         <div className="flex items-center gap-1 mb-4">
                           {product.colors.slice(0, 5).map((col) => (
-                            <div key={col.name} title={`${col.name}${col.stock != null ? ` (${col.stock})` : ""}`}
+                            <div key={col.name} title={`${col.name}${colorTotalStock(product, col.name) != null ? ` (${colorTotalStock(product, col.name)})` : ""}`}
                               className={clsx("w-4 h-4 rounded-full border", c.isDark ? "border-gray-600" : "border-gray-300")}
                               style={{ backgroundColor: col.hex }} />
                           ))}
