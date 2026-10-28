@@ -4,6 +4,9 @@
 # Mobile app lives in its own repository
 /riskyc-mobile/
 
+# POS app lives in its own repository
+/riskyc-pos/
+
 # Dependencies
 /node_modules/
 
