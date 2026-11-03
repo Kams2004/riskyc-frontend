@@ -10,6 +10,7 @@ import {
   Truck,
   Megaphone,
   CreditCard,
+  Store,
   LucideIcon,
 } from "lucide-react";
 import { Permission } from "./types";
@@ -33,6 +34,11 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/products",   label: "Products",   icon: Package,         permission: "VIEW_PRODUCTS" },
   { href: "/admin/categories", label: "Categories", icon: Layers,          permission: "VIEW_CATEGORIES" },
   { href: "/admin/customers",  label: "Customers",  icon: UserRound,       permission: "VIEW_CUSTOMERS" },
+  // VIEW_ENTERPRISES is platform-only (never granted to a seller's own
+  // scoped role — see EnterpriseService's DEFAULT_OWNER_PERMISSIONS), so
+  // this item only ever appears for real platform staff, with no separate
+  // "is this the super admin" check needed here.
+  { href: "/admin/enterprises", label: "Sellers",   icon: Store,           permission: "VIEW_ENTERPRISES" },
   { href: "/admin/users",      label: "Users",      icon: Users,           permission: "VIEW_USERS" },
   { href: "/admin/chat",       label: "Chat",       icon: MessageSquare,   permission: "VIEW_CHAT" },
   { href: "/admin/publicity",  label: "Publicity",  icon: Megaphone,       permission: "VIEW_PUBLICITY" },

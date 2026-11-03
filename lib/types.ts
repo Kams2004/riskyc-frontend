@@ -117,6 +117,36 @@ export interface Category {
   productCount: number;
 }
 
+// ── Marketplace (seller applications) ───────────────────────────────────────
+
+export type EnterpriseStatus = "PENDING" | "ACTIVE" | "SUSPENDED" | "REJECTED";
+
+export interface CategorySummary {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export interface Enterprise {
+  id: string;
+  name: string;
+  description?: string | null;
+  businessType?: string | null;
+  status: EnterpriseStatus;
+  contactFirstName?: string | null;
+  contactLastName?: string | null;
+  contactEmail: string;
+  contactPhone?: string | null;
+  whatDoYouSell?: string | null;
+  estimatedCatalogSize?: string | null;
+  categories: CategorySummary[];
+  /** Non-persisted, recomputed on every read — a starting point, not a final answer. */
+  suggestedCategories: CategorySummary[];
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  createdAt: string;
+}
+
 // ── Orders ───────────────────────────────────────────────────────────────────
 
 export type OrderStatus =
@@ -282,7 +312,9 @@ export type Permission =
   | "MANAGE_PUBLICITY"
   | "VIEW_POS"
   | "MANAGE_POS"
-  | "VOID_POS_SALE";
+  | "VOID_POS_SALE"
+  | "VIEW_ENTERPRISES"
+  | "MANAGE_ENTERPRISES";
 
 export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[] = [
   { key: "VIEW_DASHBOARD",    label: "View Dashboard",    group: "Dashboard" },
@@ -316,6 +348,8 @@ export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[
   { key: "VIEW_POS",          label: "View Point of Sale", group: "Point of Sale" },
   { key: "MANAGE_POS",        label: "Manage Point of Sale (ring up sales, edit ticket settings)", group: "Point of Sale" },
   { key: "VOID_POS_SALE",     label: "Void Point of Sale Sales", group: "Point of Sale" },
+  { key: "VIEW_ENTERPRISES",  label: "View Seller Applications", group: "Marketplace" },
+  { key: "MANAGE_ENTERPRISES", label: "Approve/Reject/Suspend Sellers", group: "Marketplace" },
 ];
 
 export interface Role {

@@ -10,6 +10,7 @@ export const adminCommon = {
       products: "Products",
       categories: "Categories",
       customers: "Customers",
+      sellers: "Sellers",
       users: "Users",
       chat: "Chat",
       publicity: "Publicity",

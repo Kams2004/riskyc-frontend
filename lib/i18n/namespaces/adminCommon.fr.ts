@@ -12,6 +12,7 @@ export const adminCommon: typeof adminCommonEn = {
       products: "Produits",
       categories: "Catégories",
       customers: "Clients",
+      sellers: "Vendeurs",
       users: "Utilisateurs",
       chat: "Discussion",
       publicity: "Publicité",

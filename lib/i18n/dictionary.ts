@@ -36,6 +36,8 @@ import { adminPublicity as adminPublicityEn } from "./namespaces/adminPublicity.
 import { adminPublicity as adminPublicityFr } from "./namespaces/adminPublicity.fr";
 import { adminPos as adminPosEn } from "./namespaces/adminPos.en";
 import { adminPos as adminPosFr } from "./namespaces/adminPos.fr";
+import { adminEnterprises as adminEnterprisesEn } from "./namespaces/adminEnterprises.en";
+import { adminEnterprises as adminEnterprisesFr } from "./namespaces/adminEnterprises.fr";
 
 /**
  * One namespace per feature area (see lib/i18n/namespaces/) rather than two
@@ -65,6 +67,7 @@ export const dictionaries = {
     deleteAccount: deleteAccountEn,
     adminPublicity: adminPublicityEn,
     adminPos: adminPosEn,
+    adminEnterprises: adminEnterprisesEn,
   },
   fr: {
     common: commonFr,
@@ -85,6 +88,7 @@ export const dictionaries = {
     deleteAccount: deleteAccountFr,
     adminPublicity: adminPublicityFr,
     adminPos: adminPosFr,
+    adminEnterprises: adminEnterprisesFr,
   },
 } satisfies Record<Language, Record<string, Record<string, unknown>>>;
 
