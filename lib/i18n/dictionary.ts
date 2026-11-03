@@ -38,6 +38,8 @@ import { adminPos as adminPosEn } from "./namespaces/adminPos.en";
 import { adminPos as adminPosFr } from "./namespaces/adminPos.fr";
 import { adminEnterprises as adminEnterprisesEn } from "./namespaces/adminEnterprises.en";
 import { adminEnterprises as adminEnterprisesFr } from "./namespaces/adminEnterprises.fr";
+import { sellerApply as sellerApplyEn } from "./namespaces/sellerApply.en";
+import { sellerApply as sellerApplyFr } from "./namespaces/sellerApply.fr";
 
 /**
  * One namespace per feature area (see lib/i18n/namespaces/) rather than two
@@ -68,6 +70,7 @@ export const dictionaries = {
     adminPublicity: adminPublicityEn,
     adminPos: adminPosEn,
     adminEnterprises: adminEnterprisesEn,
+    sellerApply: sellerApplyEn,
   },
   fr: {
     common: commonFr,
@@ -89,6 +92,7 @@ export const dictionaries = {
     adminPublicity: adminPublicityFr,
     adminPos: adminPosFr,
     adminEnterprises: adminEnterprisesFr,
+    sellerApply: sellerApplyFr,
   },
 } satisfies Record<Language, Record<string, Record<string, unknown>>>;
 

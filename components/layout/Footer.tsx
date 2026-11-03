@@ -129,6 +129,11 @@ export default function Footer() {
                 </a>
               </li>
               <li>
+                <Link href="/become-a-seller" className="hover:text-brand-400 transition-colors">
+                  {t("footer.becomeASeller")}
+                </Link>
+              </li>
+              <li>
                 <Link href="/terms" className="hover:text-brand-400 transition-colors">
                   {t("footer.termsConditions")}
                 </Link>

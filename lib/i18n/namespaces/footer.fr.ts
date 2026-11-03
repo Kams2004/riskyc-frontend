@@ -12,6 +12,7 @@ export const footer: typeof footerEn = {
   shippingPolicy: "Politique de livraison",
   returnsExchanges: "Retours et échanges",
   orderingGuide: "Comment fonctionne la commande",
+  becomeASeller: "Vendre sur Riskyc Fashion",
   termsConditions: "Conditions générales",
   privacyPolicy: "Politique de confidentialité",
   address: "Marché Central, Douala\nPrécisément au Marché des Pommes",

@@ -1,5 +1,10 @@
 import { apiFetch } from "@/lib/apiClient";
-import { Enterprise } from "@/lib/types";
+import { Enterprise, EnterpriseStatus } from "@/lib/types";
+
+export interface EnterpriseStatusLookup {
+  name: string;
+  status: EnterpriseStatus;
+}
 
 export interface EnterpriseApplication {
   businessName: string;
@@ -24,6 +29,11 @@ export function listEnterprises(token: string) {
 
 export function getEnterprise(id: string, token: string) {
   return apiFetch<Enterprise>(`/api/enterprises/${id}`, { token });
+}
+
+/** Anonymous — no token. The applicant's own contact email must match. Used by the "Become a Seller" wizard's returning-applicant status check. */
+export function getApplicationStatus(id: string, email: string) {
+  return apiFetch<EnterpriseStatusLookup>(`/api/enterprises/${id}/status?email=${encodeURIComponent(email)}`);
 }
 
 export function approveEnterprise(id: string, categoryIds: string[], token: string) {
