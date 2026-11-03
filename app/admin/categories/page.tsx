@@ -43,8 +43,18 @@ function slugify(name: string) {
 export default function AdminCategoriesPage() {
   const token = useAdminStore((s) => s.session?.token);
   const canManage = useAdminStore((s) => s.hasPermission("MANAGE_CATEGORIES"));
+  const enterpriseId = useAdminStore((s) => s.session?.enterpriseId ?? null);
+  const enterpriseCategoryIds = useAdminStore((s) => s.session?.enterpriseCategoryIds ?? []);
   const c = useAdminColors();
   const { t } = useTranslation();
+
+  // A seller admin's role grants MANAGE_CATEGORIES too (so they can manage
+  // their own subcategories), but top-level Categories stay a platform-
+  // curated taxonomy — only a platform (unscoped) admin may create/edit/
+  // delete them or their cover image. A scoped admin can only manage
+  // subcategories under the categories their enterprise was assigned.
+  const canManageTopLevel = canManage && !enterpriseId;
+  const canManageSubcat = (categoryId: string) => canManage && (!enterpriseId || enterpriseCategoryIds.includes(categoryId));
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -297,7 +307,7 @@ export default function AdminCategoriesPage() {
                 <LayoutGrid size={16} />
               </button>
             </div>
-            {canManage && (
+            {canManageTopLevel && (
               <button
                 onClick={startAddCat}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-brand-500/20"
@@ -386,7 +396,7 @@ export default function AdminCategoriesPage() {
                       <ImageIcon size={22} className={c.textMuted} />
                     </div>
                   )}
-                  {canManage && (
+                  {canManageTopLevel && (
                   <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover/img:opacity-100">
                     <button
                       onClick={() => triggerImageUpload(cat.id)}
@@ -472,7 +482,7 @@ export default function AdminCategoriesPage() {
                         </div>
                       );
                     }
-                    if (!canManage) {
+                    if (!canManageSubcat(cat.id)) {
                       return (
                         <span key={sub.id} className={clsx("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", c.isDark ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600")}>
                           <Tag size={10} />{sub.name}
@@ -524,17 +534,23 @@ export default function AdminCategoriesPage() {
                       ? t("adminProducts.categories.subCountOne", { count: cat.subcategories.length })
                       : t("adminProducts.categories.subCountOther", { count: cat.subcategories.length })}
                   </span>
-                  {canManage && (
+                  {(canManageSubcat(cat.id) || canManageTopLevel) && (
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => startAddSub(cat.id)} className={clsx("flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200")}>
-                      <Plus size={11} /> {t("adminProducts.categories.subButton")}
-                    </button>
-                    <button onClick={() => startEditCat(cat.id, cat.name, cat.icon ?? "fa:solid:tag")} className={clsx("flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors", c.btnGhost)}>
-                      <Pencil size={11} /> {t("adminProducts.common.edit")}
-                    </button>
-                    <button onClick={() => askDeleteCategory(cat.id, cat.name, cat.subcategories.length)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20">
-                      <Trash2 size={11} />{t("adminProducts.common.delete")}
-                    </button>
+                    {canManageSubcat(cat.id) && (
+                      <button onClick={() => startAddSub(cat.id)} className={clsx("flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200")}>
+                        <Plus size={11} /> {t("adminProducts.categories.subButton")}
+                      </button>
+                    )}
+                    {canManageTopLevel && (
+                      <>
+                        <button onClick={() => startEditCat(cat.id, cat.name, cat.icon ?? "fa:solid:tag")} className={clsx("flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors", c.btnGhost)}>
+                          <Pencil size={11} /> {t("adminProducts.common.edit")}
+                        </button>
+                        <button onClick={() => askDeleteCategory(cat.id, cat.name, cat.subcategories.length)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20">
+                          <Trash2 size={11} />{t("adminProducts.common.delete")}
+                        </button>
+                      </>
+                    )}
                   </div>
                   )}
                 </div>
@@ -570,14 +586,16 @@ export default function AdminCategoriesPage() {
                           <ImageIcon size={14} className={c.textMuted} />
                         </div>
                       )}
-                      <button
-                        onClick={() => triggerImageUpload(cat.id)}
-                        disabled={uploadingId === cat.id}
-                        title={t("adminProducts.categories.changeCoverImageTitle")}
-                        className="absolute inset-0 bg-black/0 hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover/img:opacity-100"
-                      >
-                        {uploadingId === cat.id ? <Loader2 size={12} className="animate-spin text-white" /> : <Upload size={12} className="text-white" />}
-                      </button>
+                      {canManageTopLevel && (
+                        <button
+                          onClick={() => triggerImageUpload(cat.id)}
+                          disabled={uploadingId === cat.id}
+                          title={t("adminProducts.categories.changeCoverImageTitle")}
+                          className="absolute inset-0 bg-black/0 hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover/img:opacity-100"
+                        >
+                          {uploadingId === cat.id ? <Loader2 size={12} className="animate-spin text-white" /> : <Upload size={12} className="text-white" />}
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -629,27 +647,33 @@ export default function AdminCategoriesPage() {
                     </div>
                   )}
 
-                  {!isEditingCat && canManage && (
+                  {!isEditingCat && (canManageSubcat(cat.id) || canManageTopLevel) && (
                     <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => startAddSub(cat.id)}
-                        className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200")}
-                      >
-                        <Plus size={12} /> {t("adminProducts.categories.subButton")}
-                      </button>
-                      <button
-                        onClick={() => startEditCat(cat.id, cat.name, cat.icon ?? "fa:solid:tag")}
-                        className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors", c.btnGhost)}
-                      >
-                        <Pencil size={12} /> {t("adminProducts.common.edit")}
-                      </button>
-                      <button
-                        onClick={() => askDeleteCategory(cat.id, cat.name, cat.subcategories.length)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                      >
-                        <Trash2 size={12} />
-                        {t("adminProducts.common.delete")}
-                      </button>
+                      {canManageSubcat(cat.id) && (
+                        <button
+                          onClick={() => startAddSub(cat.id)}
+                          className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors", c.isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200")}
+                        >
+                          <Plus size={12} /> {t("adminProducts.categories.subButton")}
+                        </button>
+                      )}
+                      {canManageTopLevel && (
+                        <>
+                          <button
+                            onClick={() => startEditCat(cat.id, cat.name, cat.icon ?? "fa:solid:tag")}
+                            className={clsx("flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors", c.btnGhost)}
+                          >
+                            <Pencil size={12} /> {t("adminProducts.common.edit")}
+                          </button>
+                          <button
+                            onClick={() => askDeleteCategory(cat.id, cat.name, cat.subcategories.length)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                          >
+                            <Trash2 size={12} />
+                            {t("adminProducts.common.delete")}
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -693,7 +717,7 @@ export default function AdminCategoriesPage() {
                                 <span className={clsx("text-sm", c.textPrimary)}>{sub.name}</span>
                                 <span className={clsx("ml-2 text-xs font-mono", c.textMuted)}>{sub.id}</span>
                               </div>
-                              {canManage && (
+                              {canManageSubcat(cat.id) && (
                               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                                 <button
                                   onClick={() => startEditSub(cat.id, sub.id, sub.name)}
