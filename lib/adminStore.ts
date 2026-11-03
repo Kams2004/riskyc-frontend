@@ -13,6 +13,12 @@ export interface AdminSession {
   roleId: string;
   roleName: string;
   permissions: Permission[];
+  /** Null for platform staff (sees/manages every seller) — set for a seller's own scoped admin. */
+  enterpriseId: string | null;
+  /** The Categories this seller is approved to list products under — only meaningful when enterpriseId is set. */
+  enterpriseCategoryIds: string[];
+  /** True right after an invite-provisioned login — AdminGuard redirects to /admin/set-password until this is cleared. */
+  mustChangePassword: boolean;
 }
 
 interface AdminLoginResponse {
@@ -24,8 +30,11 @@ interface AdminLoginResponse {
     email: string;
     roleId: string;
     roleName: string;
+    enterpriseId: string | null;
   };
   permissions: Permission[];
+  mustChangePassword: boolean;
+  enterpriseCategoryIds: string[];
 }
 
 interface AdminStore {
@@ -37,6 +46,8 @@ interface AdminStore {
   hasPermission: (permission: Permission) => boolean;
   /** Holds every permission that exists (rather than a hardcoded "Super Admin" role name, which is user-editable) — sees and manages everyone's work, not just their own. */
   isSuperAdmin: () => boolean;
+  /** Clears the forced-change flag after a successful POST /api/admin-users/me/change-password, without a full re-login. */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 export const useAdminStore = create<AdminStore>()(
@@ -60,6 +71,9 @@ export const useAdminStore = create<AdminStore>()(
               roleId: data.user.roleId,
               roleName: data.user.roleName,
               permissions: data.permissions,
+              enterpriseId: data.user.enterpriseId,
+              enterpriseCategoryIds: data.enterpriseCategoryIds,
+              mustChangePassword: data.mustChangePassword,
             },
           });
           return { ok: true };
@@ -77,6 +91,23 @@ export const useAdminStore = create<AdminStore>()(
         const perms = get().session?.permissions;
         if (!perms) return false;
         return ALL_PERMISSIONS.every((p) => perms.includes(p.key));
+      },
+
+      changePassword: async (currentPassword, newPassword) => {
+        const session = get().session;
+        if (!session) return { ok: false, error: "Not signed in." };
+        try {
+          await apiFetch<void>("/api/admin-users/me/change-password", {
+            method: "POST",
+            token: session.token,
+            body: JSON.stringify({ currentPassword, newPassword }),
+          });
+          set({ session: { ...session, mustChangePassword: false } });
+          return { ok: true };
+        } catch (e) {
+          const message = e instanceof ApiError ? e.message : "Could not reach the server. Please try again.";
+          return { ok: false, error: message };
+        }
       },
     }),
     {

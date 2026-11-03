@@ -17,6 +17,7 @@ export default function AdminGuard({
   children: React.ReactNode;
 }) {
   const isAuthenticated = useAdminStore((s) => s.session !== null);
+  const mustChangePassword = useAdminStore((s) => s.session?.mustChangePassword ?? false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -44,7 +45,23 @@ export default function AdminGuard({
     }
   }, [hydrated, isAuthenticated, pathname, router]);
 
+  // An invite-provisioned seller admin must set their own password before
+  // reaching anywhere else in the panel — checked after the auth redirect
+  // above so a guest never bounces here instead of to /admin/login.
+  useEffect(() => {
+    if (hydrated && isAuthenticated && mustChangePassword && pathname !== "/admin/set-password") {
+      router.replace("/admin/set-password");
+    }
+  }, [hydrated, isAuthenticated, mustChangePassword, pathname, router]);
+
   if (!hydrated || (!isAuthenticated && pathname !== "/admin/login")) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (isAuthenticated && mustChangePassword && pathname !== "/admin/set-password") {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />

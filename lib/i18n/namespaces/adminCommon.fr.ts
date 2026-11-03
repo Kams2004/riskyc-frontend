@@ -51,6 +51,16 @@ export const adminCommon: typeof adminCommonEn = {
     passwordPlaceholder: "Entrez votre mot de passe",
     signIn: "Se connecter",
   },
+  setPassword: {
+    title: "Définissez votre mot de passe",
+    subtitle: "Vous vous connectez avec un mot de passe temporaire — choisissez le vôtre avant de continuer.",
+    currentPasswordLabel: "Mot de passe temporaire",
+    newPasswordLabel: "Nouveau mot de passe",
+    confirmPasswordLabel: "Confirmez le nouveau mot de passe",
+    submit: "Définir et continuer",
+    mismatch: "Les mots de passe ne correspondent pas.",
+    tooShort: "Utilisez au moins 8 caractères.",
+  },
   dashboard: {
     title: "Tableau de bord",
     welcome: "Bon retour, Admin 👋",

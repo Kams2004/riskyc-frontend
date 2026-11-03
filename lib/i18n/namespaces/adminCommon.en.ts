@@ -49,6 +49,16 @@ export const adminCommon = {
     passwordPlaceholder: "Enter password",
     signIn: "Sign In",
   },
+  setPassword: {
+    title: "Set your password",
+    subtitle: "You're signing in with a temporary password — choose your own before continuing.",
+    currentPasswordLabel: "Temporary password",
+    newPasswordLabel: "New password",
+    confirmPasswordLabel: "Confirm new password",
+    submit: "Set password & continue",
+    mismatch: "Those passwords don't match.",
+    tooShort: "Use at least 8 characters.",
+  },
   dashboard: {
     title: "Dashboard",
     welcome: "Welcome back, Admin 👋",
