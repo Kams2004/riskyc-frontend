@@ -15,6 +15,7 @@ export const adminCommon: typeof adminCommonEn = {
       users: "Utilisateurs",
       chat: "Discussion",
       publicity: "Publicité",
+      pos: "Point de Vente",
     },
     lightMode: "Mode clair",
     darkMode: "Mode sombre",

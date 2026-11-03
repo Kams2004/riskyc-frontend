@@ -279,7 +279,10 @@ export type Permission =
   | "VIEW_USERS"
   | "MANAGE_USERS"
   | "VIEW_PUBLICITY"
-  | "MANAGE_PUBLICITY";
+  | "MANAGE_PUBLICITY"
+  | "VIEW_POS"
+  | "MANAGE_POS"
+  | "VOID_POS_SALE";
 
 export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[] = [
   { key: "VIEW_DASHBOARD",    label: "View Dashboard",    group: "Dashboard" },
@@ -310,6 +313,9 @@ export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[
   { key: "MANAGE_USERS",      label: "Manage Users",      group: "Users" },
   { key: "VIEW_PUBLICITY",    label: "View Publicity",    group: "Publicity" },
   { key: "MANAGE_PUBLICITY",  label: "Manage Publicity",  group: "Publicity" },
+  { key: "VIEW_POS",          label: "View Point of Sale", group: "Point of Sale" },
+  { key: "MANAGE_POS",        label: "Manage Point of Sale (ring up sales, edit ticket settings)", group: "Point of Sale" },
+  { key: "VOID_POS_SALE",     label: "Void Point of Sale Sales", group: "Point of Sale" },
 ];
 
 export interface Role {
@@ -369,4 +375,54 @@ export interface ReferralSummary {
   directReferralCount: number;
   indirectReferralCount: number;
   referrals: ReferralEntry[];
+}
+
+// ── Point of Sale ────────────────────────────────────────────────────────────
+// Mirrors the riskyc-pos app's own lib/types.ts exactly — both read/write the
+// same backend DTOs (PosSaleResponse/PosSettingsResponse), so the shapes must
+// stay identical. The main admin only reads this data (sales history, void,
+// ticket settings) — ringing up a sale itself stays the dedicated POS app's job.
+
+export type PosPaymentMethod = "CASH" | "ORANGE_MONEY" | "MOBILE_MONEY";
+
+export interface PosSaleItem {
+  id: string;
+  productId: string | null;
+  productName: string;
+  thumbnailUrl: string | null;
+  quantity: number;
+  selectedColor: string;
+  selectedSize: string;
+  unitPrice: number;
+}
+
+export interface PosSale {
+  id: string;
+  clientSaleId: string;
+  cashierId: string | null;
+  cashierName: string;
+  items: PosSaleItem[];
+  total: number;
+  paymentMethod: PosPaymentMethod;
+  receiptUrl: string | null;
+  soldAt: string;
+  syncedAt: string;
+  stockReconciliationFlag: boolean;
+  voided: boolean;
+  voidedByName: string | null;
+  voidedAt: string | null;
+}
+
+export type ReceiptPaperWidth = "MM58" | "MM80" | "A4";
+
+/** The configurable printed ticket — see backend PosSettings' own javadoc. */
+export interface PosSettings {
+  storeName: string;
+  storeAddress: string | null;
+  storePhone: string | null;
+  footerMessage: string | null;
+  showCashierName: boolean;
+  showSaleId: boolean;
+  paperWidth: ReceiptPaperWidth;
+  logoUrl: string | null;
 }

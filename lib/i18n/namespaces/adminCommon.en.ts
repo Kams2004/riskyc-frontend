@@ -13,6 +13,7 @@ export const adminCommon = {
       users: "Users",
       chat: "Chat",
       publicity: "Publicity",
+      pos: "Point of Sale",
     },
     lightMode: "Light Mode",
     darkMode: "Dark Mode",

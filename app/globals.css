@@ -96,3 +96,23 @@
   transform: translateY(0);
   transition: opacity 300ms, transform 300ms;
 }
+
+/* POS ticket printing (admin reprint from Point of Sale) — #print-area is the
+   only thing shown when window.print() fires. #print-area sits nested inside
+   AdminShell's own wrapper divs (not a direct child of <body>), so a plain
+   "hide everything but #print-area and its descendants" selector would still
+   hide #print-area's own ANCESTORS — and display:none on an ancestor hides
+   the whole subtree underneath it regardless of the descendant's own
+   position/display, unlike normal document-flow exclusions. The final
+   :not(:has(#print-area)) clause also spares those ancestors. */
+@media print {
+  body *:not(#print-area):not(#print-area *):not(:has(#print-area)) {
+    display: none !important;
+  }
+  #print-area {
+    display: block !important;
+  }
+  @page {
+    margin: 0;
+  }
+}

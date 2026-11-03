@@ -37,6 +37,7 @@
   ],
   "exclude": [
     "node_modules",
-    "riskyc-mobile"
+    "riskyc-mobile",
+    "riskyc-pos"
   ]
 }

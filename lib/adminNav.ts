@@ -9,6 +9,7 @@ import {
   PackageCheck,
   Truck,
   Megaphone,
+  CreditCard,
   LucideIcon,
 } from "lucide-react";
 import { Permission } from "./types";
@@ -35,6 +36,7 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/users",      label: "Users",      icon: Users,           permission: "VIEW_USERS" },
   { href: "/admin/chat",       label: "Chat",       icon: MessageSquare,   permission: "VIEW_CHAT" },
   { href: "/admin/publicity",  label: "Publicity",  icon: Megaphone,       permission: "VIEW_PUBLICITY" },
+  { href: "/admin/pos",        label: "Point of Sale", icon: CreditCard,   permission: "VIEW_POS" },
 ];
 
 // These sub-routes need their own permission, not just the section's
@@ -53,6 +55,10 @@ const PRODUCT_ACTIVITY_PATH = /^\/admin\/products\/[^/]+\/activity/;
 // (VIEW_ORDERS), since the Packing page's own eye icon links here. Doesn't
 // match "/admin/orders" itself (the full list, still VIEW_ORDERS-only).
 const ORDER_DETAIL_PATH = /^\/admin\/orders\/[^/]+\/?$/;
+// The ticket settings sub-route needs MANAGE_POS, not just the section's
+// general VIEW_POS — same reasoning as PRODUCT_EDIT_PATH above: a cashier
+// who can only ring up sales shouldn't be able to reach it via a direct URL.
+const POS_SETTINGS_PATH = /^\/admin\/pos\/settings/;
 
 /** Resolves which permission(s) a given /admin/... path requires, if any — an array means "any one of these". */
 export function permissionForPath(pathname: string): Permission | Permission[] | null {
@@ -69,6 +75,9 @@ export function permissionForPath(pathname: string): Permission | Permission[] |
   }
   if (ORDER_DETAIL_PATH.test(pathname)) {
     return ["VIEW_ORDERS", "VIEW_TREATMENT"];
+  }
+  if (POS_SETTINGS_PATH.test(pathname)) {
+    return "MANAGE_POS";
   }
   const matches = adminNavItems.filter((item) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href)
