@@ -7,16 +7,19 @@ import { useCategories } from "@/lib/useCategories";
 import * as ordersApi from "@/lib/api/orders";
 import * as conversationsApi from "@/lib/api/conversations";
 import * as productsApi from "@/lib/api/products";
+import * as posApi from "@/lib/api/pos";
 import { formatPrice } from "@/lib/data";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ShoppingBag, Package, TrendingUp, Clock,
-  CheckCircle2, Eye, MessageSquare, AlertCircle, ArrowRight,
+  CheckCircle2, Eye, MessageSquare, AlertCircle, ArrowRight, CreditCard,
 } from "lucide-react";
 import clsx from "clsx";
-import { Order, OrderStatus, Conversation } from "@/lib/types";
+import { Order, OrderStatus, Conversation, PosSale } from "@/lib/types";
 import { useTranslation } from "@/lib/i18n/useTranslation";
+import SalesComparisonChart, { DayPoint } from "@/components/admin/dashboard/SalesComparisonChart";
+import SalesSplitDonut from "@/components/admin/dashboard/SalesSplitDonut";
 
 export default function AdminDashboardPage() {
   const token = useAdminStore((s) => s.session?.token);
@@ -37,18 +40,46 @@ export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [productCount, setProductCount] = useState(0);
+  const [posSales, setPosSales] = useState<PosSale[]>([]);
 
   useEffect(() => {
     if (!token) return;
     ordersApi.listOrders(token).then(setOrders).catch(() => {});
     conversationsApi.listConversations(token).then(setConversations).catch(() => {});
     productsApi.listAdminProducts(token).then((p) => setProductCount(p.length)).catch(() => {});
+    posApi.listSales(token).then(setPosSales).catch(() => {});
   }, [token]);
 
   const totalRevenue = orders.filter((o) => o.status === "VALIDATED").reduce((s, o) => s + o.total, 0);
   const pending = orders.filter((o) => o.status === "REVIEWING").length;
   const validated = orders.filter((o) => o.status === "VALIDATED").length;
   const totalUnread = conversations.reduce((s, cv) => s + cv.unread, 0);
+
+  const activePosSales = useMemo(() => posSales.filter((s) => !s.voided), [posSales]);
+  const posRevenue = activePosSales.reduce((s, x) => s + x.total, 0);
+
+  // Last 7 calendar days (today inclusive), online (validated orders) vs POS
+  // (non-voided till sales) revenue per day — one shared axis, never dual-axis.
+  const salesByDay: DayPoint[] = useMemo(() => {
+    const days: DayPoint[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      const dayKey = date.toDateString();
+      const online = orders
+        .filter((o) => o.status === "VALIDATED" && new Date(o.createdAt).toDateString() === dayKey)
+        .reduce((s, o) => s + o.total, 0);
+      const pos = activePosSales
+        .filter((s) => new Date(s.soldAt).toDateString() === dayKey)
+        .reduce((s, x) => s + x.total, 0);
+      days.push({ label: date.toLocaleDateString("en-GB", { day: "numeric", month: "short" }), date, online, pos });
+    }
+    return days;
+  }, [orders, activePosSales]);
+
+  const sevenDayOnline = salesByDay.reduce((s, d) => s + d.online, 0);
+  const sevenDayPos = salesByDay.reduce((s, d) => s + d.pos, 0);
 
   const recentOrders = [...orders]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -57,6 +88,7 @@ export default function AdminDashboardPage() {
   const stats = [
     { label: t("adminCommon.dashboard.statTotalRevenue"), value: formatPrice(totalRevenue), icon: TrendingUp, color: "from-brand-500 to-brand-700", sub: t("adminCommon.dashboard.statTotalRevenueSub", { count: validated }) },
     { label: t("adminCommon.dashboard.statTotalOrders"), value: orders.length, icon: ShoppingBag, color: "from-blue-500 to-blue-700", sub: t("adminCommon.dashboard.statTotalOrdersSub", { count: pending }) },
+    { label: "POS Sales", value: formatPrice(posRevenue), icon: CreditCard, color: "from-rose-500 to-rose-700", sub: `${activePosSales.length} sale${activePosSales.length !== 1 ? "s" : ""} at the till` },
     { label: t("adminCommon.dashboard.statProducts"), value: productCount, icon: Package, color: "from-purple-500 to-purple-700", sub: t("adminCommon.dashboard.statProductsSub", { count: categories.length }) },
     { label: t("adminCommon.dashboard.statChat"), value: conversations.length, icon: MessageSquare, color: "from-emerald-500 to-emerald-700", sub: t("adminCommon.dashboard.statChatSub", { count: totalUnread }) },
   ];
@@ -89,7 +121,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {stats.map((s) => (
             <div key={s.label} className={clsx("rounded-2xl border p-5 transition-colors", c.card)}>
               <div className={clsx("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-4 shadow-sm", s.color)}>
@@ -100,6 +132,18 @@ export default function AdminDashboardPage() {
               <div className={clsx("text-xs mt-1", c.textMuted)}>{s.sub}</div>
             </div>
           ))}
+        </div>
+
+        {/* Online vs POS */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className={clsx("lg:col-span-2 rounded-2xl border p-5", c.card)}>
+            <h2 className={clsx("font-semibold mb-4", c.sectionHeader)}>Sales — last 7 days</h2>
+            <SalesComparisonChart data={salesByDay} isDark={c.isDark} />
+          </div>
+          <div className={clsx("rounded-2xl border p-5 flex flex-col justify-center", c.card)}>
+            <h2 className={clsx("font-semibold mb-4", c.sectionHeader)}>Sales split</h2>
+            <SalesSplitDonut online={sevenDayOnline} pos={sevenDayPos} isDark={c.isDark} />
+          </div>
         </div>
 
         {/* Main grid */}
