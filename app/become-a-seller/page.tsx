@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Tag,
+  CreditCard,
 } from "@/components/icons/fa";
 import clsx from "clsx";
 
@@ -84,6 +85,7 @@ export default function BecomeASellerPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [agreedToPayments, setAgreedToPayments] = useState(false);
 
   const update = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -215,6 +217,7 @@ export default function BecomeASellerPage() {
                 setExisting(null);
                 setStatusLookup(null);
                 setForm(EMPTY_FORM);
+                setAgreedToPayments(false);
                 setStep("business");
               }}
               className="text-center text-brand-600 font-semibold text-sm hover:underline w-full mt-6"
@@ -440,6 +443,25 @@ export default function BecomeASellerPage() {
                 )}
               </dl>
 
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <CreditCard size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900 mb-1">{t("sellerApply.payment.title")}</p>
+                    <p className="text-xs text-blue-800 leading-relaxed">{t("sellerApply.payment.body")}</p>
+                  </div>
+                </div>
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={agreedToPayments}
+                    onChange={(e) => setAgreedToPayments(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-blue-300 text-brand-500 focus:ring-brand-400 flex-shrink-0"
+                  />
+                  <span className="text-xs font-medium text-blue-900">{t("sellerApply.payment.agree")}</span>
+                </label>
+              </div>
+
               {submitError && (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
                   <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
@@ -471,7 +493,7 @@ export default function BecomeASellerPage() {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={submitting}
+                disabled={submitting || !agreedToPayments}
                 className="flex-1 flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-all"
               >
                 {submitting ? (

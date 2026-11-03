@@ -58,6 +58,11 @@ export const sellerApply: typeof sellerApplyEn = {
     submit: "Soumettre la candidature",
     submitting: "Envoi en cours...",
   },
+  payment: {
+    title: "Comment fonctionnent les paiements",
+    body: "Riskyc Fashion encaisse les paiements de vos clients via ses propres numéros Orange Money et MTN Mobile Money déjà existants — les mêmes pour tous les vendeurs de la plateforme, et non un compte séparé pour votre boutique. Les clients téléversent une preuve de paiement et notre équipe la valide, exactement comme pour le reste de la boutique aujourd'hui. Le règlement avec vous pour vos ventes se fait séparément, en dehors de l'application.",
+    agree: "Je comprends et j'accepte cet arrangement de paiement.",
+  },
   errors: {
     required: "Ce champ est requis.",
     validEmail: "Entrez une adresse e-mail valide.",
