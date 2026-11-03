@@ -425,4 +425,27 @@ export interface PosSettings {
   showSaleId: boolean;
   paperWidth: ReceiptPaperWidth;
   logoUrl: string | null;
+  cashEnabled: boolean;
+  orangeMoneyEnabled: boolean;
+  mobileMoneyEnabled: boolean;
+}
+
+/** One oversold sale line — see the backend's PosReconciliationLineResponse javadoc. */
+export interface PosReconciliationLine {
+  itemId: string;
+  saleId: string;
+  soldAt: string;
+  cashierName: string;
+  productName: string;
+  thumbnailUrl: string | null;
+  selectedColor: string;
+  selectedSize: string;
+  quantity: number;
+  unitPrice: number;
+  stockBefore: number;
+  stockAfter: number;
+  oversoldBy: number;
+  reconciled: boolean;
+  reconciledAt: string | null;
+  reconciledByName: string | null;
 }

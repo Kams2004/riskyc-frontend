@@ -12,7 +12,18 @@ import * as posApi from "@/lib/api/pos";
 import { PosSettings, ReceiptPaperWidth } from "@/lib/types";
 import { ApiError } from "@/lib/apiClient";
 import clsx from "clsx";
-import { ChevronLeft, Loader2, Check, Upload } from "lucide-react";
+import { ChevronLeft, Loader2, Check, Upload, Banknote, Smartphone } from "lucide-react";
+
+const PAYMENT_METHODS: {
+  key: "cashEnabled" | "orangeMoneyEnabled" | "mobileMoneyEnabled";
+  icon: typeof Banknote;
+  title: string;
+  subtitle: string;
+}[] = [
+  { key: "cashEnabled", icon: Banknote, title: "Cash", subtitle: "Paid in physical currency" },
+  { key: "orangeMoneyEnabled", icon: Smartphone, title: "Orange Money", subtitle: "Mobile payment via Orange" },
+  { key: "mobileMoneyEnabled", icon: Smartphone, title: "Mobile Money", subtitle: "Mobile payment via MTN" },
+];
 
 const PAPER_WIDTHS: { value: ReceiptPaperWidth; labelKey: string }[] = [
   { value: "MM58", labelKey: "paperWidth58" },
@@ -101,6 +112,7 @@ export default function AdminPosSettingsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
             {/* Form */}
             <div className={clsx("rounded-2xl border p-5 space-y-4 h-fit", c.card)}>
               <div>
@@ -191,6 +203,8 @@ export default function AdminPosSettingsPage() {
                 </label>
               </div>
 
+              {error && <div className="text-sm text-red-600 bg-red-50 rounded-xl px-3.5 py-2.5">{error}</div>}
+
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -202,6 +216,36 @@ export default function AdminPosSettingsPage() {
                 {saving ? <Loader2 size={16} className="animate-spin" /> : saved ? <Check size={16} /> : null}
                 {saving ? t("adminPos.settings.saving") : saved ? t("adminPos.settings.saved") : t("adminPos.settings.save")}
               </button>
+            </div>
+
+            {/* Payment methods */}
+            <div className={clsx("rounded-2xl border p-5 space-y-1 h-fit", c.card)}>
+              <p className={clsx("text-xs font-semibold uppercase tracking-wide mb-2", c.textMuted)}>Payment methods</p>
+              {PAYMENT_METHODS.map((m, i) => {
+                const Icon = m.icon;
+                const enabledCount = PAYMENT_METHODS.filter((pm) => settings[pm.key]).length;
+                const isOnlyOneLeft = enabledCount === 1 && settings[m.key];
+                return (
+                  <div key={m.key} className={clsx("flex items-center gap-3 py-3", i < PAYMENT_METHODS.length - 1 && clsx("border-b", c.border))}>
+                    <div className={clsx("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-brand-500/10 text-brand-500")}>
+                      <Icon size={15} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={clsx("text-sm font-semibold", c.textPrimary)}>{m.title}</p>
+                      <p className={clsx("text-[11px]", c.textMuted)}>{m.subtitle}</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={settings[m.key]}
+                      disabled={isOnlyOneLeft}
+                      onChange={(e) => setSettings({ ...settings, [m.key]: e.target.checked })}
+                      className="w-4 h-4 accent-brand-500 disabled:opacity-40"
+                    />
+                  </div>
+                );
+              })}
+              <p className={clsx("text-[11px] pt-2", c.textMuted)}>At least one payment method must stay on.</p>
+            </div>
             </div>
 
             {/* Live preview */}
