@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { useAdminStore } from "@/lib/adminStore";
 import { firstAccessibleHref } from "@/lib/adminNav";
 import { Eye, EyeOff, Lock, Mail, LogIn, AlertCircle, Clock } from "lucide-react";
@@ -46,8 +47,10 @@ function AdminLoginPageInner() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Background glow */}
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 relative overflow-hidden">
+      {/* The admin's own desk — laptop open on the dashboard, the boutique behind it. */}
+      <Image src="/admin-login-background.png" alt="" fill priority sizes="100vw" className="object-cover" />
+      <div className="absolute inset-0 bg-gray-950/75" />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-brand-600/10 rounded-full blur-3xl" />
       </div>
