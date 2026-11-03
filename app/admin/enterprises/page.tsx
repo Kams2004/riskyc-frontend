@@ -16,6 +16,7 @@ import clsx from "clsx";
 const TABS: { key: EnterpriseStatus | "ALL"; labelKey: string }[] = [
   { key: "PENDING", labelKey: "tabPending" },
   { key: "ACTIVE", labelKey: "tabActive" },
+  { key: "SUSPENDED", labelKey: "tabSuspended" },
   { key: "REJECTED", labelKey: "tabRejected" },
   { key: "ALL", labelKey: "tabAll" },
 ];
@@ -107,6 +108,37 @@ export default function AdminEnterprisesPage() {
       onConfirm: async (reason) => {
         if (!token) return;
         const updated = await enterprisesApi.rejectEnterprise(enterprise.id, reason, token);
+        setEnterprises((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+        setSelected((cur) => (cur?.id === updated.id ? updated : cur));
+        setConfirm(null);
+      },
+    });
+  };
+
+  const askSuspend = (enterprise: Enterprise) => {
+    setConfirm({
+      title: t("adminEnterprises.suspendDialog.title", { name: enterprise.name }),
+      message: t("adminEnterprises.suspendDialog.message"),
+      confirmLabel: t("adminEnterprises.suspendDialog.confirmLabel"),
+      onConfirm: async () => {
+        if (!token) return;
+        const updated = await enterprisesApi.suspendEnterprise(enterprise.id, token);
+        setEnterprises((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+        setSelected((cur) => (cur?.id === updated.id ? updated : cur));
+        setConfirm(null);
+      },
+    });
+  };
+
+  const askReactivate = (enterprise: Enterprise) => {
+    setConfirm({
+      title: t("adminEnterprises.reactivateDialog.title", { name: enterprise.name }),
+      message: t("adminEnterprises.reactivateDialog.message"),
+      confirmLabel: t("adminEnterprises.reactivateDialog.confirmLabel"),
+      destructive: false,
+      onConfirm: async () => {
+        if (!token) return;
+        const updated = await enterprisesApi.reactivateEnterprise(enterprise.id, token);
         setEnterprises((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
         setSelected((cur) => (cur?.id === updated.id ? updated : cur));
         setConfirm(null);
@@ -345,6 +377,28 @@ export default function AdminEnterprisesPage() {
                   className="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors"
                 >
                   {t("adminEnterprises.approve")}
+                </button>
+              </div>
+            )}
+
+            {selected.status === "ACTIVE" && (
+              <div className="mt-6">
+                <button
+                  onClick={() => askSuspend(selected)}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                >
+                  {t("adminEnterprises.suspend")}
+                </button>
+              </div>
+            )}
+
+            {selected.status === "SUSPENDED" && (
+              <div className="mt-6">
+                <button
+                  onClick={() => askReactivate(selected)}
+                  className="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors"
+                >
+                  {t("adminEnterprises.reactivate")}
                 </button>
               </div>
             )}

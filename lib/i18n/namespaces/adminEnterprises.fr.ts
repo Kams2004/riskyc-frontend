@@ -5,6 +5,7 @@ export const adminEnterprises: typeof adminEnterprisesEn = {
   subtitle: "{{count}} candidatures · {{pending}} en attente d'examen",
   tabPending: "En attente",
   tabActive: "Actifs",
+  tabSuspended: "Suspendus",
   tabRejected: "Rejetés",
   tabAll: "Tous",
   searchPlaceholder: "Rechercher par nom d'entreprise ou e-mail...",
@@ -32,6 +33,18 @@ export const adminEnterprises: typeof adminEnterprisesEn = {
   },
   approve: "Approuver",
   reject: "Rejeter",
+  suspend: "Suspendre",
+  reactivate: "Réactiver",
+  suspendDialog: {
+    title: "Suspendre {{name}} ?",
+    message: "Son équipe sera immédiatement bloquée à la connexion et tout son catalogue disparaîtra de la boutique, jusqu'à réactivation. Le choix de visibilité de chaque produit est conservé et restauré exactement tel quel.",
+    confirmLabel: "Suspendre le vendeur",
+  },
+  reactivateDialog: {
+    title: "Réactiver {{name}} ?",
+    message: "Son équipe peut de nouveau se connecter et son catalogue réapparaît dans la boutique, en respectant le choix de visibilité de chaque produit.",
+    confirmLabel: "Réactiver le vendeur",
+  },
   approveModal: {
     title: "Approuver {{name}}",
     subtitle: "Confirmez les catégories sous lesquelles ce vendeur peut lister des produits. Celles en surbrillance sont suggérées à partir de sa candidature — à modifier si besoin.",

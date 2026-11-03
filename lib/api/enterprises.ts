@@ -51,3 +51,11 @@ export function rejectEnterprise(id: string, reason: string | undefined, token: 
     body: JSON.stringify({ reason }),
   });
 }
+
+export function suspendEnterprise(id: string, token: string) {
+  return apiFetch<Enterprise>(`/api/enterprises/${id}/suspend`, { method: "POST", token });
+}
+
+export function reactivateEnterprise(id: string, token: string) {
+  return apiFetch<Enterprise>(`/api/enterprises/${id}/reactivate`, { method: "POST", token });
+}

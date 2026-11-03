@@ -3,6 +3,7 @@ export const adminEnterprises = {
   subtitle: "{{count}} applications · {{pending}} awaiting review",
   tabPending: "Pending",
   tabActive: "Active",
+  tabSuspended: "Suspended",
   tabRejected: "Rejected",
   tabAll: "All",
   searchPlaceholder: "Search by business name or email...",
@@ -30,6 +31,18 @@ export const adminEnterprises = {
   },
   approve: "Approve",
   reject: "Reject",
+  suspend: "Suspend",
+  reactivate: "Reactivate",
+  suspendDialog: {
+    title: "Suspend {{name}}?",
+    message: "Their staff will be immediately blocked from signing in and their whole catalog will disappear from the storefront, until reactivated. Each product's own visibility choice is preserved and restored exactly as it was.",
+    confirmLabel: "Suspend seller",
+  },
+  reactivateDialog: {
+    title: "Reactivate {{name}}?",
+    message: "Their staff can sign in again and their catalog reappears on the storefront, respecting each product's own visibility choice.",
+    confirmLabel: "Reactivate seller",
+  },
   approveModal: {
     title: "Approve {{name}}",
     subtitle: "Confirm which categories this seller can list products under. The highlighted ones are suggested from their application — override as needed.",
