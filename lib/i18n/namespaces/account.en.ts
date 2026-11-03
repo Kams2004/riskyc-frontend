@@ -85,6 +85,7 @@ export const account = {
   track: {
     title: "Track Your Order",
     refresh: "Refresh",
+    partOfPurchase: "Part of the same purchase ({{count}})",
     notFoundTitle: "Order not found",
     notFoundDescription: "This tracking link doesn't match any order. Double-check the link, or contact us if you think this is a mistake.",
     backToShop: "Back to shop",

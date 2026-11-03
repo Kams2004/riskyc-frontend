@@ -107,6 +107,7 @@ export const cart = {
     notificationsError: "Couldn't enable notifications — try again.",
     enableNotifications: "Enable notifications",
     enablingNotifications: "Enabling…",
+    yourPurchase: "Your purchase ({{count}} orders)",
     orderSummaryLabel: "Order Summary",
     orderIdLabel: "Order ID",
     nameLabel: "Name",

@@ -109,6 +109,7 @@ export const cart: typeof cartEn = {
     notificationsError: "Impossible d'activer les notifications — réessayez.",
     enableNotifications: "Activer les notifications",
     enablingNotifications: "Activation…",
+    yourPurchase: "Votre achat ({{count}} commandes)",
     orderSummaryLabel: "Récapitulatif de commande",
     orderIdLabel: "Numéro de commande",
     nameLabel: "Nom",

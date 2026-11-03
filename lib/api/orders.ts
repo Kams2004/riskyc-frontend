@@ -9,8 +9,14 @@ export interface CreateOrderItemInput {
   selectedImageIndex?: number;
 }
 
+/** A cart spanning several sellers now returns one Order per seller — see OrderService#create on the backend. */
 export function createOrder(data: { customerId?: string; items: CreateOrderItemInput[]; customerInfo: CustomerInfo; language?: string }) {
-  return apiFetch<Order>("/api/orders", { method: "POST", body: JSON.stringify(data) });
+  return apiFetch<Order[]>("/api/orders", { method: "POST", body: JSON.stringify(data) });
+}
+
+/** The sibling orders produced by one checkout (one per seller involved). */
+export function getOrdersByCheckoutGroup(checkoutGroupId: string) {
+  return apiFetch<Order[]>(`/api/orders/group/${checkoutGroupId}`);
 }
 
 export function setOrderPaymentMethod(orderId: string, paymentMethod: PaymentMethod) {

@@ -187,6 +187,10 @@ export interface OrderItem {
 export interface Order {
   id: string;
   customerId?: string | null;
+  /** Which seller this order's items belong to — null only for pre-marketplace orders. */
+  enterpriseId?: string | null;
+  /** Groups this order with any siblings from the same checkout (one per seller a cart spanned). */
+  checkoutGroupId?: string | null;
   items: OrderItem[];
   total: number;
   status: OrderStatus;

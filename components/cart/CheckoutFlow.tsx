@@ -96,24 +96,20 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   const { items, getCartTotal, getLineTotal, clearCart, setChatOpen, customer, refreshCart } = useStore();
   const { t, language } = useTranslation();
 
-  const [order, setOrder] = useState<Order | null>(null);
+  // A cart can span several sellers — checkout now produces one Order per
+  // seller involved, all sharing a checkoutGroupId (see OrderService.create
+  // on the backend). Re-opening a single past order from "My Orders" (where
+  // each sub-order already appears as its own row) only needs that one
+  // order, not its siblings, so `orders` stays a one-element array there.
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrder, setLoadingOrder] = useState(!!orderId);
 
-  // Determine initial step from existing order status
-  const getInitialStep = (o: Order | null): Step => {
-    if (!o) return "method";
-    switch (o.status) {
-      case "AWAITING_PAYMENT":
-        return "awaiting";
-      case "REVIEWING":
-      case "VALIDATED":
-      case "PACKAGING":
-      case "PACKAGED":
-      case "CANCELLED":
-        return "confirmed";
-      default:
-        return "method";
-    }
+  // Determine initial step from the existing orders' statuses
+  const getInitialStep = (os: Order[]): Step => {
+    if (os.length === 0) return "method";
+    if (os.some((o) => o.status === "AWAITING_PAYMENT")) return "awaiting";
+    if (os.some((o) => o.status !== "PENDING")) return "confirmed";
+    return "method";
   };
 
   const [step, setStep] = useState<Step>("method");
@@ -127,8 +123,8 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
     ordersApi
       .getOrder(orderId)
       .then((o) => {
-        setOrder(o);
-        setStep(getInitialStep(o));
+        setOrders([o]);
+        setStep(getInitialStep([o]));
       })
       .catch(() => setOrderLoadError(true))
       .finally(() => setLoadingOrder(false));
@@ -179,8 +175,10 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Delivery is free on every order, so what the customer pays is exactly
-  // the sum of what they selected — no separate "total" needed.
-  const subtotal = order ? order.total : getCartTotal();
+  // the sum of what they selected — no separate "total" needed. Summed
+  // across every sub-order when a cart spans several sellers — the customer
+  // still pays and uploads proof once for the combined amount, same as today.
+  const subtotal = orders.length > 0 ? orders.reduce((sum, o) => sum + o.total, 0) : getCartTotal();
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
 
@@ -199,7 +197,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
     setSending(true);
     setSubmitError("");
     try {
-      const newOrder = await ordersApi.createOrder({
+      const newOrders = await ordersApi.createOrder({
         customerId: customer?.id,
         items: items.map((item) => ({
           productId: item.product.id,
@@ -211,11 +209,14 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
         customerInfo,
         language: useStore.getState().language,
       });
-      await ordersApi.setOrderPaymentMethod(newOrder.id, selectedMethod);
-      const finalOrder = await ordersApi.uploadPaymentProof(newOrder.id, screenshotFile);
+      // The customer picked one payment method and uploads one proof
+      // screenshot for the combined amount — applied to every sub-order the
+      // cart split into, same as a single order would get today.
+      await Promise.all(newOrders.map((o) => ordersApi.setOrderPaymentMethod(o.id, selectedMethod)));
+      const finalOrders = await Promise.all(newOrders.map((o) => ordersApi.uploadPaymentProof(o.id, screenshotFile)));
       clearCart();
-      recordLocalOrder(finalOrder.id);
-      setOrder(finalOrder);
+      finalOrders.forEach((o) => recordLocalOrder(o.id));
+      setOrders(finalOrders);
       setStep("confirmed");
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : t("cart.checkout.genericError"));
@@ -348,9 +349,10 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 {step === "method" && t("cart.checkout.chooseMethod")}
                 {step === "awaiting" && t("cart.checkout.completePayment")}
                 {step === "info" && t("cart.checkout.yourInformation")}
-                {step === "confirmed" && (order?.status === "CANCELLED" ? t("cart.checkout.orderCancelled") : t("cart.checkout.orderConfirmed"))}
+                {step === "confirmed" && (orders.every((o) => o.status === "CANCELLED") ? t("cart.checkout.orderCancelled") : t("cart.checkout.orderConfirmed"))}
               </h2>
-              {order && <p className="text-xs text-gray-400 font-mono">{order.id}</p>}
+              {/* Each sub-order's own id is shown on its own card below once there's more than one. */}
+              {orders.length === 1 && <p className="text-xs text-gray-400 font-mono">{orders[0].id}</p>}
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
@@ -642,9 +644,9 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
           )}
 
           {/* ===== STEP 4: Confirmed ===== */}
-          {step === "confirmed" && (
+          {step === "confirmed" && orders.length > 0 && (
             <div className="space-y-5 animate-fade-in text-center">
-              {order?.status === "CANCELLED" ? (
+              {orders.every((o) => o.status === "CANCELLED") ? (
                 <div className="py-6">
                   <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
                     <AlertCircle size={40} className="text-red-500" />
@@ -667,105 +669,114 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 </div>
               )}
 
-              {order?.status === "CANCELLED" && order.rejectionReason && (
-                <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-left">
-                  <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">{t("cart.checkout.reasonLabel")}</p>
-                  <p className="text-sm text-red-800">{order.rejectionReason}</p>
-                </div>
+              {/* One card per sub-order under one "your purchase" heading — a
+                  single-seller cart (today's only real case) renders exactly
+                  one, unchanged from before the marketplace split. */}
+              {orders.length > 1 && (
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                  {t("cart.checkout.yourPurchase", { count: orders.length })}
+                </p>
               )}
 
-              {order && order.status !== "CANCELLED" && <PushOptIn orderId={order.id} />}
-
-              {order && (
-                <button
-                  onClick={async () => {
-                    if (downloadingReceipt) return;
-                    setDownloadingReceipt(true);
-                    setReceiptError(false);
-                    try {
-                      await downloadReceipt(order);
-                    } catch {
-                      setReceiptError(true);
-                    } finally {
-                      setDownloadingReceipt(false);
-                    }
-                  }}
-                  disabled={downloadingReceipt}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-sm transition-colors"
-                >
-                  {downloadingReceipt ? (
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                  ) : (
-                    <Printer size={18} />
+              {orders.map((o) => (
+                <div key={o.id} className="space-y-3 text-left">
+                  {o.status === "CANCELLED" && o.rejectionReason && (
+                    <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
+                      <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">{t("cart.checkout.reasonLabel")}</p>
+                      <p className="text-sm text-red-800">{o.rejectionReason}</p>
+                    </div>
                   )}
-                  {t("cart.checkout.downloadReceipt")}
-                </button>
-              )}
+
+                  {o.status !== "CANCELLED" && <PushOptIn orderId={o.id} />}
+
+                  <div className={clsx(
+                    "rounded-2xl border p-4 space-y-2",
+                    o.status === "CANCELLED" ? "bg-gray-50 border-gray-200" : "bg-green-50 border-green-100"
+                  )}>
+                    <div className="flex items-center justify-between">
+                      <p className={clsx("text-xs font-semibold uppercase tracking-wide", o.status === "CANCELLED" ? "text-gray-600" : "text-green-800")}>{t("cart.checkout.orderSummaryLabel")}</p>
+                      <StatusBadge status={o.status} />
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">{t("cart.checkout.orderIdLabel")}</span>
+                      <span className="font-mono font-semibold text-gray-800">{o.id}</span>
+                    </div>
+                    {o.customerInfo && (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">{t("cart.checkout.nameLabel")}</span>
+                          <span className="font-medium text-gray-800">{o.customerInfo.firstName} {o.customerInfo.lastName}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">{t("cart.checkout.phoneLabel")}</span>
+                          <span className="font-medium text-gray-800">{o.customerInfo.phone}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">{t("cart.checkout.deliveryLabel")}</span>
+                          <span className="font-medium text-gray-800 flex items-center gap-1">
+                            {o.customerInfo.deliveryType === "DELIVERY" ? <><Truck size={13} className="text-brand-500" />{t("cart.checkout.delivery")}</> : <><Store size={13} className="text-brand-500" />{t("cart.checkout.pickup")}</>}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">{t("cart.checkout.amountLabel")}</span>
+                      <span className={clsx("font-bold", o.status === "CANCELLED" ? "text-gray-700" : "text-green-700")}>{formatPrice(o.total)}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      if (downloadingReceipt) return;
+                      setDownloadingReceipt(true);
+                      setReceiptError(false);
+                      try {
+                        await downloadReceipt(o);
+                      } catch {
+                        setReceiptError(true);
+                      } finally {
+                        setDownloadingReceipt(false);
+                      }
+                    }}
+                    disabled={downloadingReceipt}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-sm transition-colors"
+                  >
+                    {downloadingReceipt ? (
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                    ) : (
+                      <Printer size={18} />
+                    )}
+                    {t("cart.checkout.downloadReceipt")}
+                  </button>
+
+                  <Link
+                    href={`/track/${o.id}`}
+                    className="block text-center text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors py-1"
+                  >
+                    {t("cart.checkout.trackOrder")}
+                  </Link>
+                </div>
+              ))}
+
               {receiptError && (
                 <p className="text-xs text-red-500 text-center -mt-2">{t("cart.checkout.receiptFailed")}</p>
               )}
 
-              {order && (
-                <div className={clsx(
-                  "rounded-2xl border p-4 text-left space-y-2",
-                  order.status === "CANCELLED" ? "bg-gray-50 border-gray-200" : "bg-green-50 border-green-100"
-                )}>
-                  <div className="flex items-center justify-between">
-                    <p className={clsx("text-xs font-semibold uppercase tracking-wide", order.status === "CANCELLED" ? "text-gray-600" : "text-green-800")}>{t("cart.checkout.orderSummaryLabel")}</p>
-                    <StatusBadge status={order.status} />
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">{t("cart.checkout.orderIdLabel")}</span>
-                    <span className="font-mono font-semibold text-gray-800">{order.id}</span>
-                  </div>
-                  {order.customerInfo && (
-                    <>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">{t("cart.checkout.nameLabel")}</span>
-                        <span className="font-medium text-gray-800">{order.customerInfo.firstName} {order.customerInfo.lastName}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">{t("cart.checkout.phoneLabel")}</span>
-                        <span className="font-medium text-gray-800">{order.customerInfo.phone}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">{t("cart.checkout.deliveryLabel")}</span>
-                        <span className="font-medium text-gray-800 flex items-center gap-1">
-                          {order.customerInfo.deliveryType === "DELIVERY" ? <><Truck size={13} className="text-brand-500" />{t("cart.checkout.delivery")}</> : <><Store size={13} className="text-brand-500" />{t("cart.checkout.pickup")}</>}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">{t("cart.checkout.amountLabel")}</span>
-                    <span className={clsx("font-bold", order.status === "CANCELLED" ? "text-gray-700" : "text-green-700")}>{formatPrice(order.total)}</span>
-                  </div>
-                </div>
-              )}
-
-              {order && (
-                <Link
-                  href={`/track/${order.id}`}
-                  className="block text-center text-sm font-semibold text-brand-500 hover:text-brand-600 transition-colors py-1"
-                >
-                  {t("cart.checkout.trackOrder")}
-                </Link>
-              )}
-
-              {order && !customer && order.status !== "CANCELLED" && (
+              {/* Account linking only ever attaches the first sub-order today — a guest who registers right after a multi-seller purchase can still track the others locally (every sub-order id is recorded via recordLocalOrder above). */}
+              {!customer && orders.some((o) => o.status !== "CANCELLED") && (
                 <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 text-left space-y-3">
                   <div>
                     <p className="text-sm font-semibold text-gray-900 mb-1">{t("cart.checkout.createAccountPromptTitle")}</p>
                     <p className="text-xs text-gray-500 leading-relaxed">{t("cart.checkout.createAccountPromptBody")}</p>
                   </div>
                   <Link
-                    href={`/register?attachOrder=${order.id}`}
+                    href={`/register?attachOrder=${orders[0].id}`}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors"
                   >
                     <UserPlus size={16} /> {t("cart.checkout.createAccountPromptSignUp")}
                   </Link>
                   <Link
-                    href={`/login?attachOrder=${order.id}`}
+                    href={`/login?attachOrder=${orders[0].id}`}
                     className="block text-center text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors"
                   >
                     {t("cart.checkout.createAccountPromptLogIn")}
@@ -773,7 +784,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 </div>
               )}
 
-              {order?.status !== "CANCELLED" && (
+              {orders.some((o) => o.status !== "CANCELLED") && (
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-left">
                   <p className="text-sm font-semibold text-amber-800 mb-1">{t("cart.checkout.whatNext")}</p>
                   <ul className="text-xs text-amber-700 space-y-1">

@@ -87,6 +87,7 @@ export const account: typeof accountEn = {
   track: {
     title: "Suivre votre commande",
     refresh: "Actualiser",
+    partOfPurchase: "Fait partie du même achat ({{count}})",
     notFoundTitle: "Commande introuvable",
     notFoundDescription: "Ce lien de suivi ne correspond à aucune commande. Vérifiez le lien, ou contactez-nous si vous pensez qu'il s'agit d'une erreur.",
     backToShop: "Retour à la boutique",

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getOrder } from "@/lib/api/orders";
+import { getOrder, getOrdersByCheckoutGroup } from "@/lib/api/orders";
 import { getConversationForOrder } from "@/lib/api/conversations";
 import { useStore } from "@/lib/store";
 import { Order, OrderStatus } from "@/lib/types";
@@ -42,6 +42,10 @@ export default function TrackOrderPage() {
   const orderId = params.orderId;
   const { t } = useTranslation();
   const [order, setOrder] = useState<Order | null>(null);
+  // Sibling orders from the same checkout (one per other seller the cart
+  // spanned) — a cross-link so a customer who only bookmarked this one
+  // order's tracking page can still reach the rest of their purchase.
+  const [siblingOrders, setSiblingOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -55,6 +59,11 @@ export default function TrackOrderPage() {
       .then((o) => {
         setOrder(o);
         setError(false);
+        if (o.checkoutGroupId) {
+          getOrdersByCheckoutGroup(o.checkoutGroupId)
+            .then((group) => setSiblingOrders(group.filter((sibling) => sibling.id !== o.id)))
+            .catch(() => {});
+        }
       })
       .catch(() => setError(true));
   };
@@ -206,6 +215,29 @@ export default function TrackOrderPage() {
           <span className="text-brand-600">{formatPrice(order.total)}</span>
         </div>
       </div>
+
+      {siblingOrders.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">
+            {t("account.track.partOfPurchase", { count: siblingOrders.length })}
+          </h2>
+          <div className="space-y-2">
+            {siblingOrders.map((sibling) => (
+              <Link
+                key={sibling.id}
+                href={`/track/${sibling.id}`}
+                className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border border-gray-100 hover:border-brand-200 hover:bg-brand-50/50 transition-colors"
+              >
+                <span className="text-xs font-mono text-gray-500 truncate">{sibling.id}</span>
+                <span className="flex items-center gap-2 flex-shrink-0">
+                  <StatusBadge status={sibling.status} />
+                  <span className="text-xs font-semibold text-gray-700">{formatPrice(sibling.total)}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!customer && (
         <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 mb-5 text-left space-y-3">
