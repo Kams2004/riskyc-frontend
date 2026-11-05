@@ -117,6 +117,7 @@ export const adminProducts = {
     colorNamePlaceholder: "e.g. Black, Navy, Rose bonbon…",
     stockQtyTitle: "Stock quantity — checked and decremented on every sale, online and in-store",
     stockQtyPlaceholder: "Qty",
+    stockUnlimitedTitle: "Unlimited — this size never runs out and isn't counted",
     stockGridTitle: "Stock (per color & size)",
     stockNoColor: "Default",
     unitsLabel: "units",

@@ -91,11 +91,14 @@ interface PendingFile {
   previewUrl: string;
 }
 
-/** Stock box values keyed by variantKey: "" for an untracked (unlimited) variant, its quantity otherwise. */
+/** A stock box's value for an unlimited (untracked) variant. */
+const UNLIMITED = "∞";
+
+/** Stock box values keyed by variantKey: UNLIMITED for an untracked variant, its quantity otherwise; "" = never set. */
 function stockDraftFromVariants(variants: Product["variants"] | undefined): Record<string, string> {
   const map: Record<string, string> = {};
   (variants ?? []).forEach((v) => {
-    map[variantKey(v.colorName, v.size)] = v.untracked ? "" : String(v.quantity);
+    map[variantKey(v.colorName, v.size)] = v.untracked ? UNLIMITED : String(v.quantity);
   });
   return map;
 }
@@ -273,7 +276,9 @@ export default function ProductForm({ initial, mode }: Props) {
           .filter(([key, value]) => value !== "" && value !== (initialVariantStock[key] ?? ""))
           .map(([key, value]) => {
             const [colorName, size] = key.split("::");
-            return { colorName, size, quantity: Number(value) };
+            return value === UNLIMITED
+              ? { colorName, size, quantity: 0, untracked: true }
+              : { colorName, size, quantity: Number(value) };
           });
         if (canUpdateStock && changedStock.length > 0) {
           calls.push(productsApi.updateProductStock(initial!.id, changedStock, token));
@@ -871,19 +876,32 @@ export default function ProductForm({ initial, mode }: Props) {
                                 <div key={key} className="flex items-center gap-1">
                                   {size && <span className={clsx("text-[10px] font-semibold", c.textMuted)}>{size}</span>}
                                   <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     className={clsx(inpSm, "w-14 text-center")}
                                     value={variantStock[key] ?? ""}
                                     onChange={(e) =>
                                       setVariantStock((v) => ({
                                         ...v,
+                                        // Typing a number makes the size tracked again; ∞ is only set by the button.
                                         [key]: e.target.value.replace(/[^\d]/g, ""),
                                       }))
                                     }
-                                    min={0}
-                                    placeholder={Object.values(variantStock).some((q) => q !== "") ? "0" : "∞"}
+                                    placeholder={Object.values(variantStock).some((q) => /^\d+$/.test(q)) ? "0" : UNLIMITED}
                                     title={t("adminProducts.form.stockQtyTitle")}
                                   />
+                                  <button
+                                    type="button"
+                                    onClick={() => setVariantStock((v) => ({ ...v, [key]: UNLIMITED }))}
+                                    title={t("adminProducts.form.stockUnlimitedTitle")}
+                                    aria-label={t("adminProducts.form.stockUnlimitedTitle")}
+                                    className={clsx(
+                                      "w-6 h-6 rounded-md text-xs font-bold transition-colors",
+                                      variantStock[key] === UNLIMITED ? "bg-brand-500 text-white" : c.btnGhost
+                                    )}
+                                  >
+                                    {UNLIMITED}
+                                  </button>
                                 </div>
                               );
                             })}
@@ -897,9 +915,11 @@ export default function ProductForm({ initial, mode }: Props) {
                   <div className={clsx("flex items-center gap-2 mt-3 px-3 py-2 rounded-lg text-xs font-medium", isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500")}>
                     <span>{t("adminProducts.form.totalStockLabel")}</span>
                     <span className={clsx("font-bold", c.textPrimary)}>
-                      {Object.values(variantStock).some((q) => q !== "")
-                        ? `${Object.values(variantStock).reduce((s, q) => s + (q === "" ? 0 : Math.max(0, Number(q))), 0)} ${t("adminProducts.form.unitsLabel")}`
-                        : "∞"}
+                      {Object.values(variantStock).some((q) => /^\d+$/.test(q))
+                        ? `${Object.values(variantStock).reduce((s, q) => s + (/^\d+$/.test(q) ? Number(q) : 0), 0)} ${t("adminProducts.form.unitsLabel")}${
+                            Object.values(variantStock).includes(UNLIMITED) ? ` + ${UNLIMITED}` : ""
+                          }`
+                        : UNLIMITED}
                     </span>
                   </div>
                 </div>

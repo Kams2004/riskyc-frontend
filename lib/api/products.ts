@@ -138,7 +138,12 @@ export function updateProductColors(id: string, colors: Pick<ProductColor, "id" 
 }
 
 /** Upserts the real per-(color,size) stock ledger — colorName/size are "" for a colorless/sizeless product, matching ProductVariant's own convention. */
-export function updateProductStock(id: string, variants: { colorName: string; size: string; quantity: number }[], token: string) {
+/** `untracked: true` makes that variant unlimited again (quantity ignored); omitted means "this is the real count". */
+export function updateProductStock(
+  id: string,
+  variants: { colorName: string; size: string; quantity: number; untracked?: boolean }[],
+  token: string
+) {
   return apiFetch<Product>(`/api/products/${id}/stock`, { method: "PATCH", token, body: JSON.stringify({ variants }) });
 }
 

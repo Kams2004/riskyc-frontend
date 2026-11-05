@@ -119,6 +119,7 @@ export const adminProducts: typeof adminProductsEn = {
     colorNamePlaceholder: "ex. Noir, Marine, Rose bonbon…",
     stockQtyTitle: "Quantité en stock — vérifiée et décrémentée à chaque vente, en ligne et en boutique",
     stockQtyPlaceholder: "Qté",
+    stockUnlimitedTitle: "Illimité — cette taille ne s'épuise jamais et n'est pas décomptée",
     stockGridTitle: "Stock (par couleur et taille)",
     stockNoColor: "Par défaut",
     unitsLabel: "unités",
