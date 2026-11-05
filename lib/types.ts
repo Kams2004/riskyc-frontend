@@ -328,6 +328,9 @@ export type Permission =
   | "MANAGE_PUBLICITY"
   | "VIEW_POS"
   | "MANAGE_POS"
+  | "POS_SELL"
+  | "POS_VIEW_SALES"
+  | "POS_RECONCILE"
   | "VOID_POS_SALE"
   | "VIEW_ENTERPRISES"
   | "MANAGE_ENTERPRISES";
@@ -361,8 +364,11 @@ export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[
   { key: "MANAGE_USERS",      label: "Manage Users",      group: "Users" },
   { key: "VIEW_PUBLICITY",    label: "View Publicity",    group: "Publicity" },
   { key: "MANAGE_PUBLICITY",  label: "Manage Publicity",  group: "Publicity" },
-  { key: "VIEW_POS",          label: "View Point of Sale", group: "Point of Sale" },
-  { key: "MANAGE_POS",        label: "Manage Point of Sale (ring up sales, edit ticket settings)", group: "Point of Sale" },
+  { key: "VIEW_POS",          label: "Open the Point of Sale app", group: "Point of Sale" },
+  { key: "POS_SELL",          label: "POS · Sale screen (ring up sales)", group: "Point of Sale" },
+  { key: "POS_VIEW_SALES",    label: "POS · Sales History", group: "Point of Sale" },
+  { key: "POS_RECONCILE",     label: "POS · Reconciliation", group: "Point of Sale" },
+  { key: "MANAGE_POS",        label: "POS · Register Settings and tills", group: "Point of Sale" },
   { key: "VOID_POS_SALE",     label: "Void Point of Sale Sales", group: "Point of Sale" },
   { key: "VIEW_ENTERPRISES",  label: "View Seller Applications", group: "Marketplace" },
   { key: "MANAGE_ENTERPRISES", label: "Approve/Reject/Suspend Sellers", group: "Marketplace" },

@@ -14,6 +14,7 @@ import { formatPrice } from "@/lib/data";
 import * as posApi from "@/lib/api/pos";
 import { PosSale, PosSettings, PosPaymentMethod } from "@/lib/types";
 import { ApiError } from "@/lib/apiClient";
+import TillsPanel from "@/components/admin/pos/TillsPanel";
 import clsx from "clsx";
 import {
   AlertTriangle,
@@ -77,7 +78,8 @@ export default function AdminPosPage() {
 
   useEffect(() => {
     if (!token) return;
-    Promise.all([posApi.listSales(token), posApi.getSettings(token)])
+    // Sales need POS_VIEW_SALES; without it the page still opens (for the Caisses section).
+    Promise.all([posApi.listSales(token).catch(() => []), posApi.getSettings(token)])
       .then(([s, settingsResp]) => {
         setSales(s);
         setSettings(settingsResp);
@@ -229,6 +231,9 @@ export default function AdminPosPage() {
             )}
           </div>
         </div>
+
+        {/* Tills (desktop app): add one, see which are online, revoke — right where Point de Vente opens. */}
+        {canManage && <TillsPanel />}
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

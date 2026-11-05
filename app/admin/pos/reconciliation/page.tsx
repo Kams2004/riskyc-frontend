@@ -25,7 +25,7 @@ import {
 export default function AdminReconciliationPage() {
   const router = useRouter();
   const token = useAdminStore((s) => s.session?.token);
-  const canManage = useAdminStore((s) => s.hasPermission("MANAGE_POS"));
+  const canManage = useAdminStore((s) => s.hasPermission("POS_RECONCILE"));
   const c = useAdminColors();
 
   const [lines, setLines] = useState<PosReconciliationLine[]>([]);
