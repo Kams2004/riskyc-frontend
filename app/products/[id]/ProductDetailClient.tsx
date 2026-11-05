@@ -17,6 +17,7 @@ import {
   ShoppingCart,
   Zap,
   Star,
+  Store,
   ChevronLeft,
   ChevronRight,
   Share2,
@@ -433,9 +434,16 @@ export default function ProductDetailClient({ productId }: { productId: string }
             </span>
           </div>
 
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900 mb-2 leading-tight">
             {name}
           </h1>
+
+          {product.seller?.name && (
+            <p className="flex items-center gap-1.5 text-sm text-gray-500 mb-3">
+              <Store size={14} className="text-brand-500" />
+              {t("products.detail.soldBy")} <span className="font-semibold text-gray-900">{product.seller.name}</span>
+            </p>
+          )}
 
           <div className="flex items-center gap-3 mb-4">
             <div className="flex items-center gap-1">

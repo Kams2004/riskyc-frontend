@@ -44,6 +44,7 @@ export const products: typeof productsEn = {
     askPrice: "Demander le prix",
   },
   detail: {
+    soldBy: "Vendu par",
     home: "Accueil",
     products: "Produits",
     productNotFound: "Produit introuvable",

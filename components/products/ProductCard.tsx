@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Zap, Heart, Star, Check } from "@/components/icons/fa";
+import { ShoppingCart, Zap, Heart, Star, Check, Store } from "@/components/icons/fa";
 import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/data";
 import { availableQuantity, isProductSoldOut } from "@/lib/stock";
@@ -116,9 +116,15 @@ export default function ProductCard({ product }: Props) {
           )}
         </div>
 
-        <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 mb-1.5">
+        <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 mb-1">
           {name}
         </h3>
+        {product.seller?.name && (
+          <p className="flex items-center gap-1 text-[11px] text-gray-500 mb-1.5 truncate">
+            <Store size={10} className="text-brand-500 flex-shrink-0" />
+            <span className="truncate">{product.seller.name}</span>
+          </p>
+        )}
 
         <div className="flex items-center gap-1 mb-2">
           <Star size={12} className="text-gold-500 fill-gold-500" />
