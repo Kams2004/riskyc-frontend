@@ -21,6 +21,9 @@ export const adminEnterprises = {
   review: "Review",
   viewDetails: "View",
   noCategoriesYet: "None assigned yet",
+  allCategoriesShort: "All categories",
+  platformStore: "Platform store",
+  allCategories: "All categories — the platform's own store isn't limited to any",
   detail: {
     businessType: "Business type",
     whatTheySell: "What they sell",

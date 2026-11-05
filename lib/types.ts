@@ -155,6 +155,8 @@ export interface Enterprise {
   approvedByName?: string | null;
   approvedAt?: string | null;
   createdAt: string;
+  /** The platform's own store (Riskyc Fashion): never suspended, not limited to any category. */
+  platformDefault?: boolean;
 }
 
 // ── Orders ───────────────────────────────────────────────────────────────────
