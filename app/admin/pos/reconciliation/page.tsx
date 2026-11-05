@@ -87,7 +87,7 @@ export default function AdminReconciliationPage() {
           </button>
           <div>
             <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>Reconciliation</h1>
-            <p className={clsx("text-sm mt-0.5", c.textSecondary)}>Sales that pushed a size/color's stock negative.</p>
+            <p className={clsx("text-sm mt-0.5", c.textSecondary)}>Sales that pushed a size/color&apos;s stock negative.</p>
           </div>
         </div>
 
