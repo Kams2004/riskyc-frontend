@@ -94,4 +94,10 @@ export const adminCommon: typeof adminCommonEn = {
     statusPackaged: "Emballée",
     statusCancelled: "Annulée",
   },
+  pagination: {
+    showing: "Affichage de {{from}} à {{to}} sur {{total}}",
+    previous: "Précédent",
+    next: "Suivant",
+    perPage: "Par page",
+  },
 };

@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import AlertDialog from "@/components/admin/AlertDialog";
+import Pagination from "@/components/admin/Pagination";
+import { usePagination } from "@/lib/hooks/usePagination";
 
 export default function AdminCustomersPage() {
   const token = useAdminStore((s) => s.session?.token);
@@ -54,6 +56,7 @@ export default function AdminCustomersPage() {
         (cu.phone ?? "").toLowerCase().includes(q)
     );
   }, [customers, query]);
+  const pagination = usePagination(filtered, 10, query);
 
   const setStatus = async (id: string, status: "ACTIVE" | "BLOCKED") => {
     if (!token) return;
@@ -158,7 +161,7 @@ export default function AdminCustomersPage() {
                   </td>
                 </tr>
               ) : null}
-              {!loading && filtered.map((cu) => (
+              {!loading && pagination.pageItems.map((cu) => (
                 <tr key={cu.id} className={clsx("transition-colors", c.rowHover)}>
                   <td className={clsx("px-5 py-3.5 font-medium", c.textPrimary)}>
                     <div className="flex items-center gap-3">
@@ -246,6 +249,17 @@ export default function AdminCustomersPage() {
             </tbody>
           </table>
         </div>
+
+        {!loading && (
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            pageSize={pagination.pageSize}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        )}
 
         {!loading && customers.length === 0 && (
           <div className={clsx("text-center py-10 rounded-2xl border", c.card)}>

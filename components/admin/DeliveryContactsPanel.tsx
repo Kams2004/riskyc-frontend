@@ -7,6 +7,8 @@ import * as deliveryContactsApi from "@/lib/api/deliveryContacts";
 import { DeliveryContact } from "@/lib/types";
 import { X, Plus, Trash2, Pencil, Check, Truck } from "lucide-react";
 import clsx from "clsx";
+import Pagination from "@/components/admin/Pagination";
+import { usePagination } from "@/lib/hooks/usePagination";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
 /** Admin CRUD for the delivery team roster auto-attached to packaging-confirmation messages (see ConversationService.buildDeliveryTeamBlock server-side). */
@@ -28,6 +30,7 @@ export default function DeliveryContactsPanel({ onClose }: { onClose: () => void
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const pagination = usePagination(contacts, 10);
 
   useEffect(() => {
     if (!token) return;
@@ -76,6 +79,7 @@ export default function DeliveryContactsPanel({ onClose }: { onClose: () => void
         token
       );
       setContacts((prev) => [...prev, created]);
+      pagination.setPage(Math.ceil((contacts.length + 1) / pagination.pageSize));
       setNewName("");
       setNewPhone("");
       setAdding(false);
@@ -123,7 +127,7 @@ export default function DeliveryContactsPanel({ onClose }: { onClose: () => void
           ) : contacts.length === 0 && !adding ? (
             <div className={clsx("text-sm text-center py-6", c.textMuted)}>{t("adminOrders.deliveryContacts.empty")}</div>
           ) : (
-            contacts.map((contact) => (
+            pagination.pageItems.map((contact) => (
               <div key={contact.id} className={clsx("rounded-xl p-3 flex items-center gap-2", c.innerCard)}>
                 {editingId === contact.id ? (
                   <>
@@ -164,6 +168,17 @@ export default function DeliveryContactsPanel({ onClose }: { onClose: () => void
                 )}
               </div>
             ))
+          )}
+
+          {!loading && (
+            <Pagination
+              className="pt-2"
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              pageSize={pagination.pageSize}
+              onPageChange={pagination.setPage}
+            />
           )}
 
           {canManage && adding && (

@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { ArrowLeft, History, Clock } from "lucide-react";
 import clsx from "clsx";
+import Pagination from "@/components/admin/Pagination";
 
 const SECTION_LABELS: Record<string, string> = {
   CREATED: "Created",
@@ -34,17 +35,32 @@ export default function ProductActivityPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [entries, setEntries] = useState<ProductAuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  // The log is paged on the server (it can grow without bound), so only the current page is fetched.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    if (!id) return;
+    productsApi.getProduct(id).then(setProduct).catch(() => {});
+  }, [id]);
 
   useEffect(() => {
     if (!id || !token) return;
-    Promise.all([productsApi.getProduct(id), productsApi.getProductAuditLog(id, token)])
-      .then(([p, log]) => {
-        setProduct(p);
+    let cancelled = false;
+    productsApi
+      .getProductAuditLog(id, token, page - 1, pageSize)
+      .then((log) => {
+        if (cancelled) return;
         setEntries(log.content);
+        setTotal(log.totalElements);
+        setTotalPages(Math.max(1, log.totalPages));
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id, token]);
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [id, token, page, pageSize]);
 
   return (
     <AdminShell>
@@ -98,6 +114,16 @@ export default function ProductActivityPage() {
               </div>
             ))}
           </div>
+        )}
+        {!loading && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+          />
         )}
       </div>
     </AdminShell>

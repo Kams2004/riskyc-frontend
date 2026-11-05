@@ -12,6 +12,8 @@ import ConfirmDialog, { ConfirmState } from "@/components/admin/ConfirmDialog";
 import AlertDialog from "@/components/admin/AlertDialog";
 import { Store, Search, Mail, Phone, Calendar, X, Sparkles } from "lucide-react";
 import clsx from "clsx";
+import Pagination from "@/components/admin/Pagination";
+import { usePagination } from "@/lib/hooks/usePagination";
 
 const TABS: { key: EnterpriseStatus | "ALL"; labelKey: string }[] = [
   { key: "PENDING", labelKey: "tabPending" },
@@ -77,6 +79,7 @@ export default function AdminEnterprisesPage() {
     }
     return list;
   }, [enterprises, tab, query]);
+  const pagination = usePagination(filtered, 10, `${tab}|${query}`);
 
   const pendingCount = enterprises.filter((e) => e.status === "PENDING").length;
 
@@ -214,7 +217,7 @@ export default function AdminEnterprisesPage() {
                 </tr>
               ) : null}
               {!loading &&
-                filtered.map((ent) => (
+                pagination.pageItems.map((ent) => (
                   <tr key={ent.id} className={clsx("transition-colors cursor-pointer", c.rowHover)} onClick={() => openDetail(ent)}>
                     <td className={clsx("px-5 py-3.5 font-medium", c.textPrimary)}>
                       <div className="flex items-center gap-3">
@@ -270,6 +273,18 @@ export default function AdminEnterprisesPage() {
             </tbody>
           </table>
         </div>
+        {!loading && (
+          <div className="mt-4">
+            <Pagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              pageSize={pagination.pageSize}
+              onPageChange={pagination.setPage}
+              onPageSizeChange={pagination.setPageSize}
+            />
+          </div>
+        )}
       </div>
 
       {selected && (

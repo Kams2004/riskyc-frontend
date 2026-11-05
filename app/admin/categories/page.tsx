@@ -28,6 +28,8 @@ import {
   Loader2,
 } from "lucide-react";
 import clsx from "clsx";
+import Pagination from "@/components/admin/Pagination";
+import { usePagination } from "@/lib/hooks/usePagination";
 
 // Strips anything beyond lowercase letters/digits, not just whitespace —
 // a name with punctuation like "Pantalon/Trouser" used to turn into the
@@ -73,6 +75,8 @@ export default function AdminCategoriesPage() {
   const [editingImage, setEditingImage] = useState<{ catId: string; previewUrl: string } | null>(null);
   const uploadTargetRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Only top-level categories are paged — each one's subcategories stay inside its card.
+  const pagination = usePagination(categories, 10);
 
   useEffect(() => {
     categoriesApi.listCategories().then(setCategories).catch(() => {}).finally(() => setLoading(false));
@@ -195,6 +199,8 @@ export default function AdminCategoriesPage() {
         token
       );
       setCategories((prev) => [...prev, created]);
+      // New categories go at the end of the list — jump to the last page so it's visible.
+      pagination.setPage(Math.ceil((categories.length + 1) / pagination.pageSize));
       setAdding(null);
       setCreatedCategoryName(created.name);
     } catch (err) {
@@ -379,7 +385,7 @@ export default function AdminCategoriesPage() {
             </div>
           )}
 
-          {!loading && categories.map((cat) => {
+          {!loading && pagination.pageItems.map((cat) => {
             const isExpanded = expanded[cat.id] ?? true;
             const isEditingCat = editing === `cat-${cat.id}`;
             const isAddingSub = adding === `new-sub-${cat.id}`;
@@ -774,6 +780,18 @@ export default function AdminCategoriesPage() {
             );
           })}
         </div>
+        {!loading && (
+          <div className="mt-4">
+            <Pagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              pageSize={pagination.pageSize}
+              onPageChange={pagination.setPage}
+              onPageSizeChange={pagination.setPageSize}
+            />
+          </div>
+        )}
       </div>
 
       <ConfirmDialog state={confirm} onCancel={() => setConfirm(null)} />
