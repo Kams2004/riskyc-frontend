@@ -415,6 +415,8 @@ export interface Customer {
   acronym: string;
   /** Acronym of whoever referred this customer in, if anyone. */
   referredByAcronym?: string | null;
+  /** Session token from login/register/Google sign-in; sent on the customer's own-account requests (orders, chat, referrals). */
+  token?: string;
 }
 
 export interface ReferralEntry {

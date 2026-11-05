@@ -89,7 +89,8 @@ export default function AccountPage() {
     setAcronymError("");
     try {
       const updated = await customersApi.updateAcronym(customer.id, trimmed);
-      useStore.setState({ customer: updated });
+      // The update doesn't re-issue the session token — keep the one we have.
+      useStore.setState({ customer: { ...updated, token: customer.token } });
       setSummary((s) => (s ? { ...s, acronym: updated.acronym } : s));
       setEditingAcronym(false);
     } catch (e) {
