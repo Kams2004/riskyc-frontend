@@ -10,6 +10,8 @@ import * as posApi from "@/lib/api/pos";
 import { PosReconciliationLine } from "@/lib/types";
 import { ApiError } from "@/lib/apiClient";
 import clsx from "clsx";
+import Pagination from "@/components/admin/Pagination";
+import { usePagination } from "@/lib/hooks/usePagination";
 import {
   ChevronLeft,
   Loader2,
@@ -61,6 +63,7 @@ export default function AdminReconciliationPage() {
     if (!q) return visible;
     return visible.filter((l) => [l.productName, l.saleId, l.cashierName].join(" ").toLowerCase().includes(q));
   }, [visible, search]);
+  const pagination = usePagination(filtered, 10, `${tab}|${search}`);
 
   const handleResolve = async (line: PosReconciliationLine) => {
     if (!token) return;
@@ -154,7 +157,7 @@ export default function AdminReconciliationPage() {
                 </tr>
               </thead>
               <tbody className={clsx("divide-y", c.divide)}>
-                {filtered.map((line) => (
+                {pagination.pageItems.map((line) => (
                   <tr key={line.itemId} className={clsx("transition-colors", c.rowHover)}>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <p className={clsx("text-xs", c.textMuted)}>
@@ -205,6 +208,16 @@ export default function AdminReconciliationPage() {
               </tbody>
             </table>
           </div>
+        )}
+        {!loading && (
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            pageSize={pagination.pageSize}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
         )}
       </div>
 

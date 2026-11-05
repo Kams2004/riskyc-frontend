@@ -29,6 +29,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import clsx from "clsx";
+import Pagination from "@/components/admin/Pagination";
+import { usePagination } from "@/lib/hooks/usePagination";
 
 type Tab = "users" | "roles";
 
@@ -369,6 +371,8 @@ export default function AdminUsersPage() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [successAlert, setSuccessAlert] = useState<{ title: string; message: string } | null>(null);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
+  const usersPagination = usePagination(users, 10);
+  const rolesPagination = usePagination(roles, 10);
 
   const token = session?.token;
 
@@ -599,7 +603,7 @@ export default function AdminUsersPage() {
                       </td>
                     </tr>
                   )}
-                  {users.map((u) => (
+                  {usersPagination.pageItems.map((u) => (
                     <Fragment key={u.id}>
                       <tr className={clsx("transition-colors", c.rowHover)}>
                         <td className={clsx("px-5 py-3.5 font-medium", c.textPrimary)}>
@@ -677,6 +681,14 @@ export default function AdminUsersPage() {
                 </tbody>
               </table>
             </div>
+            <Pagination
+              page={usersPagination.page}
+              totalPages={usersPagination.totalPages}
+              total={usersPagination.total}
+              pageSize={usersPagination.pageSize}
+              onPageChange={usersPagination.setPage}
+              onPageSizeChange={usersPagination.setPageSize}
+            />
           </div>
         )}
 
@@ -702,7 +714,7 @@ export default function AdminUsersPage() {
               </div>
             )}
 
-            {roles.map((role) => {
+            {rolesPagination.pageItems.map((role) => {
               const isExpanded = expandedRole === role.id;
               const assignedCount = users.filter((u) => u.roleId === role.id).length;
 
@@ -807,6 +819,14 @@ export default function AdminUsersPage() {
                 </div>
               );
             })}
+            <Pagination
+              page={rolesPagination.page}
+              totalPages={rolesPagination.totalPages}
+              total={rolesPagination.total}
+              pageSize={rolesPagination.pageSize}
+              onPageChange={rolesPagination.setPage}
+              onPageSizeChange={rolesPagination.setPageSize}
+            />
           </div>
         )}
         </>

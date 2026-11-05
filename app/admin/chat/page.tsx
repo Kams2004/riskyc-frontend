@@ -27,6 +27,8 @@ import {
   CheckCheck,
 } from "lucide-react";
 import clsx from "clsx";
+import Pagination from "@/components/admin/Pagination";
+import { usePagination } from "@/lib/hooks/usePagination";
 import { Conversation, ChatMessage } from "@/lib/types";
 
 function timeAgo(date: Date | string, t: (path: string, vars?: Record<string, string | number>) => string): string {
@@ -183,6 +185,8 @@ export default function AdminChatPage() {
         new Date(a.lastMessageAt ?? a.createdAt).getTime()
     );
 
+  const pagination = usePagination(filteredConvs, 20, search);
+
   const totalUnread = conversations.reduce((s, c) => s + c.unread, 0);
 
   // ── Styling helpers ──────────────────────────────────────────────
@@ -331,7 +335,7 @@ export default function AdminChatPage() {
                   </p>
                 </div>
               ) : (
-                filteredConvs.map((conv) => {
+                pagination.pageItems.map((conv) => {
                   const lastMsg = conv.messages[conv.messages.length - 1];
                   return (
                     <div
@@ -446,6 +450,16 @@ export default function AdminChatPage() {
                 })
               )}
             </div>
+            {!loading && (
+              <Pagination
+                className="flex-shrink-0"
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                total={pagination.total}
+                pageSize={pagination.pageSize}
+                onPageChange={pagination.setPage}
+              />
+            )}
           </div>
         )}
 

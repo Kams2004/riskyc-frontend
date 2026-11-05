@@ -163,8 +163,13 @@ export interface ProductAuditLogEntry {
   changedAt: string;
 }
 
-export function getProductAuditLog(id: string, token: string) {
-  return apiFetch<Page<ProductAuditLogEntry>>(`/api/products/${id}/audit-log`, { token });
+/** `page` is 0-based, like Spring's Pageable; omit both to get the backend's default first page (50 entries). */
+export function getProductAuditLog(id: string, token: string, page?: number, size?: number) {
+  const params = new URLSearchParams();
+  if (page !== undefined) params.set("page", String(page));
+  if (size !== undefined) params.set("size", String(size));
+  const qs = params.toString();
+  return apiFetch<Page<ProductAuditLogEntry>>(`/api/products/${id}/audit-log${qs ? `?${qs}` : ""}`, { token });
 }
 
 export function getAllProductAuditLog(token: string) {

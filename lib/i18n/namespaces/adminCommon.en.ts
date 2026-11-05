@@ -92,4 +92,10 @@ export const adminCommon = {
     statusPackaged: "Packaged",
     statusCancelled: "Cancelled",
   },
+  pagination: {
+    showing: "Showing {{from}}–{{to}} of {{total}}",
+    previous: "Previous",
+    next: "Next",
+    perPage: "Per page",
+  },
 };
