@@ -243,7 +243,9 @@ export default function AdminEnterprisesPage() {
                           )}
                         </div>
                       ) : (
-                        <span className={clsx("text-xs", c.textMuted)}>{t("adminEnterprises.noCategoriesYet")}</span>
+                        <span className={clsx("text-xs", c.textMuted)}>
+                          {ent.platformDefault ? t("adminEnterprises.allCategoriesShort") : t("adminEnterprises.noCategoriesYet")}
+                        </span>
                       )}
                     </td>
                     <td className={clsx("px-5 py-3.5 hidden lg:table-cell text-xs", c.textSecondary)}>
@@ -287,9 +289,16 @@ export default function AdminEnterprisesPage() {
               </div>
               <div className="min-w-0">
                 <h2 className={clsx("text-lg font-bold truncate", c.textPrimary)}>{selected.name}</h2>
-                <span className={clsx("flex items-center gap-1.5 text-xs font-semibold", STATUS_TEXT[selected.status])}>
-                  <span className={clsx("w-1.5 h-1.5 rounded-full", STATUS_DOT[selected.status])} />
-                  {statusLabel[selected.status]}
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className={clsx("flex items-center gap-1.5 text-xs font-semibold", STATUS_TEXT[selected.status])}>
+                    <span className={clsx("w-1.5 h-1.5 rounded-full", STATUS_DOT[selected.status])} />
+                    {statusLabel[selected.status]}
+                  </span>
+                  {selected.platformDefault && (
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600">
+                      {t("adminEnterprises.platformStore")}
+                    </span>
+                  )}
                 </span>
               </div>
             </div>
@@ -339,7 +348,9 @@ export default function AdminEnterprisesPage() {
                       </span>
                     ))
                   ) : (
-                    <span className={clsx("text-xs", c.textMuted)}>{t("adminEnterprises.noCategoriesYet")}</span>
+                    <span className={clsx("text-xs", c.textMuted)}>
+                      {selected.platformDefault ? t("adminEnterprises.allCategories") : t("adminEnterprises.noCategoriesYet")}
+                    </span>
                   )}
                 </dd>
               </div>
@@ -381,7 +392,8 @@ export default function AdminEnterprisesPage() {
               </div>
             )}
 
-            {selected.status === "ACTIVE" && (
+            {/* The platform's own store holds the whole catalog — suspending it would take every listing offline. */}
+            {selected.status === "ACTIVE" && !selected.platformDefault && (
               <div className="mt-6">
                 <button
                   onClick={() => askSuspend(selected)}

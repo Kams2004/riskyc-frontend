@@ -23,6 +23,9 @@ export const adminEnterprises: typeof adminEnterprisesEn = {
   review: "Examiner",
   viewDetails: "Voir",
   noCategoriesYet: "Aucune assignée pour le moment",
+  allCategoriesShort: "Toutes les catégories",
+  platformStore: "Boutique de la plateforme",
+  allCategories: "Toutes les catégories — la boutique de la plateforme n'est limitée à aucune",
   detail: {
     businessType: "Type d'entreprise",
     whatTheySell: "Ce qu'ils vendent",
