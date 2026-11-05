@@ -181,8 +181,35 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   const subtotal = orders.length > 0 ? orders.reduce((sum, o) => sum + o.total, 0) : getCartTotal();
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  const [checkingStock, setCheckingStock] = useState(false);
+  const [stockError, setStockError] = useState("");
 
-  const handleSelectMethod = (method: PaymentMethod) => {
+  const orderItems = () =>
+    items.map((item) => ({
+      productId: item.product.id,
+      quantity: item.quantity,
+      selectedColor: item.selectedColor ?? undefined,
+      selectedSize: item.selectedSize ?? undefined,
+      selectedImageIndex: item.selectedImageIndex,
+    }));
+
+  // The payment code is shown on the next step and the customer pays right away — so confirm the cart is still
+  // in stock first, instead of discovering a sold-out item only at order creation, after the money is sent.
+  const handleSelectMethod = async (method: PaymentMethod) => {
+    if (checkingStock) return;
+    setStockError("");
+    if (orders.length === 0 && items.length === 0) return;
+    if (orders.length === 0) {
+      setCheckingStock(true);
+      try {
+        await ordersApi.checkAvailability(orderItems());
+      } catch (e) {
+        setStockError(t("cart.checkout.stockChanged", { details: e instanceof Error ? e.message : "" }));
+        return;
+      } finally {
+        setCheckingStock(false);
+      }
+    }
     setSelectedMethod(method);
     setStep("awaiting");
   };
@@ -199,13 +226,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
     try {
       const newOrders = await ordersApi.createOrder({
         customerId: customer?.id,
-        items: items.map((item) => ({
-          productId: item.product.id,
-          quantity: item.quantity,
-          selectedColor: item.selectedColor ?? undefined,
-          selectedSize: item.selectedSize ?? undefined,
-          selectedImageIndex: item.selectedImageIndex,
-        })),
+        items: orderItems(),
         customerInfo,
         language: useStore.getState().language,
       });
@@ -291,7 +312,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
       ussdTemplate: "*126*14*673267022*%s#",
       color: "text-yellow-600",
       bg: "bg-yellow-50 border-yellow-200",
-      logo: "/MobileMoney.jpg",
+      logo: "/mtn-momo.png",
     },
   };
 
@@ -302,7 +323,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
   if (loadingOrder) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
         <div className="bg-white rounded-3xl shadow-2xl p-10 flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-gray-200 border-t-brand-500 rounded-full animate-spin" />
         </div>
@@ -312,7 +333,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
   if (orderLoadError) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
         <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center animate-slide-up">
           <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
             <AlertCircle size={22} />
@@ -328,7 +349,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto animate-slide-up">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-3xl z-10">
@@ -339,7 +360,7 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                   if (step === "awaiting") setStep("method");
                   if (step === "info") setStep("awaiting");
                 }}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                className="w-9 h-9 rounded-full bg-white border border-gray-300 shadow-sm text-gray-900 flex items-center justify-center hover:bg-gray-50 hover:border-gray-400 transition-colors"
               >
                 <ArrowLeft size={16} />
               </button>
@@ -446,9 +467,21 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
 
               <p className="text-sm text-gray-500 text-center">{t("cart.checkout.selectMethodPrompt")}</p>
 
-              <button onClick={() => handleSelectMethod("ORANGE_MONEY")} className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100 transition-all group text-left">
-                <div className="w-14 h-14 rounded-2xl bg-white border border-orange-200 flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 transition-transform overflow-hidden p-1">
-                  <Image src="/orange-money.png" alt="Orange Money" width={48} height={48} className="w-full h-full object-contain" />
+              {stockError && (
+                <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3.5 py-2.5">
+                  <AlertCircle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-700 text-xs font-medium">{stockError}</p>
+                </div>
+              )}
+              {checkingStock && (
+                <p className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                  <span className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> {t("cart.checkout.checkingStock")}
+                </p>
+              )}
+
+              <button onClick={() => handleSelectMethod("ORANGE_MONEY")} disabled={checkingStock} className="disabled:opacity-60 w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100 transition-all group text-left">
+                <div className="w-14 h-14 rounded-2xl flex-shrink-0 shadow-md group-hover:scale-105 transition-transform overflow-hidden">
+                  <Image src="/orange-money.png" alt="Orange Money" width={112} height={112} className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <p className="font-bold text-gray-900 text-base">{t("cart.checkout.orangeMoneyName")}</p>
@@ -458,9 +491,9 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                 <ArrowLeft size={20} className="ml-auto text-orange-400 rotate-180 group-hover:translate-x-1 transition-transform" />
               </button>
 
-              <button onClick={() => handleSelectMethod("MOBILE_MONEY")} className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-yellow-200 bg-yellow-50 hover:border-yellow-400 hover:bg-yellow-100 transition-all group text-left">
-                <div className="w-14 h-14 rounded-2xl bg-white border border-yellow-200 flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 transition-transform overflow-hidden p-1">
-                  <Image src="/MobileMoney.jpg" alt="MTN Mobile Money" width={48} height={48} className="w-full h-full object-contain" />
+              <button onClick={() => handleSelectMethod("MOBILE_MONEY")} disabled={checkingStock} className="disabled:opacity-60 w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-yellow-200 bg-yellow-50 hover:border-yellow-400 hover:bg-yellow-100 transition-all group text-left">
+                <div className="w-14 h-14 rounded-2xl flex-shrink-0 shadow-md group-hover:scale-105 transition-transform overflow-hidden">
+                  <Image src="/mtn-momo.png" alt="MTN MoMo" width={112} height={112} className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <p className="font-bold text-gray-900 text-base">{t("cart.checkout.momoName")}</p>
@@ -499,8 +532,8 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
             <div className="space-y-5 animate-fade-in">
               <div className={clsx("rounded-2xl border-2 p-5 text-center", paymentInfo[selectedMethod].bg)}>
                 <div className="flex justify-center mb-3">
-                  <div className="w-16 h-16 rounded-2xl bg-white border border-gray-200 shadow flex items-center justify-center overflow-hidden p-1.5">
-                    <Image src={paymentInfo[selectedMethod].logo} alt={paymentInfo[selectedMethod].name} width={56} height={56} className="w-full h-full object-contain" />
+                  <div className="w-16 h-16 rounded-2xl shadow overflow-hidden">
+                    <Image src={paymentInfo[selectedMethod].logo} alt={paymentInfo[selectedMethod].name} width={128} height={128} className="w-full h-full object-cover" />
                   </div>
                 </div>
                 <p className="font-semibold text-gray-700 mb-1">{t("cart.checkout.dialCodeToSend", { amount: formatPrice(subtotal) })}</p>

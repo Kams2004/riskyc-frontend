@@ -40,3 +40,7 @@ export async function uploadLogo(token: string, file: File): Promise<PosSettings
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Couldn't upload logo");
   return res.json();
 }
+
+export function removeLogo(token: string) {
+  return apiFetch<PosSettings>("/api/pos/settings/logo", { method: "DELETE", token });
+}

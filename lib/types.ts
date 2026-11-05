@@ -79,9 +79,18 @@ export interface Product {
   variants: ProductVariant[];
   bulkPrices: BulkPriceTier[];
   media: MediaItem[];
+  /** Null only for a migration-backfilled product never assigned an Enterprise. */
+  seller?: SellerSummary | null;
   createdByName?: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** The customer-safe subset of a product's seller — just enough for a "Contact Supplier" action. */
+export interface SellerSummary {
+  name: string;
+  phone?: string | null;
+  whatsappNumber?: string | null;
 }
 
 export interface CartItem {
@@ -137,6 +146,7 @@ export interface Enterprise {
   contactLastName?: string | null;
   contactEmail: string;
   contactPhone?: string | null;
+  whatsappNumber?: string | null;
   whatDoYouSell?: string | null;
   estimatedCatalogSize?: string | null;
   categories: CategorySummary[];
@@ -461,6 +471,7 @@ export interface PosSettings {
   footerMessage: string | null;
   showCashierName: boolean;
   showSaleId: boolean;
+  showLogo: boolean;
   paperWidth: ReceiptPaperWidth;
   logoUrl: string | null;
   cashEnabled: boolean;

@@ -335,7 +335,7 @@ export default function TrackOrderPage() {
       )}
 
       <Link href="/" className="w-full btn-primary py-3.5 rounded-2xl flex items-center justify-center gap-2 text-sm">
-        <ShoppingBag size={16} /> Continue Shopping
+        <ShoppingBag size={16} /> {t("account.track.continueShopping")}
       </Link>
 
       {zoomedImageUrl && (

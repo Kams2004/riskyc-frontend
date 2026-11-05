@@ -27,7 +27,8 @@ function CartPageInner() {
   const [tab, setTab] = useState<"cart" | "orders">(
     searchParams.get("tab") === "orders" ? "orders" : "cart"
   );
-  const [checkoutOpen, setCheckoutOpen] = useState(startCheckout);
+  // Opened by the effect below once the persisted cart is loaded, not during server render (which has no cart).
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutOrderId, setCheckoutOrderId] = useState<string | null>(null);
 
   useEffect(() => {

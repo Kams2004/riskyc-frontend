@@ -10,6 +10,7 @@ export const nav = {
   switchToEnglish: "Switch to English",
   myOrders: "My Orders",
   myReferrals: "My Referrals",
+  becomeASeller: "Sell on Riskyc Fashion",
   helpCenter: "Help Center",
   contactUs: "Contact Us",
   logOut: "Log Out",

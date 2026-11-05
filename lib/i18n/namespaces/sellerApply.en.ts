@@ -30,6 +30,10 @@ export const sellerApply = {
     emailPlaceholder: "you@business.com",
     phoneLabel: "Phone",
     phoneOptional: "(optional)",
+    whatsappLabel: "WhatsApp number",
+    whatsappOptional: "(optional)",
+    whatsappPlaceholder: "e.g. +237 6XX XXX XXX",
+    whatsappHint: "Shown to customers as a \"Contact Supplier\" button on your products, if provided. Leave blank to skip it.",
   },
   questionnaire: {
     title: "What will you sell?",
@@ -52,6 +56,7 @@ export const sellerApply = {
     description: "Description",
     contact: "Contact",
     whatYouSell: "What you sell",
+    whatsapp: "WhatsApp",
     catalogSize: "Expected catalog size",
     submit: "Submit application",
     submitting: "Submitting...",
@@ -60,6 +65,18 @@ export const sellerApply = {
     title: "How payments work",
     body: "Riskyc Fashion collects payment from your customers through its own existing Orange Money and MTN Mobile Money numbers — the same ones used for every seller on the platform, not a separate account for your shop. Customers upload proof of payment and our team validates it, exactly as it works for the rest of the store today. Settlement with you for your sales is handled separately, outside the app.",
     agree: "I understand and agree to this payment arrangement.",
+  },
+  howItWorks: {
+    title: "How products are sold",
+    body: "Customers shop straight from your product photos. If a product has no named colors set, they tap whichever photo shows the variant they want instead of picking a color swatch — so upload a clear photo for each variant you offer. Once a customer pays and uploads proof of payment, the order shows up in your seller panel for you to validate and pack.",
+    agree: "I understand how products are shown and sold to customers.",
+  },
+  terms: {
+    title: "Terms & Privacy",
+    body: "By applying, you agree to Riskyc Fashion's Terms & Conditions and Privacy Policy, which cover how the marketplace works, your responsibilities as a seller, and how we handle your data.",
+    termsLink: "Terms & Conditions",
+    privacyLink: "Privacy Policy",
+    agree: "I have read and agree to the Terms & Conditions and Privacy Policy.",
   },
   errors: {
     required: "This field is required.",

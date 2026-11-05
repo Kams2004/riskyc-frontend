@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import AdminGuard from "@/components/admin/AdminGuard";
 import { useAdminStore } from "@/lib/adminStore";
 import { firstAccessibleHref } from "@/lib/adminNav";
@@ -53,10 +54,17 @@ function SetPasswordInner() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-      <div className="relative w-full max-w-sm">
-        <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl">
-          <div className="flex flex-col items-center mb-8">
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12 relative overflow-hidden">
+      {/* Same desk scene as the login screen, for visual continuity across the admin auth flow. */}
+      <Image src="/admin-login-background.png" alt="" fill priority sizes="100vw" className="object-cover" />
+      <div className="absolute inset-0 bg-gray-950/75" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-brand-600/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative w-full max-w-md">
+        <div className="bg-gray-900 border border-gray-800 rounded-3xl p-10 shadow-2xl">
+          <div className="flex flex-col items-center mb-10">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-xl mb-4">
               <KeyRound className="text-white" size={28} />
             </div>
@@ -64,20 +72,20 @@ function SetPasswordInner() {
             <p className="text-gray-500 text-sm mt-1 text-center">{t("adminCommon.setPassword.subtitle")}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
                 {t("adminCommon.setPassword.currentPasswordLabel")}
               </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
+                <Lock size={16} className="absolute left-4 top-4 text-gray-500" />
                 <input
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   autoFocus
                   required
-                  className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+                  className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
                 />
               </div>
             </div>
@@ -87,18 +95,18 @@ function SetPasswordInner() {
                 {t("adminCommon.setPassword.newPasswordLabel")}
               </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
+                <Lock size={16} className="absolute left-4 top-4 text-gray-500" />
                 <input
                   type={show ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl pl-10 pr-10 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+                  className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl pl-11 pr-11 py-3.5 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShow(!show)}
-                  className="absolute right-3 top-3 text-gray-500 hover:text-gray-300 transition-colors"
+                  className="absolute right-3.5 top-3.5 text-gray-500 hover:text-gray-300 transition-colors"
                 >
                   {show ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -110,13 +118,13 @@ function SetPasswordInner() {
                 {t("adminCommon.setPassword.confirmPasswordLabel")}
               </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
+                <Lock size={16} className="absolute left-4 top-4 text-gray-500" />
                 <input
                   type={show ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+                  className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
                 />
               </div>
             </div>
@@ -131,7 +139,7 @@ function SetPasswordInner() {
             <button
               type="submit"
               disabled={loading || !currentPassword || !newPassword || !confirmPassword}
-              className="w-full flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all"
+              className="w-full flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

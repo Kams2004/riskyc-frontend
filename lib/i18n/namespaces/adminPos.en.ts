@@ -39,6 +39,8 @@ export const adminPos = {
     logo: "Logo",
     upload: "Upload",
     replace: "Replace",
+    removeLogo: "Remove",
+    showLogo: "Show store logo on the ticket",
     paperWidth: "Paper Width",
     paperWidth58: "58mm roll",
     paperWidth80: "80mm roll",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useStore } from "@/lib/store";
+import { useStore, maxQuantityForLine } from "@/lib/store";
 import { formatPrice } from "@/lib/data";
 import { Trash2, ShoppingBag, Plus, Minus, ArrowRight } from "@/components/icons/fa";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -125,14 +125,7 @@ export default function CartItems({ onCheckout }: Props) {
                 {/* Qty controls */}
                 <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
                   <button
-                    onClick={() =>
-                      updateQuantity(
-                        item.product.id,
-                        item.selectedColor,
-                        item.quantity - 1,
-                        item.selectedImageIndex
-                      )
-                    }
+                    onClick={() => updateQuantity(item, item.quantity - 1)}
                     className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors"
                   >
                     <Minus size={14} />
@@ -141,15 +134,10 @@ export default function CartItems({ onCheckout }: Props) {
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() =>
-                      updateQuantity(
-                        item.product.id,
-                        item.selectedColor,
-                        item.quantity + 1,
-                        item.selectedImageIndex
-                      )
-                    }
-                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors"
+                    onClick={() => updateQuantity(item, item.quantity + 1)}
+                    disabled={item.quantity >= maxQuantityForLine(items, item)}
+                    title={item.quantity >= maxQuantityForLine(items, item) ? t("cart.items.maxStock") : undefined}
+                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                   >
                     <Plus size={14} />
                   </button>
@@ -169,9 +157,7 @@ export default function CartItems({ onCheckout }: Props) {
 
                 {/* Remove */}
                 <button
-                  onClick={() =>
-                    removeFromCart(item.product.id, item.selectedColor, item.selectedImageIndex)
-                  }
+                  onClick={() => removeFromCart(item)}
                   className="text-gray-300 hover:text-red-500 transition-colors"
                   title={t("cart.items.removeItem")}
                 >

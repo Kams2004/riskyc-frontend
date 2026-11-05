@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ShoppingCart,
   Search,
@@ -19,6 +19,7 @@ import {
   Package,
   MapPin,
   Gift,
+  Store,
 } from "@/components/icons/fa";
 import { useStore } from "@/lib/store";
 import { useCategories } from "@/lib/useCategories";
@@ -71,6 +72,32 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
+
+  // A dropdown closing the instant the cursor leaves its trigger makes it
+  // nearly impossible to move diagonally down into the panel — the pointer
+  // crosses the small trigger-to-panel gap as "outside both", so a plain
+  // mouseleave->close fires before it ever reaches the dropdown. Closing on
+  // a short delay instead (cancelled if the pointer re-enters, the trigger
+  // or the panel, in time) gives that crossing room without needing the two
+  // elements to touch pixel-for-pixel.
+  const closeDropdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openDropdown = (key: string) => {
+    if (closeDropdownTimer.current) {
+      clearTimeout(closeDropdownTimer.current);
+      closeDropdownTimer.current = null;
+    }
+    setActiveDropdown(key);
+  };
+  const closeDropdownSoon = () => {
+    if (closeDropdownTimer.current) clearTimeout(closeDropdownTimer.current);
+    closeDropdownTimer.current = setTimeout(() => setActiveDropdown(null), 250);
+  };
+  useEffect(
+    () => () => {
+      if (closeDropdownTimer.current) clearTimeout(closeDropdownTimer.current);
+    },
+    []
+  );
 
   // Sync cart count after hydration to avoid SSR mismatch
   useEffect(() => {
@@ -149,8 +176,8 @@ export default function Navbar() {
               <div
                 key={cat.id}
                 className="relative flex-shrink-0"
-                onMouseEnter={() => setActiveDropdown(cat.slug)}
-                onMouseLeave={() => setActiveDropdown(null)}
+                onMouseEnter={() => openDropdown(cat.slug)}
+                onMouseLeave={closeDropdownSoon}
               >
                 <Link
                   href={`/category/${cat.slug}`}
@@ -199,8 +226,8 @@ export default function Navbar() {
             {overflowCategories.length > 0 && (
               <div
                 className="relative flex-shrink-0"
-                onMouseEnter={() => setActiveDropdown("__more")}
-                onMouseLeave={() => setActiveDropdown(null)}
+                onMouseEnter={() => openDropdown("__more")}
+                onMouseLeave={closeDropdownSoon}
               >
                 <button
                   className={clsx(
@@ -318,8 +345,8 @@ export default function Navbar() {
             {/* Account */}
             <div
               className="relative hidden sm:block"
-              onMouseEnter={() => setActiveDropdown("account")}
-              onMouseLeave={() => setActiveDropdown(null)}
+              onMouseEnter={() => openDropdown("account")}
+              onMouseLeave={closeDropdownSoon}
             >
               <button className="flex items-center gap-1.5 btn-ghost px-2 py-1.5 rounded-full text-sm font-medium max-w-[160px]">
                 {currentCustomer ? (
@@ -367,6 +394,13 @@ export default function Navbar() {
                         <Gift size={15} /> {t("nav.myReferrals")}
                       </Link>
                       <Link
+                        href="/become-a-seller"
+                        onClick={() => setActiveDropdown(null)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                      >
+                        <Store size={15} /> {t("nav.becomeASeller")}
+                      </Link>
+                      <Link
                         href="/help"
                         onClick={() => setActiveDropdown(null)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
@@ -402,6 +436,13 @@ export default function Navbar() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                       >
                         <UserPlus size={15} /> {t("nav.register")}
+                      </Link>
+                      <Link
+                        href="/become-a-seller"
+                        onClick={() => setActiveDropdown(null)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                      >
+                        <Store size={15} /> {t("nav.becomeASeller")}
                       </Link>
                       <Link
                         href="/help"
@@ -560,6 +601,13 @@ export default function Navbar() {
                     <Gift size={16} /> {t("nav.myReferrals")}
                   </Link>
                   <Link
+                    href="/become-a-seller"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
+                  >
+                    <Store size={16} /> {t("nav.becomeASeller")}
+                  </Link>
+                  <Link
                     href="/help"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
@@ -595,6 +643,13 @@ export default function Navbar() {
                     className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
                   >
                     <UserPlus size={16} /> {t("nav.register")}
+                  </Link>
+                  <Link
+                    href="/become-a-seller"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 py-2 px-3 rounded-lg text-gray-700 hover:bg-brand-50 hover:text-brand-600 font-medium"
+                  >
+                    <Store size={16} /> {t("nav.becomeASeller")}
                   </Link>
                   <Link
                     href="/help"

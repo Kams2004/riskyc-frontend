@@ -54,12 +54,15 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
   const language = useStore((s) => s.language);
   const setLanguage = useStore((s) => s.setLanguage);
 
+  const canViewChat = session?.permissions.includes("VIEW_CHAT") ?? false;
+
   const refreshUnread = useCallback(() => {
-    if (!session) return;
+    // Roles without chat access would only get a 403 here on every notification.
+    if (!session || !canViewChat) return;
     listConversations(session.token)
       .then((convs) => setTotalUnread(convs.reduce((sum, c) => sum + c.unread, 0)))
       .catch(() => {});
-  }, [session]);
+  }, [session, canViewChat]);
 
   useEffect(() => {
     refreshUnread();

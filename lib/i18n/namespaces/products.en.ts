@@ -62,6 +62,8 @@ export const products = {
     total: "Total:",
     contactForPricingTitle: "Contact us to get a price for this product",
     orderNow: "Order Now",
+    contactWhatsApp: "Contact Supplier",
+    contactCall: "Call Supplier",
     howToOrder: "How to order",
     fastDelivery: "Fast Delivery",
     securePay: "Secure Pay",

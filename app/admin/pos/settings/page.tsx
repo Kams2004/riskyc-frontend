@@ -12,17 +12,18 @@ import * as posApi from "@/lib/api/pos";
 import { PosSettings, ReceiptPaperWidth } from "@/lib/types";
 import { ApiError } from "@/lib/apiClient";
 import clsx from "clsx";
-import { ChevronLeft, Loader2, Check, Upload, Banknote, Smartphone } from "lucide-react";
+import { ChevronLeft, Loader2, Check, Upload, Banknote, Trash2 } from "lucide-react";
 
 const PAYMENT_METHODS: {
   key: "cashEnabled" | "orangeMoneyEnabled" | "mobileMoneyEnabled";
-  icon: typeof Banknote;
+  /** A brand logo for mobile-money methods; the Banknote icon for cash. */
+  logo?: string;
   title: string;
   subtitle: string;
 }[] = [
-  { key: "cashEnabled", icon: Banknote, title: "Cash", subtitle: "Paid in physical currency" },
-  { key: "orangeMoneyEnabled", icon: Smartphone, title: "Orange Money", subtitle: "Mobile payment via Orange" },
-  { key: "mobileMoneyEnabled", icon: Smartphone, title: "Mobile Money", subtitle: "Mobile payment via MTN" },
+  { key: "cashEnabled", title: "Cash", subtitle: "Paid in physical currency" },
+  { key: "orangeMoneyEnabled", logo: "/orange-money.png", title: "Orange Money", subtitle: "Mobile payment via Orange" },
+  { key: "mobileMoneyEnabled", logo: "/mtn-momo.png", title: "MTN MoMo", subtitle: "Mobile payment via MTN" },
 ];
 
 const PAPER_WIDTHS: { value: ReceiptPaperWidth; labelKey: string }[] = [
@@ -93,13 +94,22 @@ export default function AdminPosSettingsPage() {
     }
   };
 
+  const handleLogoRemove = async () => {
+    if (!token) return;
+    try {
+      setSettings(await posApi.removeLogo(token));
+    } catch {
+      setError(t("adminPos.settings.logoError"));
+    }
+  };
+
   return (
     <AdminShell>
       <div className="p-6 lg:p-8 space-y-6">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/admin/pos")}
-            className={clsx("w-9 h-9 rounded-xl flex items-center justify-center", c.btnGhost)}
+            className={clsx("w-9 h-9 rounded-xl flex items-center justify-center border shadow-sm transition-colors", c.isDark ? "bg-gray-800 border-gray-600 text-white hover:bg-gray-700" : "bg-white border-gray-300 text-gray-900 hover:bg-gray-50")}
           >
             <ChevronLeft size={18} />
           </button>
@@ -161,6 +171,15 @@ export default function AdminPosSettingsPage() {
                     <Upload size={13} /> {settings.logoUrl ? t("adminPos.settings.replace") : t("adminPos.settings.upload")}
                     <input type="file" accept="image/*" className="hidden" onChange={handleLogoPick} />
                   </label>
+                  {settings.logoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleLogoRemove}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-xl px-3 py-2"
+                    >
+                      <Trash2 size={13} /> {t("adminPos.settings.removeLogo")}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -183,6 +202,16 @@ export default function AdminPosSettingsPage() {
               </div>
 
               <div className="space-y-2.5 pt-1">
+                <label className={clsx("flex items-center justify-between text-sm font-medium", c.textLabel, !settings.logoUrl && "opacity-50")}>
+                  {t("adminPos.settings.showLogo")}
+                  <input
+                    type="checkbox"
+                    checked={settings.showLogo}
+                    disabled={!settings.logoUrl}
+                    onChange={(e) => setSettings({ ...settings, showLogo: e.target.checked })}
+                    className="w-4 h-4 accent-brand-500"
+                  />
+                </label>
                 <label className={clsx("flex items-center justify-between text-sm font-medium", c.textLabel)}>
                   {t("adminPos.settings.showSaleId")}
                   <input
@@ -222,14 +251,18 @@ export default function AdminPosSettingsPage() {
             <div className={clsx("rounded-2xl border p-5 space-y-1 h-fit", c.card)}>
               <p className={clsx("text-xs font-semibold uppercase tracking-wide mb-2", c.textMuted)}>Payment methods</p>
               {PAYMENT_METHODS.map((m, i) => {
-                const Icon = m.icon;
                 const enabledCount = PAYMENT_METHODS.filter((pm) => settings[pm.key]).length;
                 const isOnlyOneLeft = enabledCount === 1 && settings[m.key];
                 return (
                   <div key={m.key} className={clsx("flex items-center gap-3 py-3", i < PAYMENT_METHODS.length - 1 && clsx("border-b", c.border))}>
-                    <div className={clsx("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-brand-500/10 text-brand-500")}>
-                      <Icon size={15} />
-                    </div>
+                    {m.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.logo} alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-brand-500/10 text-brand-500">
+                        <Banknote size={15} />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className={clsx("text-sm font-semibold", c.textPrimary)}>{m.title}</p>
                       <p className={clsx("text-[11px]", c.textMuted)}>{m.subtitle}</p>

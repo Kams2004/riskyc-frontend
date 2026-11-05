@@ -41,6 +41,8 @@ export const adminPos: typeof adminPosEn = {
     logo: "Logo",
     upload: "Téléverser",
     replace: "Remplacer",
+    removeLogo: "Supprimer",
+    showLogo: "Afficher le logo sur le ticket",
     paperWidth: "Largeur du Papier",
     paperWidth58: "Rouleau 58mm",
     paperWidth80: "Rouleau 80mm",

@@ -10,6 +10,11 @@ export interface CreateOrderItemInput {
 }
 
 /** A cart spanning several sellers now returns one Order per seller — see OrderService#create on the backend. */
+/** Resolves when every line is still in stock; rejects with the backend's "Sold out — only N left" message otherwise. */
+export function checkAvailability(items: CreateOrderItemInput[]) {
+  return apiFetch<void>("/api/orders/check-availability", { method: "POST", body: JSON.stringify({ items }) });
+}
+
 export function createOrder(data: { customerId?: string; items: CreateOrderItemInput[]; customerInfo: CustomerInfo; language?: string }) {
   return apiFetch<Order[]>("/api/orders", { method: "POST", body: JSON.stringify(data) });
 }

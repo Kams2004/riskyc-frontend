@@ -125,7 +125,7 @@ export default function AdminProductViewPage() {
         <div className="flex items-center gap-4 flex-wrap">
           <button
             onClick={() => router.back()}
-            className={clsx("flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors", c.isDark ? "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900")}
+            className={clsx("flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors", c.isDark ? "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white" : "bg-white border border-gray-300 shadow-sm font-semibold text-gray-900 hover:bg-gray-50 hover:border-gray-400")}
           >
             <ArrowLeft size={16} /> {t("adminProducts.common.back")}
           </button>

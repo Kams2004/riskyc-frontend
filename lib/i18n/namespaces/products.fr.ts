@@ -64,6 +64,8 @@ export const products: typeof productsEn = {
     total: "Total :",
     contactForPricingTitle: "Contactez-nous pour obtenir un prix pour ce produit",
     orderNow: "Commander maintenant",
+    contactWhatsApp: "Contacter le vendeur",
+    contactCall: "Appeler le vendeur",
     howToOrder: "Comment commander",
     fastDelivery: "Livraison rapide",
     securePay: "Paiement sécurisé",

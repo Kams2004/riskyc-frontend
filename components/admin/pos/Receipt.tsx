@@ -46,7 +46,7 @@ export default function Receipt({ settings, data }: { settings: PosSettings; dat
       style={{ width: `${widthMm}mm`, fontSize: small ? "10px" : "11px", padding: small ? "6px" : "10px" }}
     >
       <div className="text-center mb-2">
-        {settings.logoUrl && (
+        {settings.showLogo && settings.logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={settings.logoUrl} alt="" className="mx-auto mb-1.5 max-h-12 object-contain" />
         )}

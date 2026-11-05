@@ -32,6 +32,10 @@ export const sellerApply: typeof sellerApplyEn = {
     emailPlaceholder: "vous@entreprise.com",
     phoneLabel: "Téléphone",
     phoneOptional: "(facultatif)",
+    whatsappLabel: "Numéro WhatsApp",
+    whatsappOptional: "(facultatif)",
+    whatsappPlaceholder: "ex. +237 6XX XXX XXX",
+    whatsappHint: "Affiché aux clients comme bouton « Contacter le vendeur » sur vos produits, si renseigné. Laissez vide pour l'ignorer.",
   },
   questionnaire: {
     title: "Que vendrez-vous ?",
@@ -54,6 +58,7 @@ export const sellerApply: typeof sellerApplyEn = {
     description: "Description",
     contact: "Contact",
     whatYouSell: "Ce que vous vendez",
+    whatsapp: "WhatsApp",
     catalogSize: "Taille de catalogue prévue",
     submit: "Soumettre la candidature",
     submitting: "Envoi en cours...",
@@ -62,6 +67,18 @@ export const sellerApply: typeof sellerApplyEn = {
     title: "Comment fonctionnent les paiements",
     body: "Riskyc Fashion encaisse les paiements de vos clients via ses propres numéros Orange Money et MTN Mobile Money déjà existants — les mêmes pour tous les vendeurs de la plateforme, et non un compte séparé pour votre boutique. Les clients téléversent une preuve de paiement et notre équipe la valide, exactement comme pour le reste de la boutique aujourd'hui. Le règlement avec vous pour vos ventes se fait séparément, en dehors de l'application.",
     agree: "Je comprends et j'accepte cet arrangement de paiement.",
+  },
+  howItWorks: {
+    title: "Comment les produits sont vendus",
+    body: "Les clients achètent directement à partir des photos de vos produits. Si un produit n'a pas de couleurs nommées, ils touchent simplement la photo qui montre la variante qu'ils veulent, au lieu de choisir une couleur — ajoutez donc une photo claire pour chaque variante que vous proposez. Une fois qu'un client paie et téléverse sa preuve de paiement, la commande apparaît dans votre panneau vendeur pour validation et emballage.",
+    agree: "Je comprends comment les produits sont présentés et vendus aux clients.",
+  },
+  terms: {
+    title: "Conditions et confidentialité",
+    body: "En postulant, vous acceptez les Conditions générales et la Politique de confidentialité de Riskyc Fashion, qui couvrent le fonctionnement de la marketplace, vos responsabilités en tant que vendeur, et la gestion de vos données.",
+    termsLink: "Conditions générales",
+    privacyLink: "Politique de confidentialité",
+    agree: "J'ai lu et j'accepte les Conditions générales et la Politique de confidentialité.",
   },
   errors: {
     required: "Ce champ est requis.",

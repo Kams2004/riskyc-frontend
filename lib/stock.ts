@@ -14,10 +14,15 @@ export function findVariant(
   return product.variants.find((v) => v.colorName === (selectedColor || "") && v.size === (selectedSize || ""));
 }
 
-/** Available quantity for a selection — Infinity for an "untracked" migration sentinel, or when no variant row exists yet (a brand-new color/size combo an admin hasn't visited the stock editor for), so neither case blocks a purchase on missing data. */
+/**
+ * Available quantity for a selection. Infinity for an untracked variant, or for a missing one on a product whose
+ * stock was never entered; a missing combo on a tracked product is 0 — the same rule the backend's
+ * ProductVariantService applies at checkout, so what's shown is always what can actually be bought.
+ */
 export function availableQuantity(product: Pick<Product, "variants">, selectedColor: string, selectedSize: string): number {
   const variant = findVariant(product, selectedColor, selectedSize);
-  if (!variant || variant.untracked) return Infinity;
+  if (!variant) return product.variants.some((v) => !v.untracked) ? 0 : Infinity;
+  if (variant.untracked) return Infinity;
   return Math.max(0, variant.quantity);
 }
 

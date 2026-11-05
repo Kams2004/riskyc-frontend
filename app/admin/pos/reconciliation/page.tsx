@@ -79,7 +79,7 @@ export default function AdminReconciliationPage() {
     <AdminShell>
       <div className="p-6 lg:p-8 space-y-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/admin/pos")} className={clsx("w-9 h-9 rounded-xl flex items-center justify-center", c.btnGhost)}>
+          <button onClick={() => router.push("/admin/pos")} className={clsx("w-9 h-9 rounded-xl flex items-center justify-center border shadow-sm transition-colors", c.isDark ? "bg-gray-800 border-gray-600 text-white hover:bg-gray-700" : "bg-white border-gray-300 text-gray-900 hover:bg-gray-50")}>
             <ChevronLeft size={18} />
           </button>
           <div>

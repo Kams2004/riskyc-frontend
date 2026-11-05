@@ -5,6 +5,34 @@ import * as customersApi from "./api/customers";
 import * as productsApi from "./api/products";
 import { allocateGroupedLineTotals } from "./pricing";
 import { localized } from "./i18n/localized";
+import { availableQuantity } from "./stock";
+
+type CartLineId = Pick<CartItem, "selectedColor" | "selectedSize" | "selectedImageIndex"> & { product: Pick<Product, "id"> };
+
+/** One cart line = one product + color + size + photo; two sizes of the same product are separate lines. */
+function sameCartLine(a: CartLineId, b: CartLineId): boolean {
+  return (
+    a.product.id === b.product.id &&
+    a.selectedColor === b.selectedColor &&
+    (a.selectedSize ?? "") === (b.selectedSize ?? "") &&
+    a.selectedImageIndex === b.selectedImageIndex
+  );
+}
+
+/** Most this line may hold: the variant's stock minus what other lines (other photos) of the same color+size already take. */
+export function maxQuantityForLine(items: CartItem[], line: CartItem): number {
+  const available = availableQuantity(line.product, line.selectedColor, line.selectedSize ?? "");
+  const takenElsewhere = items
+    .filter(
+      (i) =>
+        !sameCartLine(i, line) &&
+        i.product.id === line.product.id &&
+        i.selectedColor === line.selectedColor &&
+        (i.selectedSize ?? "") === (line.selectedSize ?? "")
+    )
+    .reduce((n, i) => n + i.quantity, 0);
+  return Math.max(0, available - takenElsewhere);
+}
 
 /**
  * Bulk-tier pricing is pooled across every cart line of the SAME product
@@ -44,8 +72,9 @@ interface CartStore {
 
   // Cart actions
   addToCart: (item: CartItem) => void;
-  removeFromCart: (productId: string, color: string, selectedImageIndex?: number) => void;
-  updateQuantity: (productId: string, color: string, quantity: number, selectedImageIndex?: number) => void;
+  removeFromCart: (line: CartLineId) => void;
+  /** Clamped to the line's available stock; 0 or less removes the line. */
+  updateQuantity: (line: CartLineId, quantity: number) => void;
   clearCart: () => void;
   getCartTotal: () => number;
   getCartCount: () => number;
@@ -107,43 +136,27 @@ export const useStore = create<CartStore>()(
       /* ── Cart ── */
       addToCart: (newItem) =>
         set((state) => {
-          const sameLine = (i: CartItem) =>
-            i.product.id === newItem.product.id &&
-            i.selectedColor === newItem.selectedColor &&
-            i.selectedSize === newItem.selectedSize &&
-            i.selectedImageIndex === newItem.selectedImageIndex;
-          const existing = state.items.find(sameLine);
+          const existing = state.items.find((i) => sameCartLine(i, newItem));
+          const max = maxQuantityForLine(state.items, newItem);
+          const quantity = Math.min((existing?.quantity ?? 0) + newItem.quantity, max);
           if (existing) {
-            return {
-              items: state.items.map((i) =>
-                sameLine(i) ? { ...i, quantity: i.quantity + newItem.quantity } : i
-              ),
-            };
+            return { items: state.items.map((i) => (sameCartLine(i, newItem) ? { ...i, quantity } : i)) };
           }
-          return { items: [...state.items, newItem] };
+          if (quantity <= 0) return state;
+          return { items: [...state.items, { ...newItem, quantity }] };
         }),
 
-      removeFromCart: (productId, color, selectedImageIndex) =>
-        set((state) => ({
-          items: state.items.filter(
-            (i) => !(i.product.id === productId && i.selectedColor === color && i.selectedImageIndex === selectedImageIndex)
-          ),
-        })),
+      removeFromCart: (line) => set((state) => ({ items: state.items.filter((i) => !sameCartLine(i, line)) })),
 
-      updateQuantity: (productId, color, quantity, selectedImageIndex) =>
-        set((state) => ({
-          items:
-            quantity <= 0
-              ? state.items.filter(
-                  (i) =>
-                    !(i.product.id === productId && i.selectedColor === color && i.selectedImageIndex === selectedImageIndex)
-                )
-              : state.items.map((i) =>
-                  i.product.id === productId && i.selectedColor === color && i.selectedImageIndex === selectedImageIndex
-                    ? { ...i, quantity }
-                    : i
-                ),
-        })),
+      updateQuantity: (line, quantity) =>
+        set((state) => {
+          if (quantity <= 0) return { items: state.items.filter((i) => !sameCartLine(i, line)) };
+          return {
+            items: state.items.map((i) =>
+              sameCartLine(i, line) ? { ...i, quantity: Math.min(quantity, maxQuantityForLine(state.items, i)) } : i
+            ),
+          };
+        }),
 
       clearCart: () => set({ items: [] }),
 

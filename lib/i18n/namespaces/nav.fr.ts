@@ -12,6 +12,7 @@ export const nav: typeof navEn = {
   switchToEnglish: "Switch to English",
   myOrders: "Mes commandes",
   myReferrals: "Mes parrainages",
+  becomeASeller: "Vendre sur Riskyc Fashion",
   helpCenter: "Centre d'aide",
   contactUs: "Nous contacter",
   logOut: "Se déconnecter",

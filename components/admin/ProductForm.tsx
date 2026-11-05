@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminStore } from "@/lib/adminStore";
 import { useAdminColors } from "@/lib/useAdminColors";
@@ -91,11 +91,33 @@ interface PendingFile {
   previewUrl: string;
 }
 
+/** Stock box values keyed by variantKey: "" for an untracked (unlimited) variant, its quantity otherwise. */
+function stockDraftFromVariants(variants: Product["variants"] | undefined): Record<string, string> {
+  const map: Record<string, string> = {};
+  (variants ?? []).forEach((v) => {
+    map[variantKey(v.colorName, v.size)] = v.untracked ? "" : String(v.quantity);
+  });
+  return map;
+}
+
 export default function ProductForm({ initial, mode }: Props) {
   const router = useRouter();
   const token = useAdminStore((s) => s.session?.token);
+  const session = useAdminStore((s) => s.session);
   const hasPermission = useAdminStore((s) => s.hasPermission);
-  const { categories } = useCategories();
+  const { categories: allCategories } = useCategories();
+  // A scoped seller may only list under the top-level Categories their
+  // enterprise was actually approved for (see EnterpriseService#approve())
+  // — offering every platform category here regardless of scope let a
+  // seller submit one the backend would then reject. Always keeps the
+  // product's current category available too, so editing an older product
+  // whose category was later revoked from this seller's scope doesn't
+  // silently drop it from the picker.
+  const categories = useMemo(() => {
+    if (!session?.enterpriseId) return allCategories;
+    const allowed = new Set(session.enterpriseCategoryIds);
+    return allCategories.filter((cat) => allowed.has(cat.id) || cat.slug === initial?.categorySlug);
+  }, [allCategories, session?.enterpriseId, session?.enterpriseCategoryIds, initial?.categorySlug]);
   const c = useAdminColors();
   const isDark = c.isDark;
   const { t } = useTranslation();
@@ -132,13 +154,9 @@ export default function ProductForm({ initial, mode }: Props) {
       : emptyForm()
   );
   // The real per-(color,size) stock ledger — keyed by variantKey(colorName, size), seeded from the product's existing variants. A brand-new product has no variants yet (none exist until this form's first save), so stock for a new product is set afterward, on the edit screen.
-  const [variantStock, setVariantStock] = useState<Record<string, number>>(() => {
-    const map: Record<string, number> = {};
-    (initial?.variants ?? []).forEach((v) => {
-      map[variantKey(v.colorName, v.size)] = v.quantity;
-    });
-    return map;
-  });
+  // Values are strings so an untracked (unlimited) variant can stay an empty box — only boxes an admin actually
+  // fills are ever sent, so saving one size never turns the others' unlimited stock into a real number.
+  const [variantStock, setVariantStock] = useState<Record<string, string>>(() => stockDraftFromVariants(initial?.variants));
   const [existingMedia, setExistingMedia] = useState<MediaItem[]>(initial?.media ?? []);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -250,21 +268,15 @@ export default function ProductForm({ initial, mode }: Props) {
           calls.push(productsApi.updateProductColors(initial!.id, form.colors, token));
         }
 
-        const initialVariantStock: Record<string, number> = {};
-        (initial!.variants ?? []).forEach((v) => {
-          initialVariantStock[variantKey(v.colorName, v.size)] = v.quantity;
-        });
-        if (canUpdateStock && JSON.stringify(variantStock) !== JSON.stringify(initialVariantStock)) {
-          calls.push(
-            productsApi.updateProductStock(
-              initial!.id,
-              Object.entries(variantStock).map(([key, quantity]) => {
-                const [colorName, size] = key.split("::");
-                return { colorName, size, quantity };
-              }),
-              token
-            )
-          );
+        const initialVariantStock = stockDraftFromVariants(initial!.variants);
+        const changedStock = Object.entries(variantStock)
+          .filter(([key, value]) => value !== "" && value !== (initialVariantStock[key] ?? ""))
+          .map(([key, value]) => {
+            const [colorName, size] = key.split("::");
+            return { colorName, size, quantity: Number(value) };
+          });
+        if (canUpdateStock && changedStock.length > 0) {
+          calls.push(productsApi.updateProductStock(initial!.id, changedStock, token));
         }
 
         if (
@@ -444,7 +456,7 @@ export default function ProductForm({ initial, mode }: Props) {
             "flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors",
             isDark
               ? "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+              : "bg-white border border-gray-300 shadow-sm font-semibold text-gray-900 hover:bg-gray-50 hover:border-gray-400"
           )}
         >
           <ArrowLeft size={16} />
@@ -865,11 +877,11 @@ export default function ProductForm({ initial, mode }: Props) {
                                     onChange={(e) =>
                                       setVariantStock((v) => ({
                                         ...v,
-                                        [key]: e.target.value === "" ? 0 : Number(e.target.value),
+                                        [key]: e.target.value.replace(/[^\d]/g, ""),
                                       }))
                                     }
                                     min={0}
-                                    placeholder="0"
+                                    placeholder={Object.values(variantStock).some((q) => q !== "") ? "0" : "∞"}
                                     title={t("adminProducts.form.stockQtyTitle")}
                                   />
                                 </div>
@@ -885,7 +897,9 @@ export default function ProductForm({ initial, mode }: Props) {
                   <div className={clsx("flex items-center gap-2 mt-3 px-3 py-2 rounded-lg text-xs font-medium", isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500")}>
                     <span>{t("adminProducts.form.totalStockLabel")}</span>
                     <span className={clsx("font-bold", c.textPrimary)}>
-                      {Object.values(variantStock).reduce((s, q) => s + Math.max(0, q), 0)} {t("adminProducts.form.unitsLabel")}
+                      {Object.values(variantStock).some((q) => q !== "")
+                        ? `${Object.values(variantStock).reduce((s, q) => s + (q === "" ? 0 : Math.max(0, Number(q))), 0)} ${t("adminProducts.form.unitsLabel")}`
+                        : "∞"}
                     </span>
                   </div>
                 </div>
@@ -1164,7 +1178,7 @@ export default function ProductForm({ initial, mode }: Props) {
               "w-full py-2.5 rounded-xl text-sm font-medium transition-colors",
               isDark
                 ? "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                : "bg-white border border-gray-300 shadow-sm font-semibold text-gray-900 hover:bg-gray-50 hover:border-gray-400"
             )}
           >
             {t("adminProducts.form.discardChanges")}

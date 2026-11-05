@@ -3,6 +3,7 @@
 import { Client, IMessage } from "@stomp/stompjs";
 import { useEffect, useRef } from "react";
 import { API_BASE_URL } from "./apiClient";
+import { useAdminStore } from "./adminStore";
 import { ChatMessage, AppNotification, Order } from "./types";
 
 interface ConversationReadStatus {
@@ -104,19 +105,21 @@ export function useConversationReadStatusSocket(
   }, [conversationId]);
 }
 
-/** Subscribes to `/topic/notifications/admin` — every connected admin session gets these live. */
+/** Live admin notifications — platform staff get every one; a seller's admin only their own shop's channel. */
 export function useAdminNotificationSocket(onNotification: (n: AppNotification) => void) {
   const handlerRef = useRef(onNotification);
   handlerRef.current = onNotification;
+  const enterpriseId = useAdminStore((s) => s.session?.enterpriseId ?? null);
 
   useEffect(() => {
     const client = getClient();
     let subscription: { unsubscribe: () => void } | null = null;
     let cancelled = false;
+    const topic = enterpriseId ? `/topic/notifications/admin/enterprise/${enterpriseId}` : "/topic/notifications/admin";
 
     const subscribe = () => {
       if (cancelled) return;
-      subscription = client.subscribe("/topic/notifications/admin", (frame: IMessage) => {
+      subscription = client.subscribe(topic, (frame: IMessage) => {
         handlerRef.current(JSON.parse(frame.body));
       });
     };
@@ -131,7 +134,7 @@ export function useAdminNotificationSocket(onNotification: (n: AppNotification) 
       cancelled = true;
       subscription?.unsubscribe();
     };
-  }, [onNotification]);
+  }, [onNotification, enterpriseId]);
 }
 
 /**

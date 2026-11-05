@@ -14,6 +14,7 @@ export interface EnterpriseApplication {
   contactLastName: string;
   contactEmail: string;
   contactPhone?: string;
+  whatsappNumber?: string;
   whatDoYouSell: string;
   estimatedCatalogSize?: string;
 }
