@@ -42,6 +42,7 @@ export const products = {
     askPrice: "Ask price",
   },
   detail: {
+    soldBy: "Sold by",
     home: "Home",
     products: "Products",
     productNotFound: "Product not found",
