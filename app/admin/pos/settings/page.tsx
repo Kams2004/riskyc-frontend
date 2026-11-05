@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
 import AlertDialog from "@/components/admin/AlertDialog";
+import TillsPanel from "@/components/admin/pos/TillsPanel";
 import Receipt from "@/components/admin/pos/Receipt";
 import { useAdminStore } from "@/lib/adminStore";
 import { useAdminColors } from "@/lib/useAdminColors";
@@ -115,6 +116,8 @@ export default function AdminPosSettingsPage() {
           </button>
           <h1 className={clsx("text-2xl font-bold", c.textPrimary)}>{t("adminPos.settings.pageTitle")}</h1>
         </div>
+
+        <TillsPanel />
 
         {loading || !settings ? (
           <div className={clsx("text-center py-20 rounded-2xl border", c.card)}>

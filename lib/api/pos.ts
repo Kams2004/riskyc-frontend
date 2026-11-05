@@ -44,3 +44,30 @@ export async function uploadLogo(token: string, file: File): Promise<PosSettings
 export function removeLogo(token: string) {
   return apiFetch<PosSettings>("/api/pos/settings/logo", { method: "DELETE", token });
 }
+
+// ── Tills (POS desktop app) ──
+
+export interface PosDevice {
+  id: string;
+  name: string;
+  platform: string | null;
+  appVersion: string | null;
+  enrolledAt: string;
+  enrolledByName: string | null;
+  lastSeenAt: string | null;
+  online: boolean;
+  pendingSales: number;
+  revokedAt: string | null;
+}
+
+export function listDevices(token: string) {
+  return apiFetch<PosDevice[]>("/api/pos/devices", { token });
+}
+
+export function createEnrollmentCode(token: string) {
+  return apiFetch<{ code: string; expiresAt: string }>("/api/pos/devices/enrollment-codes", { method: "POST", token });
+}
+
+export function revokeDevice(token: string, id: string) {
+  return apiFetch<PosDevice>(`/api/pos/devices/${id}/revoke`, { method: "POST", token });
+}
