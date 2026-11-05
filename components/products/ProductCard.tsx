@@ -155,7 +155,7 @@ export default function ProductCard({ product }: Props) {
             title={priceUnset ? t("products.card.contactForPricing") : defaultComboSoldOut ? t("products.detail.soldOut") : t("products.card.addToCart")}
           >
             {added ? <Check size={13} /> : <ShoppingCart size={13} />}
-            <span className="hidden sm:inline">{added ? t("products.card.added") : t("products.card.addToCart")}</span>
+            <span className="hidden sm:inline">{added ? t("products.card.added") : t("products.card.add")}</span>
           </button>
 
           {/* Order Now — full label always */}

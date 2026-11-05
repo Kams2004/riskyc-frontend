@@ -63,6 +63,33 @@ function computeLineTotals(items: CartItem[]): Map<string, number> {
   return totals;
 }
 
+/**
+ * Carts saved by an older version of the app can hold product snapshots from before fields like variants
+ * (per-size stock) or bulkPrices existed. Fill those in with empty values on load, so the cart never crashes
+ * reading them; refreshCart() then replaces each snapshot with the live product anyway.
+ */
+function normalizeSavedItems(items: unknown): CartItem[] {
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((i) => i && typeof i === "object" && (i as CartItem).product)
+    .map((i) => {
+      const item = i as CartItem;
+      const p = item.product;
+      return {
+        ...item,
+        product: {
+          ...p,
+          variants: p.variants ?? [],
+          bulkPrices: p.bulkPrices ?? [],
+          colors: p.colors ?? [],
+          sizes: p.sizes ?? [],
+          media: p.media ?? [],
+          tags: p.tags ?? [],
+        },
+      };
+    });
+}
+
 interface CartStore {
   items: CartItem[];
   language: Language;
@@ -245,6 +272,10 @@ export const useStore = create<CartStore>()(
       // longer cached client-side at all, they're fetched from the API on
       // demand, so the old persisted shape (with demo seed arrays) doesn't apply
       name: "riskyc-store-v3",
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<CartStore>;
+        return { ...current, ...saved, items: normalizeSavedItems(saved.items) };
+      },
       partialize: (state) => ({
         items: state.items,
         language: state.language,

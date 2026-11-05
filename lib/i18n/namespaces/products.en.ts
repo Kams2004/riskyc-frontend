@@ -35,6 +35,7 @@ export const products = {
     removeFromWishlist: "Remove from wishlist",
     priceOnRequest: "Price on request",
     addToCart: "Add to Cart",
+    add: "Add",
     added: "Added!",
     contactForPricing: "Contact us for pricing",
     order: "Order",

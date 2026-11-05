@@ -37,6 +37,7 @@ export const products: typeof productsEn = {
     removeFromWishlist: "Retirer des favoris",
     priceOnRequest: "Prix sur demande",
     addToCart: "Ajouter au panier",
+    add: "Ajouter",
     added: "Ajouté !",
     contactForPricing: "Contactez-nous pour le prix",
     order: "Commander",
