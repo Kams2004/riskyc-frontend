@@ -61,6 +61,7 @@ export const products: typeof productsEn = {
     sizeLabel: "Taille :",
     sizeGuide: "Guide des tailles",
     photoConfigureFirst: "Choisissez une image ci-dessus, puis définissez une taille et une quantité avant de commander.",
+    sellerNotReady: "Pas encore disponible à l'achat — le vendeur configure encore ses paiements.",
     soldOut: "Épuisé",
     quantity: "Quantité",
     total: "Total :",

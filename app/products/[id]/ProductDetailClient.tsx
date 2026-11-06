@@ -189,6 +189,8 @@ export default function ProductDetailClient({ productId }: { productId: string }
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
   const priceUnset = product.price <= 0;
+  // A shop that hasn't set up its own payment numbers can't be bought from yet (customers pay each shop directly).
+  const notPayable = product.seller?.acceptsPayments === false;
   const imageCount = product.media.filter((m) => m.type === "IMAGE").length;
   const categoryInfo = categories.find((c) => c.slug === product.categorySlug);
   const subcategoryInfo = categoryInfo?.subcategories.find((s) => s.slug === product.subcategorySlug);
@@ -249,7 +251,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const activePhotoMax = Math.max(0, activeSizeAvailable - activeSizeClaimedElsewhere);
 
   const handleAddToCart = () => {
-    if (priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)) return;
+    if (priceUnset || notPayable || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)) return;
     if (imageCount > 0) {
       for (const sel of photoSelections) {
         addToCart({ product, quantity: sel.quantity, selectedColor, selectedSize: sel.size || undefined, selectedImageIndex: sel.imageIndex });
@@ -262,7 +264,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
   };
 
   const handleOrderNow = () => {
-    if (priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)) return;
+    if (priceUnset || notPayable || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)) return;
     if (imageCount > 0) {
       for (const sel of photoSelections) {
         addToCart({ product, quantity: sel.quantity, selectedColor, selectedSize: sel.size || undefined, selectedImageIndex: sel.imageIndex });
@@ -763,14 +765,21 @@ export default function ProductDetailClient({ productId }: { productId: string }
           )}
 
           {/* ── Action buttons ── */}
+          {notPayable && (
+            <p className="text-sm font-medium text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5 mb-3">
+              {t("products.detail.sellerNotReady")}
+            </p>
+          )}
           <div className="flex gap-3 mb-3">
             {/* Add to Cart — blocked once the selected color/size is out of stock (plain mode only; the photo picker already caps itself at 0 before this gate is reached) */}
             <button
               onClick={handleAddToCart}
-              disabled={priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)}
+              disabled={priceUnset || notPayable || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)}
               title={
                 priceUnset
                   ? t("products.detail.contactForPricingTitle")
+                  : notPayable
+                  ? t("products.detail.sellerNotReady")
                   : nothingConfigured
                   ? t("products.detail.photoConfigureFirst")
                   : imageCount === 0 && selectedAvailable <= 0
@@ -779,7 +788,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
               }
               className={clsx(
                 "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-base transition-all",
-                priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)
+                priceUnset || notPayable || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                   : addedToCart ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-gray-800 text-white"
               )}
@@ -790,10 +799,12 @@ export default function ProductDetailClient({ productId }: { productId: string }
             {/* Order Now — adds the configured line(s) to cart, then opens checkout directly */}
             <button
               onClick={handleOrderNow}
-              disabled={priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)}
+              disabled={priceUnset || notPayable || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)}
               title={
                 priceUnset
                   ? t("products.detail.contactForPricingTitle")
+                  : notPayable
+                  ? t("products.detail.sellerNotReady")
                   : nothingConfigured
                   ? t("products.detail.photoConfigureFirst")
                   : imageCount === 0 && selectedAvailable <= 0
@@ -802,7 +813,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
               }
               className={clsx(
                 "flex-1 btn-primary py-3.5 rounded-2xl text-base",
-                (priceUnset || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)) && "opacity-50 cursor-not-allowed"
+                (priceUnset || notPayable || nothingConfigured || (imageCount === 0 && selectedAvailable <= 0)) && "opacity-50 cursor-not-allowed"
               )}
             >
               <Zap size={20} /> {t("products.detail.orderNow")}

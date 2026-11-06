@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/apiClient";
-import { Enterprise, EnterpriseStatus } from "@/lib/types";
+import { PaymentSettings, Enterprise, EnterpriseStatus } from "@/lib/types";
 
 export interface EnterpriseStatusLookup {
   name: string;
@@ -59,4 +59,16 @@ export function suspendEnterprise(id: string, token: string) {
 
 export function reactivateEnterprise(id: string, token: string) {
   return apiFetch<Enterprise>(`/api/enterprises/${id}/reactivate`, { method: "POST", token });
+}
+
+/** The signed-in admin's own shop's payment numbers (Riskyc's own store for platform staff). */
+export function getPaymentSettings(token: string) {
+  return apiFetch<PaymentSettings>("/api/enterprises/me/payment-settings", { token });
+}
+
+export function updatePaymentSettings(
+  token: string,
+  data: { orangeMoneyCode: string; orangeMoneyName: string; mobileMoneyCode: string; mobileMoneyName: string }
+) {
+  return apiFetch<PaymentSettings>("/api/enterprises/me/payment-settings", { method: "PUT", token, body: JSON.stringify(data) });
 }

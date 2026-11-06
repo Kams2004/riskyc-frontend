@@ -91,6 +91,28 @@ export interface SellerSummary {
   name: string;
   phone?: string | null;
   whatsappNumber?: string | null;
+  /** False until the shop has entered its own payment numbers — its products can't be bought online yet. */
+  acceptsPayments?: boolean;
+}
+
+/** Checkout's "who do I pay, how much, and how" — one entry per shop in the cart (POST /api/orders/payment-plan). */
+export interface PaymentPlanSeller {
+  enterpriseId: string | null;
+  sellerName: string;
+  amount: number;
+  acceptsPayments: boolean;
+  /** Only the methods this shop set up; `code` already includes this shop's amount. */
+  methods: { method: PaymentMethod; code: string; accountName: string }[];
+}
+
+/** A shop's own payment numbers, as its admins manage them. Codes use {amount} where the amount goes. */
+export interface PaymentSettings {
+  storeName: string;
+  orangeMoneyCode: string | null;
+  orangeMoneyName: string | null;
+  mobileMoneyCode: string | null;
+  mobileMoneyName: string | null;
+  acceptsPayments: boolean;
 }
 
 export interface CartItem {
@@ -201,6 +223,8 @@ export interface Order {
   customerId?: string | null;
   /** Which seller this order's items belong to — null only for pre-marketplace orders. */
   enterpriseId?: string | null;
+  /** The shop this order is paid to and handled by. */
+  sellerName?: string | null;
   /** Groups this order with any siblings from the same checkout (one per seller a cart spanned). */
   checkoutGroupId?: string | null;
   items: OrderItem[];
@@ -333,7 +357,8 @@ export type Permission =
   | "POS_RECONCILE"
   | "VOID_POS_SALE"
   | "VIEW_ENTERPRISES"
-  | "MANAGE_ENTERPRISES";
+  | "MANAGE_ENTERPRISES"
+  | "MANAGE_PAYMENT_SETTINGS";
 
 export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[] = [
   { key: "VIEW_DASHBOARD",    label: "View Dashboard",    group: "Dashboard" },
@@ -372,6 +397,7 @@ export const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[
   { key: "VOID_POS_SALE",     label: "Void Point of Sale Sales", group: "Point of Sale" },
   { key: "VIEW_ENTERPRISES",  label: "View Seller Applications", group: "Marketplace" },
   { key: "MANAGE_ENTERPRISES", label: "Approve/Reject/Suspend Sellers", group: "Marketplace" },
+  { key: "MANAGE_PAYMENT_SETTINGS", label: "Payment numbers (Orange Money / MTN)", group: "Marketplace" },
 ];
 
 export interface Role {

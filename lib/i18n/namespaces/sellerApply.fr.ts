@@ -65,12 +65,12 @@ export const sellerApply: typeof sellerApplyEn = {
   },
   payment: {
     title: "Comment fonctionnent les paiements",
-    body: "Riskyc Fashion encaisse les paiements de vos clients via ses propres numéros Orange Money et MTN Mobile Money déjà existants — les mêmes pour tous les vendeurs de la plateforme, et non un compte séparé pour votre boutique. Les clients téléversent une preuve de paiement et notre équipe la valide, exactement comme pour le reste de la boutique aujourd'hui. Le règlement avec vous pour vos ventes se fait séparément, en dehors de l'application.",
-    agree: "Je comprends et j'accepte cet arrangement de paiement.",
+    body: "Vos clients vous paient directement. Une fois approuvé, saisissez vos propres numéros Orange Money et/ou MTN Mobile Money dans Paiements de votre panneau vendeur — au paiement, les clients voient votre code avec le montant exact de vos articles et paient directement sur votre compte. Riskyc Fashion ne reçoit jamais votre argent. Les clients envoient une capture d'écran de leur paiement ; vous la vérifiez sur votre propre compte et confirmez la commande, puis vous l'emballez et la faites livrer par votre propre équipe. Tant que vos numéros de paiement ne sont pas configurés, vos produits sont visibles mais ne peuvent pas être achetés en ligne.",
+    agree: "Je comprends : les paiements arrivent sur mes propres comptes, et je confirme, emballe et livre mes propres commandes.",
   },
   howItWorks: {
     title: "Comment les produits sont vendus",
-    body: "Les clients achètent directement à partir des photos de vos produits. Si un produit n'a pas de couleurs nommées, ils touchent simplement la photo qui montre la variante qu'ils veulent, au lieu de choisir une couleur — ajoutez donc une photo claire pour chaque variante que vous proposez. Une fois qu'un client paie et téléverse sa preuve de paiement, la commande apparaît dans votre panneau vendeur pour validation et emballage.",
+    body: "Les clients achètent directement à partir des photos de vos produits. Si un produit n'a pas de couleurs nommées, ils touchent simplement la photo qui montre la variante qu'ils veulent, au lieu de choisir une couleur — ajoutez donc une photo claire pour chaque variante que vous proposez. Une fois qu'un client vous a payé et a téléversé sa preuve de paiement, la commande apparaît dans votre panneau vendeur : vous la confirmez sur votre propre compte, l'emballez et la livrez.",
     agree: "Je comprends comment les produits sont présentés et vendus aux clients.",
   },
   terms: {

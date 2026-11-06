@@ -1,5 +1,5 @@
 import { apiFetch, API_BASE_URL } from "@/lib/apiClient";
-import { Order, OrderStatus, PaymentMethod, CustomerInfo } from "@/lib/types";
+import { PaymentPlanSeller, Order, OrderStatus, PaymentMethod, CustomerInfo } from "@/lib/types";
 
 export interface CreateOrderItemInput {
   productId: string;
@@ -11,6 +11,11 @@ export interface CreateOrderItemInput {
 
 /** A cart spanning several sellers now returns one Order per seller — see OrderService#create on the backend. */
 /** Resolves when every line is still in stock; rejects with the backend's "Sold out — only N left" message otherwise. */
+/** For each shop in the cart: the amount to send and that shop's own payment codes (also checks stock). */
+export function getPaymentPlan(items: CreateOrderItemInput[]) {
+  return apiFetch<{ sellers: PaymentPlanSeller[] }>("/api/orders/payment-plan", { method: "POST", body: JSON.stringify({ items }) });
+}
+
 export function checkAvailability(items: CreateOrderItemInput[]) {
   return apiFetch<void>("/api/orders/check-availability", { method: "POST", body: JSON.stringify({ items }) });
 }

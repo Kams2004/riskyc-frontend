@@ -32,6 +32,7 @@ const NAV_LABEL_KEYS: Record<string, string> = {
   "/admin/orders": "orders",
   "/admin/treatment": "treatment",
   "/admin/delivery": "delivery",
+  "/admin/payments": "payments",
   "/admin/products": "products",
   "/admin/categories": "categories",
   "/admin/customers": "customers",

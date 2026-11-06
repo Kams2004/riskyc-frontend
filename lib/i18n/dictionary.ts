@@ -38,6 +38,8 @@ import { adminPos as adminPosEn } from "./namespaces/adminPos.en";
 import { adminPos as adminPosFr } from "./namespaces/adminPos.fr";
 import { adminEnterprises as adminEnterprisesEn } from "./namespaces/adminEnterprises.en";
 import { adminEnterprises as adminEnterprisesFr } from "./namespaces/adminEnterprises.fr";
+import { adminPayments as adminPaymentsEn } from "./namespaces/adminPayments.en";
+import { adminPayments as adminPaymentsFr } from "./namespaces/adminPayments.fr";
 import { sellerApply as sellerApplyEn } from "./namespaces/sellerApply.en";
 import { sellerApply as sellerApplyFr } from "./namespaces/sellerApply.fr";
 
@@ -69,6 +71,7 @@ export const dictionaries = {
     deleteAccount: deleteAccountEn,
     adminPublicity: adminPublicityEn,
     adminPos: adminPosEn,
+    adminPayments: adminPaymentsEn,
     adminEnterprises: adminEnterprisesEn,
     sellerApply: sellerApplyEn,
   },
@@ -91,6 +94,7 @@ export const dictionaries = {
     deleteAccount: deleteAccountFr,
     adminPublicity: adminPublicityFr,
     adminPos: adminPosFr,
+    adminPayments: adminPaymentsFr,
     adminEnterprises: adminEnterprisesFr,
     sellerApply: sellerApplyFr,
   },

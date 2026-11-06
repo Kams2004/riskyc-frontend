@@ -63,12 +63,12 @@ export const sellerApply = {
   },
   payment: {
     title: "How payments work",
-    body: "Riskyc Fashion collects payment from your customers through its own existing Orange Money and MTN Mobile Money numbers — the same ones used for every seller on the platform, not a separate account for your shop. Customers upload proof of payment and our team validates it, exactly as it works for the rest of the store today. Settlement with you for your sales is handled separately, outside the app.",
-    agree: "I understand and agree to this payment arrangement.",
+    body: "Your customers pay you directly. Once you're approved, enter your own Orange Money and/or MTN Mobile Money numbers under Payments in your seller panel — at checkout, customers see your code with the exact amount for your items and pay straight into your account. Riskyc Fashion never receives your money. Customers upload a screenshot of their payment; you check it against your own account and confirm the order, then pack it and send it with your own delivery team. Until your payment numbers are set, your products are visible but can't be bought online.",
+    agree: "I understand: payments go to my own accounts, and I confirm, pack and deliver my own orders.",
   },
   howItWorks: {
     title: "How products are sold",
-    body: "Customers shop straight from your product photos. If a product has no named colors set, they tap whichever photo shows the variant they want instead of picking a color swatch — so upload a clear photo for each variant you offer. Once a customer pays and uploads proof of payment, the order shows up in your seller panel for you to validate and pack.",
+    body: "Customers shop straight from your product photos. If a product has no named colors set, they tap whichever photo shows the variant they want instead of picking a color swatch — so upload a clear photo for each variant you offer. Once a customer pays you and uploads proof of payment, the order shows up in your seller panel for you to confirm against your own account, pack and deliver.",
     agree: "I understand how products are shown and sold to customers.",
   },
   terms: {

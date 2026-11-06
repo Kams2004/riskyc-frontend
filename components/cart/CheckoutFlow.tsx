@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { formatPrice } from "@/lib/data";
 import * as ordersApi from "@/lib/api/orders";
-import { PaymentMethod, Order, CustomerInfo, DeliveryType } from "@/lib/types";
+import { PaymentMethod, Order, CustomerInfo, DeliveryType, PaymentPlanSeller } from "@/lib/types";
 import { StatusBadge } from "@/components/cart/OrdersList";
 import { downloadReceipt } from "@/lib/generateReceipt";
 import { usePushSubscription } from "@/lib/usePushSubscription";
@@ -41,6 +41,23 @@ interface Props {
 }
 
 type Step = "method" | "awaiting" | "info" | "confirmed";
+
+/** One payment proof per shop — customers pay each shop's own account separately. */
+type Proof = { file: File; preview: string | null; name: string };
+
+/** Matches a shop in the payment plan to the order created for it (pre-marketplace orders have no shop id). */
+const shopKey = (enterpriseId: string | null | undefined) => enterpriseId ?? "platform";
+
+/** A re-opened order already knows where it's paid: its own code and account, from the server. */
+function planFromOrders(os: Order[]): PaymentPlanSeller[] {
+  return os.map((o) => ({
+    enterpriseId: o.enterpriseId ?? null,
+    sellerName: o.sellerName ?? "Riskyc Fashion",
+    amount: o.total,
+    acceptsPayments: true,
+    methods: o.paymentMethod && o.paymentCode ? [{ method: o.paymentMethod, code: o.paymentCode, accountName: o.paymentAccountName ?? "" }] : [],
+  }));
+}
 
 // A separate component (not inlined into the confirmed step) so the push
 // subscription hook is only ever mounted once a real orderId exists —
@@ -124,6 +141,10 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
       .getOrder(orderId)
       .then((o) => {
         setOrders([o]);
+        if (o.paymentMethod && o.paymentCode) {
+          setSelectedMethod(o.paymentMethod);
+          setPlan(planFromOrders([o]));
+        }
         setStep(getInitialStep([o]));
       })
       .catch(() => setOrderLoadError(true))
@@ -162,22 +183,23 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
     deliveryType: "DELIVERY",
   });
   const [infoErrors, setInfoErrors] = useState<Partial<Record<keyof CustomerInfo, string>>>({});
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [copyFailed, setCopyFailed] = useState(false);
   const [downloadingReceipt, setDownloadingReceipt] = useState(false);
   const [receiptError, setReceiptError] = useState(false);
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  // Where to pay, per shop in the cart (each shop's own account and amount), and one proof per shop.
+  const [plan, setPlan] = useState<PaymentPlanSeller[]>([]);
+  const [proofs, setProofs] = useState<Record<string, Proof>>({});
+  const [pickingFor, setPickingFor] = useState<string | null>(null);
   const [screenshotPickError, setScreenshotPickError] = useState<string | null>(null);
-  const [screenshotName, setScreenshotName] = useState("");
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Delivery is free on every order, so what the customer pays is exactly
   // the sum of what they selected — no separate "total" needed. Summed
-  // across every sub-order when a cart spans several sellers — the customer
-  // still pays and uploads proof once for the combined amount, same as today.
+  // across every sub-order when a cart spans several sellers; each seller is
+  // then paid its own share separately (see `plan`).
   const subtotal = orders.length > 0 ? orders.reduce((sum, o) => sum + o.total, 0) : getCartTotal();
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
@@ -193,49 +215,79 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
       selectedImageIndex: item.selectedImageIndex,
     }));
 
-  // The payment code is shown on the next step and the customer pays right away — so confirm the cart is still
-  // in stock first, instead of discovering a sold-out item only at order creation, after the money is sent.
+  // The payment codes are shown on the next step and the customer pays right away — so the server confirms the cart
+  // is still in stock and says, for each shop in it, the amount and that shop's own account. A shop that hasn't set
+  // up payments, or doesn't take the chosen method, stops checkout here, before any money is sent.
   const handleSelectMethod = async (method: PaymentMethod) => {
     if (checkingStock) return;
     setStockError("");
     if (orders.length === 0 && items.length === 0) return;
-    if (orders.length === 0) {
-      setCheckingStock(true);
-      try {
-        await ordersApi.checkAvailability(orderItems());
-      } catch (e) {
-        setStockError(t("cart.checkout.stockChanged", { details: e instanceof Error ? e.message : "" }));
-        return;
-      } finally {
-        setCheckingStock(false);
+    setCheckingStock(true);
+    try {
+      if (orders.length === 0) {
+        const { sellers } = await ordersApi.getPaymentPlan(orderItems());
+        const notReady = sellers.filter((s) => !s.acceptsPayments);
+        if (notReady.length > 0) {
+          setStockError(t("cart.checkout.sellerNotAccepting", { names: notReady.map((s) => s.sellerName).join(", ") }));
+          return;
+        }
+        const missing = sellers.filter((s) => !s.methods.some((m) => m.method === method));
+        if (missing.length > 0) {
+          setStockError(
+            t("cart.checkout.methodNotAccepted", {
+              names: missing.map((s) => s.sellerName).join(", "),
+              method: method === "ORANGE_MONEY" ? "Orange Money" : "MTN Mobile Money",
+            })
+          );
+          return;
+        }
+        setPlan(sellers);
+      } else {
+        // A re-opened order: the server picks that order's own shop account for this method.
+        const updated = await Promise.all(orders.map((o) => ordersApi.setOrderPaymentMethod(o.id, method)));
+        setOrders(updated);
+        setPlan(planFromOrders(updated));
       }
+    } catch (e) {
+      setStockError(t("cart.checkout.stockChanged", { details: e instanceof Error ? e.message : "" }));
+      return;
+    } finally {
+      setCheckingStock(false);
     }
+    setProofs({});
     setSelectedMethod(method);
     setStep("awaiting");
   };
 
+  const allProofsReady = plan.length > 0 && plan.every((p) => proofs[shopKey(p.enterpriseId)]);
+
   const handleSendProof = () => {
-    if (!screenshotFile) return;
+    if (!allProofsReady) return;
+    // A re-opened order already has the customer's details — just send its proof.
+    if (orders.length > 0) {
+      void submitPayments(orders);
+      return;
+    }
     setStep("info");
   };
 
-  const handleInfoSubmit = async () => {
-    if (!validateInfo() || !selectedMethod || !screenshotFile) return;
+  /** Each order is paid to its own shop: set the method (its shop's account) and attach that shop's proof. */
+  const submitPayments = async (targets: Order[]) => {
+    if (!selectedMethod) return;
     setSending(true);
     setSubmitError("");
     try {
-      const newOrders = await ordersApi.createOrder({
-        customerId: customer?.id,
-        items: orderItems(),
-        customerInfo,
-        language: useStore.getState().language,
-      });
-      // The customer picked one payment method and uploads one proof
-      // screenshot for the combined amount — applied to every sub-order the
-      // cart split into, same as a single order would get today.
-      await Promise.all(newOrders.map((o) => ordersApi.setOrderPaymentMethod(o.id, selectedMethod)));
-      const finalOrders = await Promise.all(newOrders.map((o) => ordersApi.uploadPaymentProof(o.id, screenshotFile)));
-      clearCart();
+      const onlyProof = Object.values(proofs)[0];
+      const finalOrders = await Promise.all(
+        targets.map(async (o) => {
+          if (o.paymentMethod !== selectedMethod || !o.paymentCode) {
+            await ordersApi.setOrderPaymentMethod(o.id, selectedMethod);
+          }
+          const proof = proofs[shopKey(o.enterpriseId)] ?? (plan.length === 1 ? onlyProof : undefined);
+          if (!proof) throw new Error(t("cart.checkout.genericError"));
+          return ordersApi.uploadPaymentProof(o.id, proof.file);
+        })
+      );
       finalOrders.forEach((o) => recordLocalOrder(o.id));
       setOrders(finalOrders);
       setStep("confirmed");
@@ -244,6 +296,29 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleInfoSubmit = async () => {
+    if (!validateInfo() || !selectedMethod || !allProofsReady) return;
+    setSending(true);
+    setSubmitError("");
+    let newOrders: Order[];
+    try {
+      // One order per shop in the cart; each is then paid to its own shop with that shop's proof.
+      newOrders = await ordersApi.createOrder({
+        customerId: customer?.id,
+        items: orderItems(),
+        customerInfo,
+        language: useStore.getState().language,
+      });
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : t("cart.checkout.genericError"));
+      setSending(false);
+      return;
+    }
+    clearCart();
+    setOrders(newOrders);
+    await submitPayments(newOrders);
   };
 
   const validateInfo = (): boolean => {
@@ -259,13 +334,12 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
     return Object.keys(errors).length === 0;
   };
 
-  const handleCopyCode = () => {
-    const code = selectedMethod ? buildUssdCode(selectedMethod) : "";
+  const handleCopyCode = (code: string, key: string) => {
     setCopyFailed(false);
     navigator.clipboard.writeText(code).then(
       () => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 2500);
       },
       () => setCopyFailed(true)
     );
@@ -283,43 +357,23 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
       setScreenshotPickError(t("cart.checkout.photoNotReadyError"));
       return;
     }
+    const key = pickingFor;
+    if (!key) return;
     setScreenshotPickError(null);
-    setScreenshotFile(file);
-    setScreenshotName(file.name);
+    setProofs((p) => ({ ...p, [key]: { file, preview: null, name: file.name } }));
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setScreenshotPreview(ev.target?.result as string);
+      setProofs((p) => (p[key] ? { ...p, [key]: { ...p[key], preview: ev.target?.result as string } } : p));
     };
     reader.readAsDataURL(file);
   };
 
 
-  const paymentInfo: Record<
-    PaymentMethod,
-    { name: string; accountName: string; ussdTemplate: string; color: string; bg: string; logo: string }
-  > = {
-    ORANGE_MONEY: {
-      name: "Orange Money",
-      accountName: "IBRAHIMA HAYA",
-      ussdTemplate: "*150*14*244153*694282606*%s#",
-      color: "text-orange-600",
-      bg: "bg-orange-50 border-orange-200",
-      logo: "/orange-money.png",
-    },
-    MOBILE_MONEY: {
-      name: "MTN Mobile Money",
-      accountName: "KHAN RAPHEAL",
-      ussdTemplate: "*126*14*673267022*%s#",
-      color: "text-yellow-600",
-      bg: "bg-yellow-50 border-yellow-200",
-      logo: "/mtn-momo.png",
-    },
+  // Look only — the accounts themselves come from each shop (see `plan`).
+  const paymentInfo: Record<PaymentMethod, { name: string; color: string; bg: string; logo: string }> = {
+    ORANGE_MONEY: { name: "Orange Money", color: "text-orange-600", bg: "bg-orange-50 border-orange-200", logo: "/orange-money.png" },
+    MOBILE_MONEY: { name: "MTN Mobile Money", color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-200", logo: "/mtn-momo.png" },
   };
-
-  // Bakes the amount to pay into the dial code so the customer can copy one
-  // string straight into their phone's dialer, e.g. *126*14*673267022*12000#
-  const buildUssdCode = (method: PaymentMethod) =>
-    paymentInfo[method].ussdTemplate.replace("%s", String(Math.round(subtotal)));
 
   if (loadingOrder) {
     return (
@@ -527,68 +581,94 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
             </div>
           )}
 
-          {/* ===== STEP 2: Copy code + upload screenshot ===== */}
+          {/* ===== STEP 2: Pay each shop + upload one proof per shop ===== */}
           {step === "awaiting" && selectedMethod && (
             <div className="space-y-5 animate-fade-in">
-              <div className={clsx("rounded-2xl border-2 p-5 text-center", paymentInfo[selectedMethod].bg)}>
-                <div className="flex justify-center mb-3">
-                  <div className="w-16 h-16 rounded-2xl shadow overflow-hidden">
-                    <Image src={paymentInfo[selectedMethod].logo} alt={paymentInfo[selectedMethod].name} width={128} height={128} className="w-full h-full object-cover" />
-                  </div>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+              {plan.length > 1 && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+                  {t("cart.checkout.paySeveralSellers", { count: plan.length })}
                 </div>
-                <p className="font-semibold text-gray-700 mb-1">{t("cart.checkout.dialCodeToSend", { amount: formatPrice(subtotal) })}</p>
-                <p className="font-bold text-xl text-gray-900 tracking-wide mb-1 break-all">{buildUssdCode(selectedMethod)}</p>
-                <p className={clsx("font-semibold text-sm", paymentInfo[selectedMethod].color)}>
-                  {paymentInfo[selectedMethod].name} · {paymentInfo[selectedMethod].accountName}
-                </p>
-              </div>
-
-              <button onClick={handleCopyCode} className={clsx(
-                "w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 font-semibold text-sm transition-all",
-                copied ? "border-green-400 bg-green-50 text-green-700" : "border-gray-200 hover:border-brand-300 hover:bg-brand-50 text-gray-700"
-              )}>
-                {copied ? <><Check size={18} className="text-green-500" />{t("cart.checkout.codeCopied")}</> : <><Copy size={18} />{t("cart.checkout.copyCode")}</>}
-              </button>
-              {copyFailed && (
-                <p className="text-xs text-red-500 text-center mt-1.5">{t("cart.checkout.copyFailed")}</p>
               )}
 
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
-                <strong>{t("cart.checkout.instructionsLabel")}</strong> {t("cart.checkout.instructionsBefore", { amount: formatPrice(subtotal) })}<strong>{paymentInfo[selectedMethod].accountName}</strong>{t("cart.checkout.instructionsAfter")}
-              </div>
+              {plan.map((seller) => {
+                const key = shopKey(seller.enterpriseId);
+                const account = seller.methods.find((m) => m.method === selectedMethod);
+                const proof = proofs[key];
+                if (!account) return null;
+                return (
+                  <div key={key} className="space-y-3 rounded-2xl border border-gray-100 p-4">
+                    {plan.length > 1 && (
+                      <p className="text-sm font-bold text-gray-900">{t("cart.checkout.payThisSeller", { seller: seller.sellerName })}</p>
+                    )}
+                    <div className={clsx("rounded-2xl border-2 p-5 text-center", paymentInfo[selectedMethod].bg)}>
+                      <div className="flex justify-center mb-3">
+                        <div className="w-14 h-14 rounded-2xl shadow overflow-hidden">
+                          <Image src={paymentInfo[selectedMethod].logo} alt={paymentInfo[selectedMethod].name} width={112} height={112} className="w-full h-full object-cover" />
+                        </div>
+                      </div>
+                      <p className="font-semibold text-gray-700 mb-1">{t("cart.checkout.dialCodeToSend", { amount: formatPrice(seller.amount) })}</p>
+                      <p className="font-bold text-xl text-gray-900 tracking-wide mb-1 break-all">{account.code}</p>
+                      <p className={clsx("font-semibold text-sm", paymentInfo[selectedMethod].color)}>
+                        {paymentInfo[selectedMethod].name} · {account.accountName}
+                      </p>
+                    </div>
 
-              <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3">{t("cart.checkout.uploadPrompt")}</p>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-                {!screenshotFile ? (
-                  <button onClick={() => fileInputRef.current?.click()} className="w-full border-2 border-dashed border-gray-300 hover:border-brand-400 rounded-2xl p-8 flex flex-col items-center gap-3 transition-colors group">
-                    <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-brand-50 flex items-center justify-center transition-colors">
-                      <Upload size={22} className="text-gray-400 group-hover:text-brand-500" />
+                    <button onClick={() => handleCopyCode(account.code, key)} className={clsx(
+                      "w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 font-semibold text-sm transition-all",
+                      copiedKey === key ? "border-green-400 bg-green-50 text-green-700" : "border-gray-200 hover:border-brand-300 hover:bg-brand-50 text-gray-700"
+                    )}>
+                      {copiedKey === key ? <><Check size={18} className="text-green-500" />{t("cart.checkout.codeCopied")}</> : <><Copy size={18} />{t("cart.checkout.copyCode")}</>}
+                    </button>
+
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+                      <strong>{t("cart.checkout.instructionsLabel")}</strong> {t("cart.checkout.instructionsBefore", { amount: formatPrice(seller.amount) })}<strong>{account.accountName}</strong>{t("cart.checkout.instructionsAfter")}
                     </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-600 group-hover:text-brand-600">{t("cart.checkout.uploadCta")}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{t("cart.checkout.uploadHint")}</p>
+
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700 mb-2">
+                        {plan.length > 1 ? t("cart.checkout.uploadPromptFor", { seller: seller.sellerName }) : t("cart.checkout.uploadPrompt")}
+                      </p>
+                      {!proof ? (
+                        <button
+                          onClick={() => {
+                            setPickingFor(key);
+                            fileInputRef.current?.click();
+                          }}
+                          className="w-full border-2 border-dashed border-gray-300 hover:border-brand-400 rounded-2xl p-6 flex flex-col items-center gap-2 transition-colors group"
+                        >
+                          <div className="w-11 h-11 rounded-xl bg-gray-100 group-hover:bg-brand-50 flex items-center justify-center transition-colors">
+                            <Upload size={20} className="text-gray-400 group-hover:text-brand-500" />
+                          </div>
+                          <p className="text-sm font-medium text-gray-600 group-hover:text-brand-600">{t("cart.checkout.uploadCta")}</p>
+                          <p className="text-xs text-gray-400">{t("cart.checkout.uploadHint")}</p>
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="relative rounded-2xl overflow-hidden border border-gray-200">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={proof.preview ?? undefined} alt={t("cart.checkout.paymentProofAlt")} className="w-full max-h-44 object-contain bg-gray-50" />
+                            <button
+                              onClick={() => setProofs((p) => { const next = { ...p }; delete next[key]; return next; })}
+                              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-red-50 transition-colors"
+                            >
+                              <X size={14} className="text-gray-600" />
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500 truncate">📎 {proof.name}</p>
+                        </div>
+                      )}
                     </div>
-                  </button>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="relative rounded-2xl overflow-hidden border border-gray-200">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={screenshotPreview ?? undefined} alt={t("cart.checkout.paymentProofAlt")} className="w-full max-h-52 object-contain bg-gray-50" />
-                      <button onClick={() => { setScreenshotFile(null); setScreenshotPreview(null); setScreenshotName(""); }} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-red-50 transition-colors">
-                        <X size={14} className="text-gray-600" />
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500 truncate">📎 {screenshotName}</p>
                   </div>
-                )}
-                {screenshotPickError && (
-                  <p className="text-xs text-red-500 text-center mt-2">{screenshotPickError}</p>
-                )}
-              </div>
+                );
+              })}
 
-              {screenshotFile && (
-                <button onClick={handleSendProof} className="w-full btn-primary py-4 rounded-2xl text-base">
+              {copyFailed && <p className="text-xs text-red-500 text-center">{t("cart.checkout.copyFailed")}</p>}
+              {screenshotPickError && <p className="text-xs text-red-500 text-center">{screenshotPickError}</p>}
+              {submitError && orders.length > 0 && <p className="text-xs text-red-500 text-center">{submitError}</p>}
+
+              {allProofsReady && (
+                <button onClick={handleSendProof} disabled={sending} className="w-full btn-primary py-4 rounded-2xl text-base disabled:opacity-60">
                   <Upload size={20} />{t("cart.checkout.sendProof")}
                 </button>
               )}
@@ -730,6 +810,12 @@ export default function CheckoutFlow({ orderId, onClose }: Props) {
                       <p className={clsx("text-xs font-semibold uppercase tracking-wide", o.status === "CANCELLED" ? "text-gray-600" : "text-green-800")}>{t("cart.checkout.orderSummaryLabel")}</p>
                       <StatusBadge status={o.status} />
                     </div>
+                    {o.sellerName && orders.length > 1 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">{t("cart.checkout.sellerLabel")}</span>
+                        <span className="font-semibold text-gray-800">{o.sellerName}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">{t("cart.checkout.orderIdLabel")}</span>
                       <span className="font-mono font-semibold text-gray-800">{o.id}</span>

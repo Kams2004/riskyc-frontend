@@ -7,6 +7,7 @@ export const adminCommon = {
       orders: "Orders",
       treatment: "Packing",
       delivery: "Delivery Agents",
+      payments: "Payments",
       products: "Products",
       categories: "Categories",
       customers: "Customers",

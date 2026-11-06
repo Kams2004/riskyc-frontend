@@ -59,6 +59,7 @@ export const products = {
     sizeLabel: "Size:",
     sizeGuide: "Size Guide",
     photoConfigureFirst: "Pick a picture above, then set a size and quantity for it before ordering.",
+    sellerNotReady: "Not available to buy yet — the seller is still setting up payments.",
     soldOut: "Sold out",
     quantity: "Quantity",
     total: "Total:",

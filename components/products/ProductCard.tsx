@@ -31,6 +31,7 @@ export default function ProductCard({ product }: Props) {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
   const priceUnset = product.price <= 0;
+  const notPayable = product.seller?.acceptsPayments === false;
   const name = localized(product.name, product.nameFr, language);
   const soldOut = isProductSoldOut(product);
   // The quick-add button always adds the first color/size — if that
@@ -40,7 +41,7 @@ export default function ProductCard({ product }: Props) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (priceUnset || defaultComboSoldOut) return;
+    if (priceUnset || notPayable || defaultComboSoldOut) return;
     addToCart({ product, quantity: 1, selectedColor: firstColor?.name ?? "", selectedSize: firstSize });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
@@ -151,14 +152,14 @@ export default function ProductCard({ product }: Props) {
           {/* Add to Cart — icon only on mobile, full label on sm+; blocked once the default color/size is out of stock */}
           <button
             onClick={handleAddToCart}
-            disabled={priceUnset || defaultComboSoldOut}
+            disabled={priceUnset || notPayable || defaultComboSoldOut}
             className={clsx(
               "flex-1 min-w-0 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap",
-              priceUnset || defaultComboSoldOut
+              priceUnset || notPayable || defaultComboSoldOut
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                 : added ? "bg-green-500 text-white" : "bg-gray-900 hover:bg-brand-500 text-white"
             )}
-            title={priceUnset ? t("products.card.contactForPricing") : defaultComboSoldOut ? t("products.detail.soldOut") : t("products.card.addToCart")}
+            title={priceUnset ? t("products.card.contactForPricing") : notPayable ? t("products.detail.sellerNotReady") : defaultComboSoldOut ? t("products.detail.soldOut") : t("products.card.addToCart")}
           >
             {added ? <Check size={13} /> : <ShoppingCart size={13} />}
             <span className="hidden sm:inline">{added ? t("products.card.added") : t("products.card.add")}</span>

@@ -9,6 +9,7 @@ export const adminCommon: typeof adminCommonEn = {
       orders: "Commandes",
       treatment: "Emballage",
       delivery: "Équipe de livraison",
+      payments: "Paiements",
       products: "Produits",
       categories: "Catégories",
       customers: "Clients",
