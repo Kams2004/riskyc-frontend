@@ -76,7 +76,11 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
   );
 
   return (
-    <aside className="w-64 min-h-screen flex flex-col flex-shrink-0 bg-gradient-to-b from-[#3d0518] via-gray-950 to-gray-950 text-gray-300 border-r border-brand-900/30 shadow-2xl shadow-black/40">
+    <aside
+      // Exactly as tall as its column and scrollable as a whole: on a short screen every item — Logout included — stays
+      // reachable instead of being cut off below the window.
+      style={{ scrollbarWidth: "thin" }}
+      className="w-64 h-full min-h-0 overflow-y-auto overscroll-contain flex flex-col flex-shrink-0 bg-gradient-to-b from-[#3d0518] via-gray-950 to-gray-950 text-gray-300 border-r border-brand-900/30 shadow-2xl shadow-black/40">
       {/* Logo */}
       <div className="px-6 py-5 border-b border-white/5">
         <div className="flex items-center gap-3">
@@ -108,7 +112,7 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
       )}
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-1">
         {visibleNavItems.map(({ href, label: fallbackLabel, icon: Icon, exact }) => {
           const label = NAV_LABEL_KEYS[href]
             ? t(`adminCommon.sidebar.nav.${NAV_LABEL_KEYS[href]}`)

@@ -45,8 +45,8 @@ export default function AdminShell({
           isDark ? "bg-gray-900 text-gray-100" : "bg-slate-50 text-gray-900"
         )}
       >
-        {/* ── Desktop sidebar — fixed height, no scroll ── */}
-        <div className="hidden lg:flex flex-col flex-shrink-0">
+        {/* ── Desktop sidebar — as tall as the window; scrolls on its own when the window is short ── */}
+        <div className="hidden lg:flex flex-col flex-shrink-0 h-full min-h-0">
           <AdminSidebar />
         </div>
 
@@ -57,7 +57,7 @@ export default function AdminShell({
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setSidebarOpen(false)}
             />
-            <div className="relative z-10 flex flex-col animate-slide-in-right">
+            <div className="relative z-10 flex flex-col h-full min-h-0 animate-slide-in-right">
               <AdminSidebar onNavigate={() => setSidebarOpen(false)} />
             </div>
           </div>
