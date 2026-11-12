@@ -14,6 +14,10 @@ const nextConfig = {
   // Standalone output — the Docker build copies only the compiled server +
   // its traced dependencies, not the whole node_modules tree.
   output: "standalone",
+  // Link-preview tags (og:image, og:title…) always in the page's <head>. Next.js otherwise streams them later in the
+  // page for anything that looks like a browser — and WhatsApp Web/Desktop fetch previews like a browser, then find no
+  // photo or title in <head> (only the bare domain shows). Costs one product lookup before the page starts sending.
+  htmlLimitedBots: /.*/,
   images: {
     remotePatterns: [
       // Product photos served by the API (/api/media/{id}/content) — resized for link previews.
