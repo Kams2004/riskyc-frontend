@@ -100,7 +100,7 @@ function HowToOrderModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export default function ProductDetailClient({ productId }: { productId: string }) {
+export default function ProductDetailClient({ productId, initialPhoto = 0 }: { productId: string; initialPhoto?: number }) {
   const router = useRouter();
   const { t, language } = useTranslation();
   const { addToCart, setChatOpen, setChatDraft } = useStore();
@@ -113,7 +113,8 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [qty, setQty] = useState(1);
-  const [imgIdx, setImgIdx] = useState(0);
+  // A shared link (?photo=N, e.g. from WhatsApp) opens on the photo it was sent with.
+  const [imgIdx, setImgIdx] = useState(initialPhoto);
   const [addedToCart, setAddedToCart] = useState(false);
   const [tab, setTab] = useState<"description" | "details" | "reviews">("description");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -283,17 +284,18 @@ export default function ProductDetailClient({ productId }: { productId: string }
   // that contact method.
   const handleWhatsApp = () => {
     if (!product.seller?.whatsappNumber) return;
-    const productUrl = typeof window !== "undefined" ? window.location.href : "";
-    const imageUrl = product.media[imgIdx]?.presignedUrl || product.media[0]?.presignedUrl;
+    // The product page link is the only link in the message: WhatsApp turns it into a preview card showing the photo
+    // the customer was looking at (?photo= picks it for the page's preview tags), instead of a raw image address.
+    const productUrl =
+      typeof window !== "undefined" ? `${window.location.origin}/products/${product.id}${imgIdx > 0 ? `?photo=${imgIdx}` : ""}` : "";
     const lines = [
       `Hi! I'm interested in ordering:`,
       `*${product.name}*`,
-      `Color: ${selectedColor}`,
+      selectedColor ? `Color: ${selectedColor}` : null,
       selectedSize ? `Size: ${selectedSize}` : null,
       `Qty: ${qty}`,
       `Price: ${formatPrice(computeLineTotal(product.price, product.bulkPrices, qty))}`,
-      imageUrl ? `\nPicture: ${imageUrl}` : null,
-      productUrl ? `Product page: ${productUrl}` : null,
+      productUrl ? `\n${productUrl}` : null,
     ]
       .filter((l): l is string => Boolean(l))
       .join("\n");

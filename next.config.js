@@ -1,3 +1,14 @@
+/** The API host this build talks to (e.g. a local backend in development), allowed for resized product photos. */
+function apiImagePattern() {
+  try {
+    const u = new URL(process.env.NEXT_PUBLIC_API_BASE_URL || "");
+    if (u.hostname === "api.riskycfashion.com") return [];
+    return [{ protocol: u.protocol.replace(":", ""), hostname: u.hostname, port: u.port, pathname: "/api/media/**" }];
+  } catch {
+    return [];
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Standalone output — the Docker build copies only the compiled server +
@@ -5,6 +16,9 @@ const nextConfig = {
   output: "standalone",
   images: {
     remotePatterns: [
+      // Product photos served by the API (/api/media/{id}/content) — resized for link previews.
+      { protocol: "https", hostname: "api.riskycfashion.com", pathname: "/api/media/**" },
+      ...apiImagePattern(),
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "via.placeholder.com" },
     ],
