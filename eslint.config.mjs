@@ -27,6 +27,7 @@ const eslintConfig = defineConfig([
     // Separate projects living inside this folder, each with its own tooling.
     "Riskyc/**",
     "riskyc-pos/**",
+    "riskyc-pos-mobile/**",
     "riskyc-mobile/**",
   ]),
 ]);

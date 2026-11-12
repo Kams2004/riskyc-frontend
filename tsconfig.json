@@ -38,6 +38,6 @@
   "exclude": [
     "node_modules",
     "riskyc-mobile",
-    "riskyc-pos"
+    "riskyc-pos", "riskyc-pos-mobile"
   ]
 }

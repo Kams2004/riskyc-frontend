@@ -6,6 +6,7 @@
 
 # POS app lives in its own repository
 /riskyc-pos/
+/riskyc-pos-mobile/
 
 # Dependencies
 /node_modules/
